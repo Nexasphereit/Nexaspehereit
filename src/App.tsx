@@ -19,11 +19,24 @@ import Login from './pages/Login';
 import { GalaxyBackground } from './components/common/GalaxyBackground';
 
 function AppContent() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { settings } = useTheme();
 
   useEffect(() => {
+    // Check local storage for persistent custom logged-in user profiles
+    const savedCustomUser = localStorage.getItem('customUser');
+    if (savedCustomUser) {
+      try {
+        const parsed = JSON.parse(savedCustomUser);
+        setUser(parsed);
+        setLoading(false);
+        return;
+      } catch (e) {
+        console.error("Local storage custom user parse error:", e);
+      }
+    }
+
     return onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);

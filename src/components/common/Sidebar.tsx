@@ -43,6 +43,12 @@ export default function Sidebar() {
     }
   }, []);
 
+  const handleLogout = async () => {
+    localStorage.removeItem('customUser');
+    await signOut(auth);
+    window.location.reload();
+  };
+
   return (
     <>
       {/* Mobile Top Header Bar */}
@@ -226,7 +232,7 @@ export default function Sidebar() {
              </div>
           )}
           <button 
-            onClick={() => signOut(auth)}
+            onClick={handleLogout}
             className={cn(
               "flex items-center gap-3 px-4 py-3 w-full rounded-2xl transition-all font-bold group",
               isDark ? "hover:bg-red-900/20 hover:text-red-400 text-slate-500" : "hover:bg-red-50 hover:text-red-500 text-slate-400",

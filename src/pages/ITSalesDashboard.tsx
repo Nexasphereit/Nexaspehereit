@@ -35,6 +35,8 @@ import { cn } from '../lib/utils';
 import { Button, Input, Card } from '../components/common/UI';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
+import CommissionDesk from '../components/CommissionDesk';
+import StaffManager from '../components/StaffManager';
 
 // Pre-seeded template IT Services to get the client started beautifully
 const PRESEEDED_SERVICES = [
@@ -55,10 +57,16 @@ export default function ITSalesDashboard() {
   const { settings } = useTheme();
   const isDark = settings.sidebarTheme === 'dark';
 
+  const isUserAdmin = ((auth.currentUser as any)?.role || 'admin') === 'admin';
+
   // --- State for Role Management ---
   // Users can toggle their active RBAC role to see the dashboard switch instantly!
-  const [activeRole, setActiveRole] = useState<'admin' | 'executive'>('admin');
-  const [executiveName, setExecutiveName] = useState<string>('Sarah Ahmed');
+  const [activeRole, setActiveRole] = useState<'admin' | 'executive'>(() => {
+    return (auth.currentUser as any)?.role || 'executive';
+  });
+  const [executiveName, setExecutiveName] = useState<string>(() => {
+    return auth.currentUser?.displayName || 'Sarah Ahmed';
+  });
 
   // --- State for Currency Selection ---
   const [currency, setCurrency] = useState<string>(() => {
@@ -86,7 +94,7 @@ export default function ITSalesDashboard() {
   const [usersSnap, usersLoading] = useCollection(collection(db, 'users'));
 
   // --- Local Setup & Active Modals State ---
-  const [activeSubTab, setActiveSubTab] = useState<'sales' | 'services' | 'customers'>('sales');
+  const [activeSubTab, setActiveSubTab] = useState<'sales' | 'services' | 'customers' | 'commissions' | 'users'>('sales');
   
   // Customer Search
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
@@ -101,6 +109,10 @@ export default function ITSalesDashboard() {
   const [txQuantity, setTxQuantity] = useState(1);
   const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
   const [txExecutiveId, setTxExecutiveId] = useState(''); // defaults to current logged-in user
+  const [txPaymentStatus, setTxPaymentStatus] = useState<'Collected' | 'Due'>('Collected');
+  const [assignedExecutiveId, setAssignedExecutiveId] = useState('');
+  const [assignedExecutiveName, setAssignedExecutiveName] = useState('');
+  const [assignedExecutiveCommission, setAssignedExecutiveCommission] = useState(10);
 
   // Service contract coverage timeline states
   const [txStartDate, setTxStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -360,8 +372,28 @@ export default function ITSalesDashboard() {
     const price = Number(sData.price);
     const totalAmount = price * txQuantity;
 
-    const currentExecId = activeRole === 'executive' ? (auth.currentUser?.uid || 'exec-custom') : auth.currentUser?.uid || 'admin-ceo';
-    const currentExecName = activeRole === 'executive' ? executiveName : (auth.currentUser?.displayName || ' Sarah Ahmed (Admin Admin)');
+    let currentExecId = auth.currentUser?.uid || 'exec-custom';
+    let currentExecName = auth.currentUser?.displayName || 'Sarah Ahmed';
+    let commissionPercentage = (auth.currentUser as any)?.commissionPercentage ?? 10;
+
+    if (activeRole === 'admin') {
+      if (assignedExecutiveId) {
+        currentExecId = assignedExecutiveId;
+        currentExecName = assignedExecutiveName;
+        commissionPercentage = assignedExecutiveCommission;
+      } else {
+        currentExecId = 'admin';
+        currentExecName = 'Main Administrator';
+        commissionPercentage = (auth.currentUser as any)?.commissionPercentage ?? 10;
+      }
+    } else {
+      // Current executive logged-in
+      currentExecId = auth.currentUser?.uid || 'exec-custom';
+      currentExecName = auth.currentUser?.displayName || executiveName || 'Sales Executive';
+      commissionPercentage = (auth.currentUser as any)?.commissionPercentage ?? 10;
+    }
+
+    const commissionEarned = totalAmount * (commissionPercentage / 100);
 
     const transactionPayload = {
       customerId: targetCustomerId,
@@ -374,6 +406,9 @@ export default function ITSalesDashboard() {
       totalAmount,
       executiveId: currentExecId,
       executiveName: currentExecName,
+      commissionPercentage,
+      commissionEarned,
+      status: txPaymentStatus, // 'Collected' or 'Due'
       date: txDate,
       startDate: txStartDate,
       endDate: txEndDate,
@@ -391,6 +426,8 @@ export default function ITSalesDashboard() {
       setTxCustomerName('');
       setTxCustomerPhone('');
       setTxCustomerId('');
+      setAssignedExecutiveId('');
+      setAssignedExecutiveName('');
       
       const todayStr = new Date().toISOString().split('T')[0];
       setTxStartDate(todayStr);
@@ -592,6 +629,57 @@ export default function ITSalesDashboard() {
     } catch (err) {
       toast.error('Could not remove contract', { id: loadDel });
       handleFirestoreError(err, OperationType.DELETE, `transactions/${txId}`);
+    }
+  };
+
+  // --- New Handlers for User Credentials and Commission Status Toggles ---
+  const handleTogglePaymentStatus = async (txId: string, nextStatus: string) => {
+    const loading = toast.loading(`Updating deal payment status to ${nextStatus}...`);
+    try {
+      await updateDoc(doc(db, 'transactions', txId), {
+        status: nextStatus,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(`Successfully marked deal as ${nextStatus}!`, { id: loading });
+    } catch (err) {
+      toast.error('Failed to change payment status.', { id: loading });
+      handleFirestoreError(err, OperationType.UPDATE, `transactions/${txId}`);
+    }
+  };
+
+  const handleAddUser = async (userPayload: any) => {
+    const loading = toast.loading(`Provisioning ${userPayload.name} credentials...`);
+    try {
+      await setDoc(doc(db, 'users', userPayload.id), userPayload);
+      toast.success('Staff account registered in secure directory!', { id: loading });
+    } catch (err) {
+      toast.error('Failed to save user account.', { id: loading });
+      handleFirestoreError(err, OperationType.CREATE, `users/${userPayload.id}`);
+    }
+  };
+
+  const handleUpdateUserCommission = async (uId: string, newRate: number) => {
+    const loading = toast.loading(`Adjusting dynamic commission rate to ${newRate}%...`);
+    try {
+      await updateDoc(doc(db, 'users', uId), {
+        commissionPercentage: newRate,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success('Commission rate customized successfully!', { id: loading });
+    } catch (err) {
+      toast.error('Could not update commission rate.', { id: loading });
+      handleFirestoreError(err, OperationType.UPDATE, `users/${uId}`);
+    }
+  };
+
+  const handleDeleteUser = async (uId: string) => {
+    const loading = toast.loading('Deleting staff profile...');
+    try {
+      await deleteDoc(doc(db, 'users', uId));
+      toast.success('Personnel credentials revoked and removed.', { id: loading });
+    } catch (err) {
+      toast.error('Could not complete user removal.', { id: loading });
+      handleFirestoreError(err, OperationType.DELETE, `users/${uId}`);
     }
   };
 
@@ -806,41 +894,43 @@ export default function ITSalesDashboard() {
             </select>
           </div>
 
-          <div className={cn(
-            "p-1.5 rounded-2xl border flex items-center gap-1",
-            isDark ? "bg-slate-900/50 border-white/5" : "bg-slate-100 border-slate-200"
-          )}>
-            <button
-              onClick={() => {
-                setActiveRole('admin');
-                toast.success('Switched to Administrator Role: Full Ledger Visible');
-              }}
-              className={cn(
-                "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5",
-                activeRole === 'admin' 
-                  ? "bg-white text-slate-900 shadow-md" 
-                  : "text-slate-400 hover:text-slate-200"
-              )}
-            >
-              <UserCheck size={12} style={activeRole === 'admin' ? { color: settings.primaryColor } : {}} />
-              Admin View
-            </button>
-            <button
-              onClick={() => {
-                setActiveRole('executive');
-                toast.success('Switched to Sales Executive View: Restricted Private Ledger');
-              }}
-              className={cn(
-                "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5",
-                activeRole === 'executive' 
-                  ? "bg-white text-slate-900 shadow-md" 
-                  : "text-slate-400 hover:text-slate-200"
-              )}
-            >
-              <Users size={12} style={activeRole === 'executive' ? { color: settings.primaryColor } : {}} />
-              Executive View
-            </button>
-          </div>
+          {isUserAdmin && (
+            <div className={cn(
+              "p-1.5 rounded-2xl border flex items-center gap-1",
+              isDark ? "bg-slate-900/50 border-white/5" : "bg-slate-100 border-slate-200"
+            )}>
+              <button
+                onClick={() => {
+                  setActiveRole('admin');
+                  toast.success('Switched to Administrator Role: Full Ledger Visible');
+                }}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5",
+                  activeRole === 'admin' 
+                    ? "bg-white text-slate-900 shadow-md" 
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                <UserCheck size={12} style={activeRole === 'admin' ? { color: settings.primaryColor } : {}} />
+                Admin View
+              </button>
+              <button
+                onClick={() => {
+                  setActiveRole('executive');
+                  toast.success('Switched to Sales Executive View: Restricted Private Ledger');
+                }}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5",
+                  activeRole === 'executive' 
+                    ? "bg-white text-slate-900 shadow-md" 
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                <Users size={12} style={activeRole === 'executive' ? { color: settings.primaryColor } : {}} />
+                Executive View
+              </button>
+            </div>
+          )}
 
           <div className="flex gap-2 shrink-0">
             {/* Seed Sandbox data button */}
@@ -942,11 +1032,11 @@ export default function ITSalesDashboard() {
       )}
 
       {/* SUB-TAB NAVIGATOR FOR SECTIONS */}
-      <div className="flex border-b border-slate-800/40 pb-px">
+      <div className="flex flex-wrap border-b border-slate-800/40 pb-px gap-y-2">
         <button
           onClick={() => setActiveSubTab('sales')}
           className={cn(
-            "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all",
+            "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all cursor-pointer",
             activeSubTab === 'sales' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
           )}
           style={activeSubTab === 'sales' ? { color: settings.primaryColor } : {}}
@@ -956,23 +1046,25 @@ export default function ITSalesDashboard() {
             <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
           )}
         </button>
-        <button
-          onClick={() => setActiveSubTab('services')}
-          className={cn(
-            "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all",
-            activeSubTab === 'services' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
-          )}
-          style={activeSubTab === 'services' ? { color: settings.primaryColor } : {}}
-        >
-          Manage Services Database
-          {activeSubTab === 'services' && (
-            <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
-          )}
-        </button>
+        {isUserAdmin && (
+          <button
+            onClick={() => setActiveSubTab('services')}
+            className={cn(
+              "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all cursor-pointer",
+              activeSubTab === 'services' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
+            )}
+            style={activeSubTab === 'services' ? { color: settings.primaryColor } : {}}
+          >
+            Manage Services Database
+            {activeSubTab === 'services' && (
+              <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
+            )}
+          </button>
+        )}
         <button
           onClick={() => setActiveSubTab('customers')}
           className={cn(
-            "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all",
+            "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all cursor-pointer",
             activeSubTab === 'customers' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
           )}
           style={activeSubTab === 'customers' ? { color: settings.primaryColor } : {}}
@@ -982,8 +1074,36 @@ export default function ITSalesDashboard() {
             <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
           )}
         </button>
+        <button
+          onClick={() => setActiveSubTab('commissions')}
+          className={cn(
+            "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all cursor-pointer",
+            activeSubTab === 'commissions' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
+          )}
+          style={activeSubTab === 'commissions' ? { color: settings.primaryColor } : {}}
+        >
+          📊 Commission Dashboard
+          {activeSubTab === 'commissions' && (
+            <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
+          )}
+        </button>
+        {isUserAdmin && (
+          <button
+            onClick={() => setActiveSubTab('users')}
+            className={cn(
+              "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all cursor-pointer",
+              activeSubTab === 'users' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
+            )}
+            style={activeSubTab === 'users' ? { color: settings.primaryColor } : {}}
+          >
+            🔑 Passkeys & Ratios
+            {activeSubTab === 'users' && (
+              <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
+            )}
+          </button>
+        )}
       </div>
-
+      
       {/* SECTION CONTENT SWITCHING */}
       <div className="grid grid-cols-12 gap-8 items-start">
         
@@ -1406,6 +1526,76 @@ export default function ITSalesDashboard() {
                       <p className="mt-1 text-slate-500 font-bold not-italic">
                         SLA Span: {Math.max(0, Math.ceil((new Date(txEndDate).getTime() - new Date(txStartDate).getTime()) / (1000 * 3600 * 24)))} days of support.
                       </p>
+                    </div>
+                  </div>
+
+                  {/* Assignee Sales Executive Option for Administrators */}
+                  {activeRole === 'admin' && (
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">Assignee Sales Executive</label>
+                      <select
+                        value={assignedExecutiveId}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setAssignedExecutiveId(val);
+                          const matchingUser = usersSnap?.docs
+                            .map(doc => ({ id: doc.id, ...doc.data() } as any))
+                            .find(u => u.id === val);
+                          if (matchingUser) {
+                            setAssignedExecutiveName(matchingUser.name);
+                            setAssignedExecutiveCommission(matchingUser.commissionPercentage !== undefined ? matchingUser.commissionPercentage : 10);
+                            toast.success(`Assigned to ${matchingUser.name} at ${matchingUser.commissionPercentage ?? 10}% commission rate!`);
+                          } else {
+                            setAssignedExecutiveName('');
+                            setAssignedExecutiveCommission(10);
+                          }
+                        }}
+                        className={cn(
+                          "w-full px-5 py-3 border-none rounded-2xl transition-all outline-none text-xs font-semibold appearance-none",
+                          isDark ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900"
+                        )}
+                      >
+                        <option value="">-- Assign to Me (Admin Desk) --</option>
+                        {usersSnap?.docs
+                          .map(doc => ({ id: doc.id, ...doc.data() } as any))
+                          .filter(u => u.role === 'executive')
+                          .map(u => (
+                            <option key={u.id} value={u.id}>
+                              {u.name} (Commission: {u.commissionPercentage !== undefined ? u.commissionPercentage : 10}%)
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Initial Payment Status Selector */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">Deal Initial Payment Status</label>
+                    <div className="grid grid-cols-2 gap-2 bg-slate-900/10 dark:bg-slate-950/40 p-1 rounded-2xl border border-slate-800/10">
+                      <button
+                        type="button"
+                        onClick={() => setTxPaymentStatus('Collected')}
+                        className={cn(
+                          "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex-1 text-center",
+                          txPaymentStatus === 'Collected'
+                            ? "bg-emerald-600 text-white shadow font-semibold"
+                            : "text-slate-400 hover:text-slate-200"
+                        )}
+                      >
+                        Collected (Cleared)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTxPaymentStatus('Due')}
+                        className={cn(
+                          "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex-1 text-center",
+                          txPaymentStatus === 'Due'
+                            ? "bg-rose-600 text-white shadow font-semibold"
+                            : "text-slate-400 hover:text-slate-200"
+                        )}
+                      >
+                        Due (Outstanding)
+                      </button>
                     </div>
                   </div>
 
@@ -2359,6 +2549,36 @@ export default function ITSalesDashboard() {
             </>
           );
         })()}
+
+        {/* TAB 4: COMMISSIONS REPORT & PERFORMANCE */}
+        {activeSubTab === 'commissions' && (
+          <div className="col-span-12">
+            <CommissionDesk
+              isDark={isDark}
+              settings={settings}
+              activeUserId={activeUserIdForSession}
+              activeRole={activeRole}
+              currencySymbol={currencySymbol}
+              rawTransactions={rawTransactions}
+              usersList={usersSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() })) || []}
+              onTogglePaymentStatus={handleTogglePaymentStatus}
+            />
+          </div>
+        )}
+
+        {/* TAB 5: STAFF USER REGISTRATION & COMMISSION CREDITS LIMITATION */}
+        {activeSubTab === 'users' && isUserAdmin && (
+          <div className="col-span-12">
+            <StaffManager
+              isDark={isDark}
+              settings={settings}
+              usersList={usersSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() })) || []}
+              onAddUser={handleAddUser}
+              onUpdateUserCommission={handleUpdateUserCommission}
+              onDeleteUser={handleDeleteUser}
+            />
+          </div>
+        )}
 
       </div>
     </div>

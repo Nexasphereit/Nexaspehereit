@@ -1,24 +1,53 @@
 // Compatibility hotfix for sandboxed iframe environments where window.fetch has only a getter.
 // This prevents libraries like html2canvas from throwing 'Cannot set property fetch' when copying window properties.
 (function() {
-  try {
-    const desc = Object.getOwnPropertyDescriptor(window, 'fetch');
-    if (desc && (!desc.configurable || desc.writable === false || !desc.set)) {
-      const originalFetch = window.fetch;
-      try {
-        Object.defineProperty(window, 'fetch', {
-          get() {
-            return originalFetch;
-          },
-          set() {
-            // No-op setter
-          },
-          configurable: true,
-          enumerable: true
-        });
-      } catch (e) {
-        // Redefining main window may fail if non-configurable, which is fine
+  function makeFetchWritable(obj: any) {
+    if (!obj) return;
+    try {
+      const desc = Object.getOwnPropertyDescriptor(obj, 'fetch');
+      if (desc) {
+        if (desc.configurable) {
+          const originalFetch = desc.get ? desc.get.call(obj) : (desc.value || obj.fetch);
+          let storedFetch = originalFetch;
+          Object.defineProperty(obj, 'fetch', {
+            get() {
+              return storedFetch;
+            },
+            set(newVal) {
+              storedFetch = newVal;
+            },
+            configurable: true,
+            enumerable: desc.enumerable !== false
+          });
+        }
+      } else {
+        const originalFetch = obj.fetch;
+        let storedFetch = originalFetch;
+        try {
+          Object.defineProperty(obj, 'fetch', {
+            get() {
+              return storedFetch;
+            },
+            set(newVal) {
+              storedFetch = newVal;
+            },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (err) {
+          // ignore
+        }
       }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  try {
+    makeFetchWritable(window);
+    makeFetchWritable(Window.prototype);
+    if (typeof globalThis !== 'undefined') {
+      makeFetchWritable(globalThis);
     }
   } catch (e) {
     // ignore
@@ -36,17 +65,10 @@
             if (win && !win.__fetch_patched__) {
               try {
                 win.__fetch_patched__ = true;
-                const originalFetch = win.fetch;
-                Object.defineProperty(win, 'fetch', {
-                  get() {
-                    return originalFetch;
-                  },
-                  set() {
-                    // No-op setter to avoid throwing when cloning window properties
-                  },
-                  configurable: true,
-                  enumerable: true
-                });
+                makeFetchWritable(win);
+                if (win.Window && win.Window.prototype) {
+                  makeFetchWritable(win.Window.prototype);
+                }
               } catch (err) {
                 // ignore
               }
