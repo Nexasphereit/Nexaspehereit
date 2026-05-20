@@ -1,0 +1,152 @@
+{
+  "entities": {
+    "Quotation": {
+      "title": "Quotation",
+      "description": "Professional Quotation document",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "quotationNumber": { "type": "string" },
+        "companyName": { "type": "string" },
+        "companyAddress": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientAddress": { "type": "string" },
+        "clientPhone": { "type": "string" },
+        "date": { "type": "string" },
+        "items": { "type": "array" },
+        "totalAmount": { "type": "number" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["quotationNumber", "companyName", "clientName", "totalAmount"]
+    },
+    "CV": {
+      "title": "CV",
+      "description": "Professional CV document",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "fullName": { "type": "string" },
+        "profession": { "type": "string" },
+        "aboutMe": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "skills": { "type": "array" },
+        "experience": { "type": "array" },
+        "education": { "type": "array" },
+        "socialLinks": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fullName", "email"]
+    },
+    "Receipt": {
+      "title": "Receipt",
+      "description": "Money Receipt document",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "receiptNumber": { "type": "string" },
+        "date": { "type": "string" },
+        "receivedFrom": { "type": "string" },
+        "amount": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "purpose": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["receiptNumber", "receivedFrom", "amount"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile with role",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "executive"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "IT Business Service",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "IT Business Customer",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "phone"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Service purchase transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "executiveId": { "type": "string" },
+        "executiveName": { "type": "string" },
+        "serviceId": { "type": "string" },
+        "serviceName": { "type": "string" },
+        "price": { "type": "number" },
+        "quantity": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "date": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["customerId", "serviceId", "executiveId", "quantity", "totalAmount"]
+    }
+  },
+  "firestore": {
+    "quotations": {
+      "schema": "Quotation",
+      "description": "Collection of quotations"
+    },
+    "cvs": {
+      "schema": "CV",
+      "description": "Collection of CVs"
+    },
+    "receipts": {
+      "schema": "Receipt",
+      "description": "Collection of money receipts"
+    },
+    "users": {
+      "schema": "User",
+      "description": "Collection of user profiles containing roles"
+    },
+    "services": {
+      "schema": "Service",
+      "description": "Collection of IT services offered"
+    },
+    "customers": {
+      "schema": "Customer",
+      "description": "Collection of customers"
+    },
+    "transactions": {
+      "schema": "Transaction",
+      "description": "Collection of sales buy transactions"
+    }
+  }
+}
