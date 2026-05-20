@@ -105,10 +105,12 @@ export default function ITSalesDashboard() {
   const [txCustomerName, setTxCustomerName] = useState('');
   const [txCustomerPhone, setTxCustomerPhone] = useState('');
   const [txIsNewCustomer, setTxIsNewCustomer] = useState(false);
+  const [txPhoneSearch, setTxPhoneSearch] = useState('');
   const [txServiceId, setTxServiceId] = useState('');
   const [txQuantity, setTxQuantity] = useState(1);
-  const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
+  const [txDate, setTxDate] = useState('2026-05-20');
   const [txExecutiveId, setTxExecutiveId] = useState(''); // defaults to current logged-in user
+  const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
   const [txPaymentStatus, setTxPaymentStatus] = useState<'Collected' | 'Due'>('Collected');
   const [assignedExecutiveId, setAssignedExecutiveId] = useState('');
   const [assignedExecutiveName, setAssignedExecutiveName] = useState('');
@@ -231,6 +233,7 @@ export default function ITSalesDashboard() {
 
         const dummyTx = [
           {
+            dealId: 'IT-20260518-842',
             customerId: customerIds[0],
             customerName: PRESEEDED_CUSTOMERS[0].name,
             customerPhone: PRESEEDED_CUSTOMERS[0].phone,
@@ -247,6 +250,7 @@ export default function ITSalesDashboard() {
             createdAt: new Date(Date.now() - 86400000).toISOString()
           },
           {
+            dealId: 'IT-20260515-519',
             customerId: customerIds[1],
             customerName: PRESEEDED_CUSTOMERS[1].name,
             customerPhone: PRESEEDED_CUSTOMERS[1].phone,
@@ -263,6 +267,7 @@ export default function ITSalesDashboard() {
             createdAt: new Date(Date.now() - 345600000).toISOString()
           },
           {
+            dealId: 'IT-20260510-188',
             customerId: customerIds[2],
             customerName: PRESEEDED_CUSTOMERS[2].name,
             customerPhone: PRESEEDED_CUSTOMERS[2].phone,
@@ -395,7 +400,12 @@ export default function ITSalesDashboard() {
 
     const commissionEarned = totalAmount * (commissionPercentage / 100);
 
+    const datePart = txDate.replace(/-/g, '');
+    const randPart = Math.floor(100 + Math.random() * 900);
+    const generatedDealId = `IT-${datePart}-${randPart}`;
+
     const transactionPayload = {
+      dealId: generatedDealId,
       customerId: targetCustomerId,
       customerName: finalCustName,
       customerPhone: finalCustPhone,
@@ -418,7 +428,7 @@ export default function ITSalesDashboard() {
     const loadSave = toast.loading('Filing IT Ledger Purchase Record...');
     try {
       await addDoc(collection(db, 'transactions'), transactionPayload);
-      toast.success('Sales Ledger updated securely!', { id: loadSave });
+      toast.success(`Sales Ledger updated securely with Deal ID: ${generatedDealId}`, { id: loadSave });
       
       // Reset Transaction Form Fields
       setTxServiceId('');
@@ -426,12 +436,14 @@ export default function ITSalesDashboard() {
       setTxCustomerName('');
       setTxCustomerPhone('');
       setTxCustomerId('');
+      setTxPhoneSearch('');
       setAssignedExecutiveId('');
       setAssignedExecutiveName('');
       
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = '2026-05-20';
       setTxStartDate(todayStr);
-      const d = new Date();
+      setTxDate(todayStr);
+      const d = new Date(todayStr);
       d.setDate(d.getDate() + 30);
       setTxEndDate(d.toISOString().split('T')[0]);
     } catch (err) {
@@ -718,6 +730,7 @@ export default function ITSalesDashboard() {
       id: doc.id,
       name: data.name || 'Untitled Client',
       phone: data.phone || 'No phone',
+      createdAt: data.createdAt || '',
       status,
       creditNote,
       refundAmount,
@@ -751,6 +764,18 @@ export default function ITSalesDashboard() {
 
   // Selected customer for detailed lookup in slider panel
   const selectedCustomerRecord = customerList.find(c => c.id === selectedCustomerIdForDetails);
+
+  // Today's Live Engagement Analytics ('2026-05-20')
+  const todayDateStr = '2026-05-20';
+  const todayTransactions = rawTransactions.filter(item => item.date === todayDateStr);
+  const todaySalesCount = todayTransactions.length;
+  const todayRevenueSum = todayTransactions.reduce((acc, t) => acc + (t.totalAmount || 0), 0);
+  
+  const todayOnboardedCustomers = customerList.filter(c => {
+    const createdStr = c.createdAt?.split('T')[0] || (c.history && c.history[0]?.createdAt?.split('T')[0]);
+    return createdStr === todayDateStr;
+  });
+  const todayOnboardedCount = todayOnboardedCustomers.length;
 
   // --- Excel Exporter utilizing SheetJS xlsx library ---
   const handleExportAllToExcel = () => {
@@ -1110,6 +1135,82 @@ export default function ITSalesDashboard() {
         {/* TAB 1: SALES AND PURCHASES ENGINE */}
         {activeSubTab === 'sales' && (
           <>
+            {/* Dynamic Real-Time Today's Live Radar Board */}
+            <div className="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className={cn(
+                "p-4 rounded-2.5xl border flex items-center gap-4 transition-all hover:scale-[1.01] cursor-pointer",
+                isDark ? "bg-slate-900 border-white/5" : "bg-white border-slate-100 shadow-sm"
+              )} onClick={() => {
+                setFilterStartDate('2026-05-20');
+                setFilterEndDate('2026-05-20');
+                setSelectedPreset('custom');
+                toast.success("Filtering active table for Today's Sales entries!");
+              }}>
+                <div className="p-3 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
+                  <ShoppingBag size={20} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">Today's Sales</p>
+                  <h4 className="text-xl font-black mt-0.5" style={{ color: isDark ? 'white' : 'black' }}>
+                    {currencySymbol}{todayRevenueSum.toLocaleString()}
+                  </h4>
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-[9px] text-orange-400 font-extrabold pb-px">Live dynamic flow</span>
+                    <span className="text-[9px] font-bold text-slate-400 bg-orange-500/5 px-1.5 py-0.5 rounded">
+                      Show Today ({todaySalesCount})
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={cn(
+                "p-4 rounded-2.5xl border flex items-center gap-4 transition-all hover:scale-[1.01] cursor-pointer",
+                isDark ? "bg-slate-900 border-white/5" : "bg-white border-slate-100 shadow-sm"
+              )} onClick={() => {
+                setFilterStartDate('2026-05-20');
+                setFilterEndDate('2026-05-20');
+                setSelectedPreset('custom');
+                toast.success("Filtering active table for Today's New IT Deals!");
+              }}>
+                <div className="p-3 rounded-xl bg-[#ec4899]/10 text-[#ec4899] flex items-center justify-center" style={{ backgroundColor: `${settings.primaryColor}15`, color: settings.primaryColor }}>
+                  <TrendingUp size={20} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-500 font-bold">New IT Deals Today</p>
+                  <h4 className="text-xl font-black mt-0.5" style={{ color: isDark ? 'white' : 'black' }}>
+                    {todaySalesCount} active contracts
+                  </h4>
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-[9px] text-[#ec4899] font-extrabold" style={{ color: settings.primaryColor }}>Real-time persistence</span>
+                    <span className="text-[9px] text-slate-400">Default date: 2026-05-20</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={cn(
+                "p-4 rounded-2.5xl border flex items-center gap-4 transition-all hover:scale-[1.01] cursor-pointer",
+                isDark ? "bg-slate-900 border-white/5" : "bg-white border-slate-100 shadow-sm"
+              )} onClick={() => {
+                setActiveSubTab('customers');
+                setCustomerSearchQuery('');
+                toast.success("Transferred to CRM search suite!");
+              }}>
+                <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                  <Users size={20} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">Today Onboarding Desk</p>
+                  <h4 className="text-xl font-black mt-0.5" style={{ color: isDark ? 'white' : 'black' }}>
+                    {todayOnboardedCount} clients registered
+                  </h4>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-[9px] text-emerald-400 font-extrabold">Instant corporate CRM</span>
+                    <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-1 py-0.5 rounded font-bold">Manage CRM</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Dynamic Interactive SLA Calendar & Date-Range analytical controller */}
             <div className="col-span-12">
               <Card className="p-6 space-y-6">
@@ -1155,14 +1256,14 @@ export default function ITSalesDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                  {/* CALENDAR NAVIGATION & CELLS GRID COLUMN */}
-                  <div className="md:col-span-6 lg:col-span-5 space-y-4">
+                  {/* CALENDAR NAVIGATION & CELLS GRID COLUMN - Condensed to smaller, compact side view! */}
+                  <div className="md:col-span-5 lg:col-span-4 space-y-3 max-w-[280px] mx-auto md:mx-0">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-[#ec4899]" style={{ color: settings.primaryColor }}>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-[#ec4899]" style={{ color: settings.primaryColor }}>
                         Month Explorer
                       </span>
                       {/* Navigation buttons */}
-                      <div className="flex items-center gap-1 bg-slate-900/10 dark:bg-slate-950/50 p-1 rounded-xl border border-slate-800/10">
+                      <div className="flex items-center gap-1 bg-slate-900/10 dark:bg-slate-950/50 p-1 rounded-lg border border-slate-800/10">
                         <button
                           type="button"
                           onClick={() => {
@@ -1175,10 +1276,10 @@ export default function ITSalesDashboard() {
                           }}
                           className="p-1 hover:bg-slate-800/10 dark:hover:bg-slate-800 rounded-md text-slate-400 cursor-pointer"
                         >
-                          <ChevronLeft size={14} />
+                          <ChevronLeft size={12} />
                         </button>
-                        <span className="text-[10px] font-black uppercase px-2 text-slate-500 tracking-wider">
-                          {MONTHS_NAMES[calendarMonth]} {calendarYear}
+                        <span className="text-[9px] font-black uppercase px-2 text-slate-500 tracking-wider">
+                          {MONTHS_NAMES[calendarMonth].substring(0, 3)} '{String(calendarYear).substring(2)}
                         </span>
                         <button
                           type="button"
@@ -1192,26 +1293,26 @@ export default function ITSalesDashboard() {
                           }}
                           className="p-1 hover:bg-slate-800/10 dark:hover:bg-slate-800 rounded-md text-slate-400 cursor-pointer"
                         >
-                          <ChevronRight size={14} />
+                          <ChevronRight size={12} />
                         </button>
                       </div>
                     </div>
 
-                    {/* Weekday guide & Cells */}
-                    <div className="grid grid-cols-7 gap-1 text-center text-[10px]">
+                    {/* Weekday guide & Cells condensed */}
+                    <div className="grid grid-cols-7 gap-1 text-center bg-slate-900/5 dark:bg-slate-950/20 p-2 rounded-2xl border border-slate-850/5">
                       {['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map(d => (
-                        <div key={d} className="font-extrabold text-slate-500 text-[8px] tracking-widest uppercase py-1">{d}</div>
+                        <div key={d} className="font-extrabold text-slate-500 text-[8px] tracking-widest uppercase py-0.5">{d}</div>
                       ))}
                       
                       {calendarCells.map((cell, idx) => {
                         if (cell.dayNum === null || !cell.dateString) {
-                          return <div key={`empty-${idx}`} className="p-2 opacity-5" />;
+                          return <div key={`empty-${idx}`} className="p-1.5 opacity-0 text-[10px]" />;
                         }
                         
                         const count = getSalesCountForDate(cell.dateString);
                         const isSelectedRange = filterStartDate <= cell.dateString && filterEndDate >= cell.dateString && filterStartDate !== '' && filterEndDate !== '';
                         const isDaySelectedExact = filterStartDate === cell.dateString && filterEndDate === cell.dateString;
-                        const isToday = cell.dateString === '2026-05-19';
+                        const isToday = cell.dateString === '2026-05-20'; // Local current date
 
                         return (
                           <button
@@ -1226,32 +1327,26 @@ export default function ITSalesDashboard() {
                               }
                             }}
                             className={cn(
-                              "relative aspect-square flex flex-col items-center justify-center rounded-xl p-1 font-black cursor-pointer transition-all border border-transparent",
+                              "relative w-7 h-7 mx-auto flex flex-col items-center justify-center rounded-lg text-[9px] font-black cursor-pointer transition-all border border-transparent duration-150",
                               isDaySelectedExact 
-                                ? "text-white shadow-lg"
+                                ? "text-white shadow-md font-bold scale-105"
                                 : isSelectedRange
-                                  ? "bg-slate-500/10 border-slate-500/10 text-white"
+                                  ? "bg-slate-500/15 border-slate-500/10 text-white"
                                   : isToday
-                                    ? "bg-slate-500/15 border-rose-500/30 text-rose-400"
-                                    : isDark ? "bg-slate-900/40 text-slate-300 hover:bg-slate-800" : "bg-slate-100 text-slate-900 hover:bg-slate-200"
+                                    ? "bg-rose-500/15 border border-rose-500/20 text-rose-450 font-black"
+                                    : isDark ? "bg-slate-900/30 text-slate-350 hover:bg-slate-850" : "bg-slate-100 text-slate-800 hover:bg-slate-200"
                             )}
                             style={isDaySelectedExact ? { backgroundColor: settings.primaryColor } : {}}
                           >
-                            <span className="text-[10px]">{cell.dayNum}</span>
+                            <span>{cell.dayNum}</span>
                             
                             {count > 0 && (
                               <span 
                                 className={cn(
-                                  "absolute bottom-1 w-1.5 h-1.5 rounded-full",
+                                  "absolute bottom-0.5 w-1 h-1 rounded-full",
                                   isDaySelectedExact ? "bg-white" : "bg-emerald-500"
                                 )} 
                               />
-                            )}
-                            
-                            {count > 0 && (
-                              <span className="absolute top-0.5 right-0.5 text-[7px] bg-emerald-500/15 text-emerald-400 px-1 rounded font-black scale-90">
-                                {count}
-                              </span>
                             )}
                           </button>
                         );
@@ -1260,7 +1355,7 @@ export default function ITSalesDashboard() {
                   </div>
 
                   {/* CUSTOM DATE PICKERS & REAL-TIME INTERACTIVE SLATE */}
-                  <div className="md:col-span-6 lg:col-span-7 flex flex-col justify-between space-y-4">
+                  <div className="md:col-span-7 lg:col-span-8 flex flex-col justify-between space-y-4">
                     <div className="space-y-4">
                       <span className="text-[10px] font-black uppercase tracking-widest text-[#ec4899]" style={{ color: settings.primaryColor }}>
                         Custom Range & Statistics
@@ -1402,22 +1497,95 @@ export default function ITSalesDashboard() {
                     </div>
 
                     {!txIsNewCustomer ? (
-                      <select
-                        value={txCustomerId}
-                        onChange={(e) => setTxCustomerId(e.target.value)}
-                        required
-                        className={cn(
-                          "w-full px-5 py-3.5 border-none rounded-2xl transition-all outline-none text-xs font-semibold appearance-none",
-                          isDark ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900"
+                      <div className="relative">
+                        <input
+                          type="text"
+                          required={!txCustomerId}
+                          placeholder="🔍 Search profile (e.g., +88017...)"
+                          value={txPhoneSearch}
+                          onChange={(e) => {
+                            setTxPhoneSearch(e.target.value);
+                            // If they empty search, reset active selection
+                            if (!e.target.value) {
+                              setTxCustomerId('');
+                            }
+                          }}
+                          className={cn(
+                            "w-full px-5 py-3.5 border-none rounded-2xl transition-all outline-none text-xs font-semibold placeholder:text-slate-500",
+                            isDark ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900 border border-slate-200"
+                          )}
+                        />
+                        
+                        {/* Selected Customer confirmation banner */}
+                        {txCustomerId && (
+                          <div className={cn(
+                            "mt-2 text-[10px] p-2.5 rounded-xl flex items-center justify-between font-bold",
+                            isDark ? "bg-emerald-950/20 border border-emerald-900/60 text-emerald-400" : "bg-emerald-50 border border-emerald-100 text-emerald-850"
+                          )}>
+                            <span className="truncate">
+                              Selected: <span className="underline">{customersSnap?.docs.find(d => d.id === txCustomerId)?.data().name}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTxCustomerId('');
+                                setTxPhoneSearch('');
+                              }}
+                              className="text-[9px] font-black uppercase text-rose-500 hover:underline shrink-0"
+                            >
+                              Clear
+                            </button>
+                          </div>
                         )}
-                      >
-                        <option value="">-- Choose Customer profile --</option>
-                        {customersSnap?.docs.map(doc => (
-                          <option key={doc.id} value={doc.id}>
-                            {doc.data().name} ({doc.data().phone})
-                          </option>
-                        ))}
-                      </select>
+
+                        {/* Dropdown Suggestions matching phone numbers */}
+                        {txPhoneSearch && (
+                          <div className={cn(
+                            "absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto divide-y rounded-xl shadow-2xl z-30",
+                            isDark ? "bg-slate-950 border border-white/5 divide-slate-800" : "bg-white border border-slate-200 divide-slate-100"
+                          )}>
+                            {(customersSnap?.docs.filter(doc => {
+                              const ph = doc.data().phone || '';
+                              const nm = doc.data().name || '';
+                              const sTerm = txPhoneSearch.toLowerCase();
+                              return ph.toLowerCase().includes(sTerm) || nm.toLowerCase().includes(sTerm);
+                            }) || []).length === 0 ? (
+                              <div className="p-3 text-slate-500 text-[10px] italic">No phone or customer matches found. Toggle "Add New Customer"!</div>
+                            ) : (
+                              (customersSnap?.docs.filter(doc => {
+                                const ph = doc.data().phone || '';
+                                const nm = doc.data().name || '';
+                                const sTerm = txPhoneSearch.toLowerCase();
+                                return ph.toLowerCase().includes(sTerm) || nm.toLowerCase().includes(sTerm);
+                              }) || []).map(doc => {
+                                const d = doc.data();
+                                const isSelected = txCustomerId === doc.id;
+                                return (
+                                  <button
+                                    key={doc.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setTxCustomerId(doc.id);
+                                      setTxPhoneSearch(d.phone);
+                                      toast.success(`Selected customer context: ${d.name}`);
+                                    }}
+                                    className={cn(
+                                      "w-full text-left p-2.5 flex flex-col transition-all text-xs",
+                                      isSelected ? (isDark ? "bg-white/[0.05]" : "bg-slate-50") : (isDark ? "hover:bg-white/[0.03]" : "hover:bg-slate-50")
+                                    )}
+                                  >
+                                    <div className="flex items-center justify-between w-full font-bold">
+                                      <span className={isDark ? "text-slate-150" : "text-slate-850"}>{d.name}</span>
+                                      {isSelected && <span className="text-[8px] uppercase tracking-wider bg-emerald-500/10 text-emerald-400 px-1 py-0.5 rounded font-black">Active</span>}
+                                    </div>
+                                    <span className="text-[9px] text-slate-500 font-mono mt-0.5">{d.phone}</span>
+                                  </button>
+                                );
+                              })
+                            )}
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <div className="space-y-3 pt-1">
                         <Input 
@@ -1684,43 +1852,92 @@ export default function ITSalesDashboard() {
                           </td>
                         </tr>
                       ) : (
-                        filteredTransactions.map((tx, idx) => (
-                          <tr key={tx.id || idx} className={cn(
-                            "hover:bg-slate-50/50 transition-colors",
-                            isDark ? "hover:bg-white/[0.02]" : ""
-                          )}>
-                            <td className="p-4">
-                              <p className="font-bold text-slate-100" style={{ color: isDark ? 'white' : 'black' }}>{tx.customerName}</p>
-                              <p className="text-[10px] text-slate-500 mt-0.5">{tx.customerPhone}</p>
-                            </td>
-                            <td className="p-4">
-                              <p className="font-bold max-w-xs truncate">{tx.serviceName}</p>
-                            </td>
-                            <td className="p-4 font-mono text-[11px]">{currencySymbol}{Number(tx.price).toLocaleString()}</td>
-                            <td className="p-4 text-center font-bold">{tx.quantity}</td>
-                            <td className="p-4 font-black font-mono text-[11px]" style={{ color: settings.primaryColor }}>
-                              {currencySymbol}{Number(tx.totalAmount).toLocaleString()}
-                            </td>
-                            <td className="p-4">
-                              <span className="px-2 py-1 rounded-md text-[9px] font-bold bg-slate-500/10 text-slate-400">
-                                {tx.executiveName || 'Admin'}
-                              </span>
-                            </td>
-                            <td className="p-4 text-slate-400 font-mono text-[10px]">{tx.date}</td>
-                            <td className="p-4">
-                              <div className="text-[9.5px] leading-normal font-sans bg-slate-900/10 dark:bg-slate-950/40 p-2 rounded-xl border border-slate-800/10 space-y-0.5 inline-block min-w-[7.5rem]">
-                                <div className="flex gap-1.5 justify-between">
-                                  <span className="text-slate-500 font-black">START:</span>
-                                  <span className="text-emerald-400 font-bold">{tx.startDate || tx.date}</span>
-                                </div>
-                                <div className="flex gap-1.5 justify-between">
-                                  <span className="text-slate-500 font-black">END:</span>
-                                  <span className="text-pink-400 font-bold">{tx.endDate || tx.date}</span>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
+                        filteredTransactions.map((tx, idx) => {
+                          const isExpanded = expandedTxId === (tx.id || `idx-${idx}`);
+                          return (
+                            <React.Fragment key={tx.id || `tx-${idx}`}>
+                              <tr 
+                                onClick={() => {
+                                  setExpandedTxId(isExpanded ? null : (tx.id || `idx-${idx}`));
+                                  toast.success(`Deal info ${isExpanded ? 'collapsed' : 'revealed'}: ${tx.dealId || 'No Contract ID'}`);
+                                }}
+                                className={cn(
+                                  "hover:bg-slate-50/50 transition-colors cursor-pointer select-none",
+                                  isExpanded ? (isDark ? "bg-white/[0.03]" : "bg-slate-100/50") : "",
+                                  isDark ? "hover:bg-white/[0.02]" : ""
+                                )}
+                              >
+                                <td className="p-4">
+                                  <p className="font-bold text-slate-100" style={{ color: isDark ? 'white' : 'black' }}>{tx.customerName}</p>
+                                  <p className="text-[10px] text-slate-500 mt-0.5">{tx.customerPhone}</p>
+                                </td>
+                                <td className="p-4">
+                                  <p className="font-bold max-w-xs truncate">{tx.serviceName}</p>
+                                </td>
+                                <td className="p-4 font-mono text-[11px]">{currencySymbol}{Number(tx.price).toLocaleString()}</td>
+                                <td className="p-4 text-center font-bold">{tx.quantity}</td>
+                                <td className="p-4 font-black font-mono text-[11px]" style={{ color: settings.primaryColor }}>
+                                  {currencySymbol}{Number(tx.totalAmount).toLocaleString()}
+                                </td>
+                                <td className="p-4">
+                                  <span className="px-2 py-1 rounded-md text-[9px] font-bold bg-slate-500/10 text-slate-400">
+                                    {tx.executiveName || 'Admin'}
+                                  </span>
+                                </td>
+                                <td className="p-4 text-slate-400 font-mono text-[10px]">{tx.date}</td>
+                                <td className="p-4">
+                                  <div className="text-[9.5px] leading-normal font-sans bg-slate-900/10 dark:bg-slate-950/40 p-2 rounded-xl border border-slate-800/10 space-y-0.5 inline-block min-w-[7.5rem]">
+                                    <div className="flex gap-1.5 justify-between">
+                                      <span className="text-slate-500 font-black">START:</span>
+                                      <span className="text-emerald-400 font-bold">{tx.startDate || tx.date}</span>
+                                    </div>
+                                    <div className="flex gap-1.5 justify-between">
+                                      <span className="text-slate-500 font-black">END:</span>
+                                      <span className="text-pink-400 font-bold">{tx.endDate || tx.date}</span>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                              {isExpanded && (
+                                <tr className={isDark ? "bg-slate-950/40" : "bg-slate-50/30"}>
+                                  <td colSpan={8} className="p-4 border-t border-b border-slate-800/10">
+                                    <motion.div 
+                                      initial={{ opacity: 0, y: -4 }} 
+                                      animate={{ opacity: 1, y: 0 }}
+                                      className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs py-2 px-1"
+                                    >
+                                      <div>
+                                        <p className="text-[9px] font-black uppercase text-slate-500">Unique Corporate Deal ID</p>
+                                        <p className="font-extrabold text-amber-500 font-mono mt-1 text-[11px] block">{tx.dealId || `IT-${tx.date.replace(/-/g, '')}-DNL`}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-[9px] font-black uppercase text-slate-500 animate-pulse">SLA Contract support span</p>
+                                        <p className="font-bold text-slate-300 mt-1" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>
+                                          {tx.startDate || tx.date} to {tx.endDate || tx.date}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-[9px] font-black uppercase text-slate-500">Commission Distribution</p>
+                                        <p className="font-black text-rose-455 mt-1" style={{ color: settings.primaryColor }}>
+                                          {tx.commissionPercentage || 10}% rate ({currencySymbol}{Number(tx.commissionEarned || 0).toLocaleString()})
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-[9px] font-black uppercase text-slate-500">Payment Status Tracker</p>
+                                        <span className={cn(
+                                          "inline-block mt-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider select-none",
+                                          tx.status === 'Collected' ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-450"
+                                        )}>
+                                          ● {tx.status || 'Collected'}
+                                        </span>
+                                      </div>
+                                    </motion.div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
