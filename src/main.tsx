@@ -5,39 +5,42 @@
     if (!obj) return;
     try {
       const desc = Object.getOwnPropertyDescriptor(obj, 'fetch');
-      if (desc) {
-        if (desc.configurable) {
-          const originalFetch = desc.get ? desc.get.call(obj) : (desc.value || obj.fetch);
-          let storedFetch = originalFetch;
-          Object.defineProperty(obj, 'fetch', {
-            get() {
-              return storedFetch;
-            },
-            set(newVal) {
-              storedFetch = newVal;
-            },
-            configurable: true,
-            enumerable: desc.enumerable !== false
-          });
-        }
-      } else {
-        const originalFetch = obj.fetch;
-        let storedFetch = originalFetch;
-        try {
-          Object.defineProperty(obj, 'fetch', {
-            get() {
-              return storedFetch;
-            },
-            set(newVal) {
-              storedFetch = newVal;
-            },
-            configurable: true,
-            enumerable: true
-          });
-        } catch (err) {
-          // ignore
-        }
+      if (desc && !desc.configurable) {
+        // If it exists but is already locked, we shouldn't attempt to re-define
+        return;
       }
+
+      let originalFetch: any = undefined;
+      try {
+        if (desc && desc.get) {
+          // Avoid calling desc.get with Window.prototype as 'this' context as it triggers Illegal invocation
+          if (obj !== Window.prototype) {
+            originalFetch = desc.get.call(obj);
+          }
+        } else if (desc) {
+          originalFetch = desc.value;
+        }
+      } catch (err) {
+        // Ignore evaluation errors
+      }
+
+      if (!originalFetch) {
+        originalFetch = obj.fetch || 
+          (typeof window !== 'undefined' ? window.fetch : undefined) || 
+          (typeof globalThis !== 'undefined' ? globalThis.fetch : undefined);
+      }
+
+      let storedFetch = originalFetch;
+      Object.defineProperty(obj, 'fetch', {
+        get() {
+          return storedFetch;
+        },
+        set(newVal) {
+          storedFetch = newVal;
+        },
+        configurable: true,
+        enumerable: desc ? desc.enumerable !== false : true
+      });
     } catch (e) {
       // ignore
     }

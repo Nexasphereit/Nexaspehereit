@@ -33,7 +33,30 @@ const getCustomUserFromStorage = () => {
         role: parsed.role || 'executive',
         commissionPercentage: parsed.commissionPercentage ?? 0,
         emailVerified: true,
-        isDemoUser: true
+        isDemoUser: true,
+
+        // Custom mocks to fully satisfy Firebase Auth SDK internals & avoid _stopProactiveRefresh crashes
+        _stopProactiveRefresh: () => {},
+        _startProactiveRefresh: () => {},
+        getIdToken: () => Promise.resolve(''),
+        getIdTokenResult: () => Promise.resolve({
+          token: '',
+          authTime: '',
+          expirationTime: '',
+          signInProvider: '',
+          claims: {}
+        }),
+        reload: () => Promise.resolve(),
+        toJSON: () => ({}),
+        delete: () => Promise.resolve(),
+        phoneNumber: null,
+        photoURL: null,
+        providerId: 'firebase',
+        tenantId: null,
+        metadata: {
+          creationTime: new Date().toISOString(),
+          lastSignInTime: new Date().toISOString()
+        }
       };
     } catch {
       return null;

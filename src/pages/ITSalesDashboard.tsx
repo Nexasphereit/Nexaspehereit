@@ -57,15 +57,44 @@ export default function ITSalesDashboard() {
   const { settings } = useTheme();
   const isDark = settings.sidebarTheme === 'dark';
 
-  const isUserAdmin = ((auth.currentUser as any)?.role || 'admin') === 'admin';
+  const loggedInUser = React.useMemo(() => {
+    const saved = localStorage.getItem('customUser');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse customUser:", e);
+      }
+    }
+    return {
+      id: 'admin',
+      name: 'Main Administrator',
+      email: 'admin@nexasphere.it',
+      role: 'admin',
+      commissionPercentage: 10
+    };
+  }, []);
+
+  const isUserAdmin = loggedInUser.role === 'admin';
 
   // --- State for Role Management ---
-  // Users can toggle their active RBAC role to see the dashboard switch instantly!
-  const [activeRole, setActiveRole] = useState<'admin' | 'executive'>(() => {
-    return (auth.currentUser as any)?.role || 'executive';
+  // Administrators can toggle their active role to test or preview executive restrictions inline, while Executives are hard-locked as 'executive'.
+  const [activeRoleState, setActiveRoleState] = useState<'admin' | 'executive'>(() => {
+    return loggedInUser.role === 'admin' ? 'admin' : 'executive';
   });
+
+  const activeRole = isUserAdmin ? activeRoleState : 'executive';
+
+  const setActiveRole = (role: 'admin' | 'executive') => {
+    if (isUserAdmin) {
+      setActiveRoleState(role);
+    } else {
+      toast.error('Privilege Violation: Only administrators can change active views.');
+    }
+  };
+
   const [executiveName, setExecutiveName] = useState<string>(() => {
-    return auth.currentUser?.displayName || 'Sarah Ahmed';
+    return loggedInUser.name || 'Sales Executive';
   });
 
   // --- State for Currency Selection ---
@@ -137,6 +166,22 @@ export default function ITSalesDashboard() {
   const [serviceName, setServiceName] = useState('');
   const [servicePrice, setServicePrice] = useState('');
   const [serviceDesc, setServiceDesc] = useState('');
+  const [servicePriceTier, setServicePriceTier] = useState<'High' | 'Low'>('High');
+
+  // Service Edit Mode states
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [editServiceName, setEditServiceName] = useState('');
+  const [editServicePrice, setEditServicePrice] = useState('');
+  const [editServiceDesc, setEditServiceDesc] = useState('');
+  const [editServicePriceTier, setEditServicePriceTier] = useState<'High' | 'Low'>('High');
+
+  // Quick User Registration states
+  const [quickUserId, setQuickUserId] = useState('');
+  const [quickFullName, setQuickFullName] = useState('');
+  const [quickPassword, setQuickPassword] = useState('');
+  const [quickRole, setQuickRole] = useState<'admin' | 'executive'>('executive');
+  const [quickCommission, setQuickCommission] = useState('10');
+  const [showQuickAddUserForm, setShowQuickAddUserForm] = useState(false);
 
   // CRM Navigation Sub-Tab inside Customer CRM
   const [crmFilterMode, setCrmFilterMode] = useState<'all' | 'dues'>('all');
@@ -190,10 +235,18 @@ export default function ITSalesDashboard() {
 
   // Set defaults for Transaction Creator who is signing entry
   useEffect(() => {
-    if (auth.currentUser) {
-      setTxExecutiveId(auth.currentUser.uid);
+    if (loggedInUser && loggedInUser.id) {
+      setTxExecutiveId(loggedInUser.id);
     }
-  }, [auth.currentUser]);
+  }, [loggedInUser]);
+
+  // Strict frontend sub-tab routing privilege guard for non-admin users
+  useEffect(() => {
+    if (!isUserAdmin && (activeSubTab === 'services' || activeSubTab === 'users')) {
+      setActiveSubTab('sales');
+      toast.error('Restricted Access: Executives are not authorized to view the Service Database or Staff Panel.');
+    }
+  }, [isUserAdmin, activeSubTab]);
 
   // Seeding initial sandbox data if empty
   const handleSeedData = async () => {
@@ -205,6 +258,8 @@ export default function ITSalesDashboard() {
         for (const service of PRESEEDED_SERVICES) {
           await addDoc(collection(db, 'services'), {
             ...service,
+            priceTier: service.price > 3000 ? 'High' : 'Low',
+            status: 'Kept',
             createdAt: new Date().toISOString()
           });
         }
@@ -317,15 +372,69 @@ export default function ITSalesDashboard() {
         name: serviceName,
         price: priceNum,
         description: serviceDesc,
+        priceTier: servicePriceTier,
+        status: 'Kept',
         createdAt: new Date().toISOString()
       });
       toast.success('New Corporate Service registered!', { id: loadingToast });
       setServiceName('');
       setServicePrice('');
       setServiceDesc('');
+      setServicePriceTier('High');
     } catch (err) {
       toast.error('Error recording service details', { id: loadingToast });
       handleFirestoreError(err, OperationType.CREATE, 'services');
+    }
+  };
+
+  const handleUpdateService = async (serviceId: string) => {
+    const priceNum = parseFloat(editServicePrice);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      toast.error('Please enter a valid price amount');
+      return;
+    }
+    if (!editServiceName.trim()) {
+      toast.error('Service Name is required');
+      return;
+    }
+
+    const loadingToast = toast.loading('Updating IT service details...');
+    try {
+      await updateDoc(doc(db, 'services', serviceId), {
+        name: editServiceName.trim(),
+        price: priceNum,
+        description: editServiceDesc.trim(),
+        priceTier: editServicePriceTier,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success('Service updated successfully!', { id: loadingToast });
+      setEditingServiceId(null);
+    } catch (err) {
+      toast.error('Could not update service details', { id: loadingToast });
+    }
+  };
+
+  const handleToggleServiceStatus = async (serviceId: string, currentStatus?: string) => {
+    const nextStatus = currentStatus === 'Muted' ? 'Kept' : 'Muted';
+    const loadingToast = toast.loading(`Setting service to ${nextStatus}...`);
+    try {
+      await updateDoc(doc(db, 'services', serviceId), {
+        status: nextStatus,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success(`Service status set to ${nextStatus}!`, { id: loadingToast });
+    } catch (err) {
+      toast.error('Could not modify service status', { id: loadingToast });
+    }
+  };
+
+  const handleDeleteService = async (serviceId: string) => {
+    const loadingToast = toast.loading('Removing IT service package...');
+    try {
+      await deleteDoc(doc(db, 'services', serviceId));
+      toast.success('Service package removed from catalog!', { id: loadingToast });
+    } catch (err) {
+      toast.error('Could not delete service offering', { id: loadingToast });
     }
   };
 
@@ -377,9 +486,12 @@ export default function ITSalesDashboard() {
     const price = Number(sData.price);
     const totalAmount = price * txQuantity;
 
-    let currentExecId = auth.currentUser?.uid || 'exec-custom';
-    let currentExecName = auth.currentUser?.displayName || 'Sarah Ahmed';
-    let commissionPercentage = (auth.currentUser as any)?.commissionPercentage ?? 10;
+    let currentExecId = loggedInUser.id;
+    let currentExecName = loggedInUser.name;
+    const dbUserField = usersSnap?.docs.find(doc => doc.id === loggedInUser.id)?.data();
+    let commissionPercentage = dbUserField?.commissionPercentage !== undefined 
+      ? dbUserField.commissionPercentage 
+      : (loggedInUser.commissionPercentage !== undefined ? loggedInUser.commissionPercentage : 10);
 
     if (activeRole === 'admin') {
       if (assignedExecutiveId) {
@@ -389,13 +501,18 @@ export default function ITSalesDashboard() {
       } else {
         currentExecId = 'admin';
         currentExecName = 'Main Administrator';
-        commissionPercentage = (auth.currentUser as any)?.commissionPercentage ?? 10;
+        const adminDbField = usersSnap?.docs.find(doc => doc.id === 'admin')?.data();
+        commissionPercentage = adminDbField?.commissionPercentage !== undefined 
+          ? adminDbField.commissionPercentage 
+          : 10;
       }
     } else {
       // Current executive logged-in
-      currentExecId = auth.currentUser?.uid || 'exec-custom';
-      currentExecName = auth.currentUser?.displayName || executiveName || 'Sales Executive';
-      commissionPercentage = (auth.currentUser as any)?.commissionPercentage ?? 10;
+      currentExecId = loggedInUser.id;
+      currentExecName = dbUserField?.name || loggedInUser.name || 'Sales Executive';
+      commissionPercentage = dbUserField?.commissionPercentage !== undefined 
+        ? dbUserField.commissionPercentage 
+        : (loggedInUser.commissionPercentage !== undefined ? loggedInUser.commissionPercentage : 10);
     }
 
     const commissionEarned = totalAmount * (commissionPercentage / 100);
@@ -454,7 +571,7 @@ export default function ITSalesDashboard() {
 
   // --- Filtering Ledger Based on Activated RBAC Roles & Calendar Ranges ---
   const rawTransactions = transactionsSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)) || [];
-  const activeUserIdForSession = auth.currentUser?.uid || 'exec-custom';
+  const activeUserIdForSession = loggedInUser.id;
 
   const filteredTransactions = rawTransactions.filter(item => {
     // 1. Role-based access level overrides
@@ -866,6 +983,96 @@ export default function ITSalesDashboard() {
     }).length;
   };
 
+  const handleQuickSwitchUser = (userId: string) => {
+    if (userId === 'admin') {
+      localStorage.setItem('customUser', JSON.stringify({
+        id: 'admin',
+        uid: 'admin',
+        name: 'Main Administrator',
+        email: 'admin@nexasphere.it',
+        role: 'admin',
+        commissionPercentage: 10
+      }));
+      toast.success('Successfully switched active workspace session to Main Administrator!');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } else {
+      const docMatch = usersSnap?.docs.find(d => d.id === userId);
+      if (docMatch) {
+        const u = docMatch.data();
+        localStorage.setItem('customUser', JSON.stringify({
+          id: u.id,
+          uid: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          commissionPercentage: u.commissionPercentage || 10
+        }));
+        toast.success(`Active status changed! Authenticated as Sales ${u.role === 'admin' ? 'Admin' : 'Executive'}: ${u.name}`);
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
+    }
+  };
+
+  const handleQuickAddUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickUserId.trim()) {
+      toast.error('Please specify a unique User ID login!');
+      return;
+    }
+    if (!quickFullName.trim()) {
+      toast.error('Please specify a full name!');
+      return;
+    }
+    if (!quickPassword.trim()) {
+      toast.error('Please define an access password!');
+      return;
+    }
+
+    const cleanId = quickUserId.trim().toLowerCase().replace(/\s+/g, '-');
+    const commPct = parseFloat(quickCommission);
+    if (isNaN(commPct) || commPct < 0 || commPct > 100) {
+      toast.error('Commission percentage must be between 0 and 100');
+      return;
+    }
+
+    // Check if ID matches admin or existing firestore user
+    const idExistsInFirestore = usersSnap?.docs.some(d => d.id === cleanId) || cleanId === 'admin';
+    if (idExistsInFirestore) {
+      toast.error(`The login ID "${cleanId}" is already taken. Try another unique user ID.`);
+      return;
+    }
+
+    const newUserObj = {
+      id: cleanId,
+      name: quickFullName.trim(),
+      email: `${cleanId}@nexasphere.it`,
+      role: quickRole,
+      password: quickPassword.trim(),
+      commissionPercentage: commPct,
+      createdAt: new Date().toISOString()
+    };
+
+    const loadingToast = toast.loading(`Registering credentials for ${newUserObj.name}...`);
+    try {
+      await setDoc(doc(db, 'users', cleanId), newUserObj);
+      toast.success(`Account created with Password: "${newUserObj.password}"! Switch to this account now!`, { id: loadingToast });
+      
+      // Clear fields
+      setQuickUserId('');
+      setQuickFullName('');
+      setQuickPassword('');
+      setQuickRole('executive');
+      setQuickCommission('10');
+      setShowQuickAddUserForm(false);
+    } catch (err) {
+      toast.error('Failed to save staff credentials record.', { id: loadingToast });
+    }
+  };
+
   return (
     <div className="space-y-8 pb-20">
       
@@ -981,6 +1188,269 @@ export default function ITSalesDashboard() {
           </div>
         </div>
       </header>
+
+      {/* NEW SECTION: ACTIVE USER CREDENTIALS SWAPPER, PASSKEY DIRECTORY, & QUICK REGISTRY */}
+      <section className={cn(
+        "rounded-[2.5rem] p-6 lg:p-8 border shadow-xl space-y-6 transition-all text-left",
+        isDark ? "bg-[#0c0d1b]/70 border-white/5" : "bg-slate-50 border-slate-200"
+      )}>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded bg-[#ec4899]/10 text-[#ec4899] border border-[#ec4899]/20 animate-pulse">
+              Sandbox Control Companion
+            </span>
+            <h2 className={cn("text-lg font-black tracking-tight mt-2 uppercase", isDark ? "text-white" : "text-slate-900")}>
+              System Credentials Hub & Switcher
+            </h2>
+            <p className="text-slate-500 text-[10.5px] font-semibold mt-0.5 leading-relaxed">
+              Define custom user accounts & passwords below. Select any identity to instantly change the active session dashboard!
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowQuickAddUserForm(!showQuickAddUserForm)}
+              className="px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              {showQuickAddUserForm ? 'Close Registration Form' : 'Register New User ID'}
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic Multi-column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          
+          {/* Column A: Swapper Selection & Current Profile Info */}
+          <div className="lg:col-span-4 flex flex-col justify-between p-5 rounded-[1.75rem] bg-indigo-500/5 border border-indigo-500/10">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-black tracking-widest text-slate-500">
+                  Select Active Login Identity:
+                </label>
+                <div className="relative">
+                  <select
+                    value={loggedInUser?.id || 'admin'}
+                    onChange={(e) => handleQuickSwitchUser(e.target.value)}
+                    className={cn(
+                      "w-full px-4 py-3 border-none rounded-xl transition-all outline-none text-xs font-bold appearance-none cursor-pointer",
+                      isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900 shadow-sm"
+                    )}
+                  >
+                    <option value="admin">
+                      👑 Head Administrator [id: admin]
+                    </option>
+                    {usersSnap?.docs
+                      .filter(d => d.id !== 'admin')
+                      .map(d => {
+                        const u = d.data();
+                        return (
+                          <option key={d.id} value={d.id}>
+                            👤 {u.name} [{u.role?.toUpperCase()} | UserID: {u.id}]
+                          </option>
+                        );
+                      })}
+                  </select>
+                </div>
+                <span className="text-[8.5px] text-slate-500 block leading-tight">
+                  Selecting an account will simulate signing-out and signing-in again instantly.
+                </span>
+              </div>
+
+              <div className="py-3.5 border-t border-slate-800/10 dark:border-white/5 space-y-2">
+                <p className="text-[10px] uppercase font-black text-slate-500 tracking-wider">Active Authorized User Info</p>
+                <div className="space-y-1 text-xs">
+                  <p className="font-extrabold text-[#6366f1] text-[13px]">{loggedInUser?.name || 'Main Administrator'}</p>
+                  <div className="flex justify-between text-[11px] text-slate-400">
+                    <span>Assigned Role:</span>
+                    <span className="font-bold text-slate-300 uppercase tracking-widest text-[10px]">
+                      {loggedInUser?.role || 'admin'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-400">
+                    <span>Base Commission Perc.:</span>
+                    <span className="font-bold text-slate-300">
+                      {loggedInUser?.commissionPercentage || loggedInUser?.commission || 10}% rate
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-400">
+                    <span>Unique Service DB Access:</span>
+                    <span className={cn(
+                      "font-black text-[9px] uppercase tracking-wider",
+                      isUserAdmin ? "text-emerald-400" : "text-rose-450"
+                    )}>
+                      {isUserAdmin ? '✅ Enabled' : '❌ Disabled'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Column B: Active Passkey Directory Checklist / Table */}
+          <div className="lg:col-span-8 flex flex-col justify-between p-5 rounded-[1.75rem] bg-pink-500/5 border border-pink-500/10 min-h-[14rem]">
+            <div className="space-y-3 w-full overflow-hidden">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                  Access Directory Checklist [IDs & Passwords]
+                </span>
+                <span className="text-[9px] font-bold text-slate-500 bg-slate-500/10 px-2 py-0.5 rounded">
+                  {1 + (usersSnap?.size || 0)} Total Profiles
+                </span>
+              </div>
+
+              <div className="overflow-x-auto w-full prose prose-slate">
+                <table className="w-full text-[10.5px] leading-relaxed select-text border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800/10 text-slate-500 font-extrabold text-[9px] uppercase tracking-wider">
+                      <th className="pb-2 text-left font-semibold">Staff Identity</th>
+                      <th className="pb-2 text-left font-semibold">User ID (Login)</th>
+                      <th className="pb-2 text-left font-semibold">Access Password</th>
+                      <th className="pb-2 text-left font-semibold">Role Level</th>
+                      <th className="pb-2 text-right font-semibold">Com.</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/5">
+                    {/* Pre-seeded Admin fallback or explicit admin doc row */}
+                    <tr className={cn(
+                      "group",
+                      (loggedInUser?.id === 'admin') ? "text-[#ec4899] font-bold" : "text-slate-400"
+                    )}>
+                      <td className="py-2.5 font-bold flex items-center gap-1">
+                        👑 Main Administrator
+                      </td>
+                      <td className="py-2.5 font-mono font-bold text-[10px]">admin</td>
+                      <td className="py-2.5 font-mono bg-slate-900/40 px-2 py-0.5 rounded text-[10px] text-amber-500 font-extrabold select-all">
+                        admin
+                      </td>
+                      <td className="py-2.5 uppercase text-[9px] tracking-wider font-extrabold text-indigo-400">ADMIN</td>
+                      <td className="py-2.5 text-right font-bold">10%</td>
+                    </tr>
+
+                    {/* Firestore users */}
+                    {usersSnap?.docs
+                      .filter(doc => doc.id !== 'admin')
+                      .map(doc => {
+                        const u = doc.data();
+                        const isActive = loggedInUser?.id === u.id;
+                        return (
+                          <tr key={doc.id} className={cn(
+                            "group hover:bg-slate-500/5 transition-all",
+                            isActive ? "text-[#6366f1] font-bold" : "text-slate-400"
+                          )}>
+                            <td className="py-2 font-black">👤 {u.name}</td>
+                            <td className="py-2 font-mono font-bold">{u.id}</td>
+                            <td className="py-2 font-mono bg-slate-900/35 px-2 py-0.5 rounded text-[10px] text-amber-500 select-all font-semibold">
+                              {u.password || 'exec123'}
+                            </td>
+                            <td className="py-2">
+                              <span className={cn(
+                                "text-[8.5px] font-black uppercase tracking-wider",
+                                u.role === 'admin' ? "text-indigo-400" : "text-amber-500"
+                              )}>
+                                {u.role?.toUpperCase()}
+                              </span>
+                            </td>
+                            <td className="py-2 text-right font-semibold">
+                              {u.commissionPercentage || u.commission || 10}%
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Quick User Creation Form Modal Panel */}
+        {showQuickAddUserForm && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="p-6 rounded-[1.75rem] bg-indigo-500/5 border border-indigo-500/10 space-y-4 animate-fade-in text-xs"
+          >
+            <div className="border-b border-indigo-500/10 pb-3">
+              <h3 className="font-black uppercase tracking-widest text-[#ec4899] text-xs">
+                Register New Credentials Profile
+              </h3>
+              <p className="text-[10px] text-slate-500 mt-1">
+                Instantly provision a brand-new user with their own ID, passcode, role level, and automatic commission rate tracker.
+              </p>
+            </div>
+
+            <form onSubmit={handleQuickAddUserSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <Input
+                label="Full Employee Name"
+                placeholder="e.g. John Executive"
+                value={quickFullName}
+                onChange={(e) => setQuickFullName(e.target.value)}
+                required
+              />
+              <Input
+                label="User ID (Login Username)"
+                placeholder="e.g. john"
+                value={quickUserId}
+                onChange={(e) => setQuickUserId(e.target.value)}
+                required
+              />
+              <Input
+                label="Access Password / Passkey"
+                placeholder="e.g. securePass1"
+                value={quickPassword}
+                onChange={(e) => setQuickPassword(e.target.value)}
+                required
+              />
+              <div className="space-y-1.5 text-left">
+                <label className="text-[10px] pl-1 font-black uppercase tracking-widest text-slate-500">Role access level</label>
+                <select
+                  value={quickRole}
+                  onChange={(e) => setQuickRole(e.target.value as any)}
+                  className="w-full bg-slate-900 border-none rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  style={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#e2e8f0', color: isDark ? 'white' : 'black' }}
+                >
+                  <option value="executive">Sales Executive (No DB View)</option>
+                  <option value="admin">Main Administrator (Full Access)</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2 space-y-1.5 text-left">
+                <label className="text-[10px] pl-1 font-black uppercase tracking-widest text-slate-500">Commission Ratio (%)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 15"
+                  value={quickCommission}
+                  onChange={(e) => setQuickCommission(e.target.value)}
+                  className={cn(
+                    "w-full px-4 py-3 border-none rounded-xl transition-all outline-none font-semibold text-xs",
+                    isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900 border border-slate-200"
+                  )}
+                  style={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#fff' }}
+                  required
+                />
+              </div>
+
+              <div className="md:col-span-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickAddUserForm(false)}
+                  className="w-1/2 py-3 rounded-xl bg-slate-800 text-slate-300 font-extrabold uppercase text-[10px] tracking-wider transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="w-1/2 text-white py-3 rounded-xl font-extrabold uppercase text-[10px] tracking-wider transition-all cursor-pointer"
+                  style={{ backgroundColor: settings.primaryColor }}
+                >
+                  Create Identity
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </section>
 
       {/* QUICK CORE ANALYTICS CARDS */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1603,7 +2073,7 @@ export default function ITSalesDashboard() {
                   </div>
 
                   {/* Service options from DB */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 text-left">
                     <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">IT Service Required</label>
                     <select
                       value={txServiceId}
@@ -1615,12 +2085,18 @@ export default function ITSalesDashboard() {
                       )}
                     >
                       <option value="">-- Select Corporate Package --</option>
-                      {servicesSnap?.docs.map(doc => (
-                        <option key={doc.id} value={doc.id}>
-                          {doc.data().name} - {currencySymbol}{doc.data().price}
-                        </option>
-                      ))}
+                      {servicesSnap?.docs
+                        .filter(doc => doc.data().status !== 'Muted')
+                        .map(doc => {
+                          const data = doc.data();
+                          return (
+                            <option key={doc.id} value={doc.id}>
+                              [{data.priceTier || 'High'} Price] {data.name} - {currencySymbol}{Number(data.price || 0).toLocaleString()}
+                            </option>
+                          );
+                        })}
                     </select>
+                    <span className="text-[8.5px] text-slate-500 pl-1 block">Only active (kept) services from the catalog are displayed here.</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -1948,10 +2424,10 @@ export default function ITSalesDashboard() {
         )}
 
         {/* TAB 2: IT SERVICES MANAGER */}
-        {activeSubTab === 'services' && (
+        {activeSubTab === 'services' && isUserAdmin && (
           <>
             {/* Left form input */}
-            <div className="col-span-12 lg:col-span-5">
+            <div className="col-span-12 lg:col-span-4">
               <Card className="space-y-6">
                 <div>
                   <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
@@ -1961,7 +2437,7 @@ export default function ITSalesDashboard() {
                   <p className="text-[10px] text-slate-500 mt-1 italic font-medium">Extend business catalog packages or project scopes details.</p>
                 </div>
 
-                <form onSubmit={handleAddService} className="space-y-4">
+                <form onSubmit={handleAddService} className="space-y-4 text-left">
                   <Input 
                     label="Service Name"
                     placeholder="e.g., Scalable Magento/NextJS E-Commerce"
@@ -1979,6 +2455,22 @@ export default function ITSalesDashboard() {
                     required
                   />
 
+                  <div className="space-y-1.5 animate-fade-in">
+                    <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">Price category / Tier</label>
+                    <select
+                      value={servicePriceTier}
+                      onChange={(e) => setServicePriceTier(e.target.value as any)}
+                      className={cn(
+                        "w-full px-5 py-3.5 border-none rounded-2xl transition-all outline-none text-xs font-semibold appearance-none",
+                        isDark ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900"
+                      )}
+                    >
+                      <option value="High">High Price Tier (Enterprise)</option>
+                      <option value="Low">Low Price Tier (Standard/Micro)</option>
+                    </select>
+                    <span className="text-[8.5px] text-slate-500 pl-1 block">Specify if this is classified as high or low price.</span>
+                  </div>
+
                   <div className="space-y-1.5">
                     <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">Description of Service</label>
                     <textarea
@@ -1987,7 +2479,7 @@ export default function ITSalesDashboard() {
                       onChange={(e) => setServiceDesc(e.target.value)}
                       className={cn(
                         "w-full px-5 py-4 border-none rounded-2xl transition-all outline-none placeholder:text-slate-500 text-xs font-semibold h-24",
-                        isDark ? "bg-slate-900/70 text-white" : "bg-slate-100 text-slate-900"
+                        isDark ? "bg-slate-900/70 text-white" : "bg-slate-100/90 text-slate-900"
                       )}
                     />
                   </div>
@@ -2000,31 +2492,167 @@ export default function ITSalesDashboard() {
             </div>
 
             {/* Service list table right */}
-            <div className="col-span-12 lg:col-span-7">
+            <div className="col-span-12 lg:col-span-8">
               <Card className="p-0 overflow-hidden">
-                <div className="p-6 border-b border-slate-800/10">
-                  <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                    <Database size={16} style={{ color: settings.primaryColor }} />
-                    Live Services Catalog({servicesSnap?.size || 0})
-                  </h3>
-                  <p className="text-[10px] text-slate-500 italic mt-1">These packages are dynamically loaded into transaction pickers.</p>
+                <div className="p-6 border-b border-slate-800/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                      <Database size={16} style={{ color: settings.primaryColor }} />
+                      Live Services & Tiers Catalog ({servicesSnap?.size || 0})
+                    </h3>
+                    <p className="text-[10px] text-slate-500 italic mt-1">Manage corporate prices, tier classifiers (High/Low) and keep status variables below.</p>
+                  </div>
                 </div>
 
-                <div className="divide-y divide-slate-800/10">
+                <div className="divide-y divide-slate-800/10 text-left">
                   {servicesSnap?.empty ? (
                     <div className="p-12 text-center text-slate-500 italic">No services listed yet. Populate automatically with the top-right button.</div>
                   ) : (
                     servicesSnap?.docs.map(doc => {
                       const data = doc.data();
-                      return (
-                        <div key={doc.id} className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-slate-50/20 transition-all">
-                          <div className="space-y-1">
-                            <h4 className="font-bold text-sm tracking-tight text-white" style={{ color: isDark ? 'white' : 'black' }}>{data.name}</h4>
-                            <p className="text-xs text-slate-500 leading-relaxed font-semibold italic">{data.description || 'No description provided.'}</p>
+                      const isEditingThis = editingServiceId === doc.id;
+                      const isKept = data.status !== 'Muted';
+
+                      if (isEditingThis) {
+                        return (
+                          <div key={doc.id} className="p-6 bg-slate-500/5 space-y-4 animate-fade-in text-xs">
+                            <span className="font-extrabold text-[9px] text-[#ec4899] uppercase tracking-widest">Inline IT Service Editor</span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <Input 
+                                label="Service name"
+                                value={editServiceName}
+                                onChange={(e) => setEditServiceName(e.target.value)}
+                                required
+                              />
+                              <Input 
+                                label={`Price (${currency})`}
+                                type="number"
+                                value={editServicePrice}
+                                onChange={(e) => setEditServicePrice(e.target.value)}
+                                required
+                              />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-1.5 text-left">
+                                <label className="text-[10px] pl-1 font-black uppercase tracking-widest text-slate-500">Price Tier Category</label>
+                                <select
+                                  value={editServicePriceTier}
+                                  onChange={(e) => setEditServicePriceTier(e.target.value as any)}
+                                  className="w-full bg-slate-900 text-white border-none rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none transition-all"
+                                  style={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#e2e8f0', color: isDark ? 'white' : 'black' }}
+                                >
+                                  <option value="High">High Price Tier (Enterprise)</option>
+                                  <option value="Low">Low Price Tier (Standard/Micro)</option>
+                                </select>
+                              </div>
+                              <Input 
+                                label="Short description"
+                                value={editServiceDesc}
+                                onChange={(e) => setEditServiceDesc(e.target.value)}
+                              />
+                            </div>
+                            <div className="flex gap-2 justify-end pt-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditingServiceId(null)}
+                                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-300 transition-all cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateService(doc.id)}
+                                className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white transition-all cursor-pointer"
+                                style={{ backgroundColor: settings.primaryColor }}
+                              >
+                                Save Changes
+                              </button>
+                            </div>
                           </div>
-                          <div className="text-right shrink-0">
-                            <p className="text-lg font-mono font-black" style={{ color: settings.primaryColor }}>{currencySymbol}{Number(data.price).toLocaleString()}</p>
-                            <p className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Base Package Rate</p>
+                        );
+                      }
+
+                      return (
+                        <div key={doc.id} className={cn(
+                          "p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:bg-slate-50/20 transition-all",
+                          !isKept && "opacity-60 bg-slate-950/20"
+                        )}>
+                          <div className="space-y-2 flex-1 text-left min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="font-bold text-sm tracking-tight" style={{ color: isDark ? 'white' : 'black' }}>{data.name}</h4>
+                              
+                              {/* Price level High or Low badge indicator */}
+                              <span className={cn(
+                                "px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-widest border shrink-0",
+                                (data.priceTier || 'High') === 'High'
+                                  ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                                  : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                              )}>
+                                {(data.priceTier || 'High')} Price Tier
+                              </span>
+
+                              {/* Keep Status Badge */}
+                              <span className={cn(
+                                "px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-widest border shrink-0",
+                                isKept
+                                  ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                  : "bg-slate-500/10 text-slate-500 border-slate-500/20"
+                              )}>
+                                {isKept ? 'Kept (Active)' : 'Muted (Hidden)'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500 leading-relaxed font-semibold italic truncate">{data.description || 'No description provided.'}</p>
+                          </div>
+
+                          <div className="flex items-center gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
+                            <div className="text-right">
+                              <p className="text-lg font-mono font-black" style={{ color: settings.primaryColor }}>{currencySymbol}{Number(data.price).toLocaleString()}</p>
+                              <p className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Base Package Rate</p>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              {/* Keep/Mute variable switch toggle button */}
+                              <button
+                                onClick={() => handleToggleServiceStatus(doc.id, data.status)}
+                                title={isKept ? "Mute Service (Hide from transaction creation)" : "Keep Service (Show in transaction creation)"}
+                                className={cn(
+                                  "p-2 rounded-xl border transition-all cursor-pointer text-xs font-extrabold uppercase py-1 px-2.5",
+                                  isKept 
+                                    ? "bg-amber-500/15 border-amber-500/20 text-amber-500 hover:bg-amber-500/25" 
+                                    : "bg-blue-500/15 border-blue-500/20 text-blue-400 hover:bg-blue-500/25"
+                                )}
+                              >
+                                {isKept ? "De-select" : "Keep Offer"}
+                              </button>
+
+                              {/* Edit Button */}
+                              <button
+                                onClick={() => {
+                                  setEditingServiceId(doc.id);
+                                  setEditServiceName(data.name);
+                                  setEditServicePrice(String(data.price));
+                                  setEditServiceDesc(data.description || '');
+                                  setEditServicePriceTier(data.priceTier || 'High');
+                                }}
+                                className="p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-xl transition-all cursor-pointer"
+                                title="Edit Service details"
+                              >
+                                <Edit size={14} />
+                              </button>
+
+                              {/* Delete Service */}
+                              <button
+                                onClick={() => {
+                                  if (confirm(`Are you absolutely sure you want to delete this IT service offer entirely from the system database? Any record using this service id will remain as-is.`)) {
+                                    handleDeleteService(doc.id);
+                                  }
+                                }}
+                                className="p-2 bg-red-500/10 border border-red-500/20 text-slate-400 hover:text-red-500 rounded-xl transition-all cursor-pointer"
+                                title="Delete Service record"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
