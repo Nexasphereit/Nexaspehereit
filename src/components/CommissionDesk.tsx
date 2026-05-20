@@ -202,18 +202,20 @@ export default function CommissionDesk({
             </span>
             
             {/* ProgressBar */}
-            <div className="mt-4 space-y-1.5">
-              <div className="w-full h-1.5 bg-slate-900/60 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-emerald-400 rounded-full transition-all duration-500" 
-                  style={{ width: `${collectedPct}%` }}
-                />
+            {activeRole !== 'executive' && (
+              <div className="mt-4 space-y-1.5">
+                <div className="w-full h-1.5 bg-slate-900/60 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-emerald-400 rounded-full transition-all duration-500" 
+                    style={{ width: `${collectedPct}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center text-[9px] font-black text-slate-500">
+                  <span>{collectedPct}% RECOVERED</span>
+                  <span>{currencySymbol}{(totalEarnedCommissions - totalCollectedCommissions).toLocaleString()} REMAINING</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center text-[9px] font-black text-slate-500">
-                <span>{collectedPct}% RECOVERED</span>
-                <span>{currencySymbol}{(totalEarnedCommissions - totalCollectedCommissions).toLocaleString()} REMAINING</span>
-              </div>
-            </div>
+            )}
           </div>
         </Card>
 
@@ -342,16 +344,16 @@ export default function CommissionDesk({
                 <th className="py-4">IT Enterprise Contract</th>
                 <th className="py-4 text-right">Contract Deal Value</th>
                 <th className="py-4 text-center">Sales Rep</th>
-                <th className="py-4 text-center">Applied Ratio</th>
+                {activeRole !== 'executive' && <th className="py-4 text-center">Applied Ratio</th>}
                 <th className="py-4 text-right">Commission Credit</th>
                 <th className="py-4 text-center">Client Payment Standing</th>
-                <th className="py-4 text-center">Status Action Toggle</th>
+                {activeRole === 'admin' && <th className="py-4 text-center">Status Action Toggle</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/5 font-semibold text-slate-300">
               {computedTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-8 text-slate-500 font-bold italic">
+                  <td colSpan={activeRole === 'admin' ? 9 : (activeRole === 'executive' ? 7 : 8)} className="text-center py-8 text-slate-500 font-bold italic">
                     No transactions registered in current view scope. Go to Sales ledger to file a new purchase.
                   </td>
                 </tr>
@@ -379,9 +381,11 @@ export default function CommissionDesk({
                       <td className="py-4 text-center text-slate-400">
                         <span className="font-bold text-xs">{tx.executiveName}</span>
                       </td>
-                      <td className="py-4 text-center font-mono font-black text-slate-500">
-                        {tx.rate}%
-                      </td>
+                      {activeRole !== 'executive' && (
+                        <td className="py-4 text-center font-mono font-black text-slate-500">
+                          {tx.rate}%
+                        </td>
+                      )}
                       <td className="py-4 text-right font-black text-violet-400">
                         {currencySymbol}{tx.earned?.toLocaleString()}
                       </td>
@@ -394,23 +398,25 @@ export default function CommissionDesk({
                           {hasDueStatus ? 'Payment Due' : 'Fully Collected'}
                         </span>
                       </td>
-                      <td className="py-4 text-center">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            const nextStatus = hasDueStatus ? 'Collected' : 'Due';
-                            onTogglePaymentStatus(tx.id, nextStatus);
-                          }}
-                          className={`text-[8.5px] px-2.5 py-1 font-black uppercase tracking-wider border rounded-md cursor-pointer transition-all ${
-                            hasDueStatus 
-                              ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500 hover:text-white' 
-                              : 'text-rose-400 border-rose-500/20 bg-rose-500/5 hover:bg-rose-500 hover:text-white'
-                          }`}
-                        >
-                          {hasDueStatus ? 'Set Collected' : 'Set Due'}
-                        </Button>
-                      </td>
+                      {activeRole === 'admin' && (
+                        <td className="py-4 text-center">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const nextStatus = hasDueStatus ? 'Collected' : 'Due';
+                              onTogglePaymentStatus(tx.id, nextStatus);
+                            }}
+                            className={`text-[8.5px] px-2.5 py-1 font-black uppercase tracking-wider border rounded-md cursor-pointer transition-all ${
+                              hasDueStatus 
+                                ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500 hover:text-white' 
+                                : 'text-rose-450 border-rose-500/20 bg-rose-500/5 hover:bg-rose-500 hover:text-white'
+                            }`}
+                          >
+                            {hasDueStatus ? 'Set Collected' : 'Set Due'}
+                          </Button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })
