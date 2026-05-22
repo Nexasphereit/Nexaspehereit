@@ -38,7 +38,22 @@ function AppContent() {
     }
 
     return onAuthStateChanged(auth, (u) => {
-      setUser(u);
+      if (u && u.email && (u.email.endsWith('@gmail.com') || u.email.includes('@gmail.com'))) {
+        const namePart = u.email.split('@')[0];
+        const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+        const gmailCustomAdmin = {
+          id: 'admin',
+          uid: 'admin',
+          name: `${displayName} (Testing Admin)`,
+          email: u.email,
+          role: 'admin',
+          commissionPercentage: 15
+        };
+        localStorage.setItem('customUser', JSON.stringify(gmailCustomAdmin));
+        setUser(gmailCustomAdmin);
+      } else {
+        setUser(u);
+      }
       setLoading(false);
     });
   }, []);

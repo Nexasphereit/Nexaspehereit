@@ -72,6 +72,18 @@
       },
       "required": ["name", "email", "role"]
     },
+    "Menu": {
+      "title": "Menu",
+      "description": "Custom restaurant or business menu",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "items": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title"]
+    },
     "Service": {
       "title": "Service",
       "description": "IT Business Service",
@@ -147,6 +159,10 @@
     "transactions": {
       "schema": "Transaction",
       "description": "Collection of sales buy transactions"
+    },
+    "menus": {
+      "schema": "Menu",
+      "description": "Collection of business custom menus"
     }
   }
 }

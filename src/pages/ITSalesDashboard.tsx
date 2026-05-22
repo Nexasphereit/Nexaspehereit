@@ -117,10 +117,12 @@ export default function ITSalesDashboard() {
   const currencySymbol = getCurrencySymbol(currency);
 
   // --- Firebase Subscriptions ---
-  const [servicesSnap, servicesLoading] = useCollection(collection(db, 'services'));
-  const [customersSnap, customersLoading] = useCollection(collection(db, 'customers'));
-  const [transactionsSnap, transactionsLoading] = useCollection(collection(db, 'transactions'));
-  const [usersSnap, usersLoading] = useCollection(collection(db, 'users'));
+  const [servicesSnap, servicesLoading, servicesError] = useCollection(collection(db, 'services'));
+  const [customersSnap, customersLoading, customersError] = useCollection(collection(db, 'customers'));
+  const [transactionsSnap, transactionsLoading, transactionsError] = useCollection(collection(db, 'transactions'));
+  const [usersSnap, usersLoading, usersError] = useCollection(collection(db, 'users'));
+
+  const activeDbError = servicesError || customersError || transactionsError || usersError;
 
   // --- Local Setup & Active Modals State ---
   const [activeSubTab, setActiveSubTab] = useState<'sales' | 'services' | 'customers' | 'commissions' | 'users'>('sales');
@@ -186,6 +188,11 @@ export default function ITSalesDashboard() {
   // CRM Navigation Sub-Tab inside Customer CRM
   const [crmFilterMode, setCrmFilterMode] = useState<'all' | 'dues'>('all');
 
+  // Calendar toggle and service search states
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [serviceSearchQuery, setServiceSearchQuery] = useState('');
+  const [selectedServiceDetails, setSelectedServiceDetails] = useState<any | null>(null);
+
   // Customer/Transaction Delete Confirmation States
   const [customerToDeleteId, setCustomerToDeleteId] = useState<string | null>(null);
   const [txToDeleteId, setTxToDeleteId] = useState<string | null>(null);
@@ -242,9 +249,9 @@ export default function ITSalesDashboard() {
 
   // Strict frontend sub-tab routing privilege guard for non-admin users
   useEffect(() => {
-    if (!isUserAdmin && (activeSubTab === 'services' || activeSubTab === 'users')) {
+    if (!isUserAdmin && activeSubTab === 'users') {
       setActiveSubTab('sales');
-      toast.error('Restricted Access: Executives are not authorized to view the Service Database or Staff Panel.');
+      toast.error('Restricted Access: Executives are not authorized to view the Staff Panel.');
     }
   }, [isUserAdmin, activeSubTab]);
 
@@ -381,8 +388,9 @@ export default function ITSalesDashboard() {
       setServicePrice('');
       setServiceDesc('');
       setServicePriceTier('High');
-    } catch (err) {
-      toast.error('Error recording service details', { id: loadingToast });
+    } catch (err: any) {
+      const errorMessage = err?.message || err?.code || String(err);
+      toast.error(`Error recording service details: ${errorMessage}`, { id: loadingToast });
       handleFirestoreError(err, OperationType.CREATE, 'services');
     }
   };
@@ -572,6 +580,20 @@ export default function ITSalesDashboard() {
   // --- Filtering Ledger Based on Activated RBAC Roles & Calendar Ranges ---
   const rawTransactions = transactionsSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)) || [];
   const activeUserIdForSession = loggedInUser.id;
+
+  const execTransactionsFiltered = rawTransactions.filter(t => t.executiveId === activeUserIdForSession);
+  const execCustomersClosedCount = Array.from(new Set(
+    execTransactionsFiltered
+      .filter(t => t.status === 'Collected')
+      .map(t => t.customerId)
+      .filter(Boolean)
+  )).length;
+
+  const execCustomersServedCount = Array.from(new Set(
+    execTransactionsFiltered
+      .map(t => t.customerId)
+      .filter(Boolean)
+  )).length;
 
   const filteredTransactions = rawTransactions.filter(item => {
     // 1. Role-based access level overrides
@@ -1076,6 +1098,20 @@ export default function ITSalesDashboard() {
   return (
     <div className="space-y-8 pb-20">
       
+      {activeDbError && (
+        <div className="p-4 bg-red-950/40 border border-red-500/30 rounded-2xl flex items-start gap-3 text-red-200">
+          <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5 animate-pulse" />
+          <div className="flex-1 text-xs">
+            <span className="font-bold block text-sm text-red-300">Firestore Connection or Permission Warning ({activeDbError.code || 'UNKNOWN'}):</span>
+            <p className="mt-1 opacity-90">{activeDbError.message}</p>
+            <p className="mt-2 text-[10px] text-slate-400 font-mono">
+              Database Path: services/customers/transactions/users <br />
+              Action tip: If the error reports missing permissions, please run Database Seed or verify that rules match the custom database in config.
+            </p>
+          </div>
+        </div>
+      )}
+      
       {/* HEADER SECTION WITH ADVANCED ROLE SWITCHER FOR GRADERS */}
       <header className={cn(
         "rounded-[2rem] p-6 border shadow-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 backdrop-blur-xl relative overflow-hidden",
@@ -1453,60 +1489,122 @@ export default function ITSalesDashboard() {
       </section>
 
       {/* QUICK CORE ANALYTICS CARDS */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="flex items-center gap-5">
-          <div className="p-4 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${settings.primaryColor}15`, color: settings.primaryColor }}>
-            <DollarSign size={24} />
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Booked Revenue</p>
-            <h3 className="text-2xl font-black mt-1 text-slate-200" style={{ color: isDark ? 'white' : 'black' }}>
-              {currencySymbol}{totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 0 })}
-            </h3>
-            <span className="text-[9px] text-green-500 font-extrabold flex items-center gap-1 mt-1">
-              <TrendingUp size={10} /> Active Filter Ledger
-            </span>
-          </div>
-        </Card>
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
+        {activeRole === 'admin' ? (
+          <>
+            {/* ADMIN KPI CARDS */}
+            <Card className="flex items-center gap-5">
+              <div className="p-4 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${settings.primaryColor}15`, color: settings.primaryColor }}>
+                <DollarSign size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Booked Revenue</p>
+                <h3 className="text-2xl font-black mt-1 text-slate-200" style={{ color: isDark ? 'white' : 'black' }}>
+                  {currencySymbol}{totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                </h3>
+                <span className="text-[9px] text-green-500 font-extrabold flex items-center gap-1 mt-1">
+                  <TrendingUp size={10} /> Active Filter Ledger
+                </span>
+              </div>
+            </Card>
 
-        <Card className="flex items-center gap-5">
-          <div className="p-4 rounded-2xl flex items-center justify-center shrink-0 text-amber-500 bg-amber-500/10">
-            <ShoppingBag size={24} />
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Deals Closed</p>
-            <h3 className="text-2xl font-black mt-1" style={{ color: isDark ? 'white' : 'black' }}>
-              {totalTransactionsCount} Purchases
-            </h3>
-            <span className="text-[9px] text-slate-500 font-medium italic mt-1 block">Real-time persistent entries</span>
-          </div>
-        </Card>
+            <Card className="flex items-center gap-5">
+              <div className="p-4 rounded-2xl flex items-center justify-center shrink-0 text-amber-500 bg-amber-500/10">
+                <ShoppingBag size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Deals Closed</p>
+                <h3 className="text-2xl font-black mt-1" style={{ color: isDark ? 'white' : 'black' }}>
+                  {totalTransactionsCount} Purchases
+                </h3>
+                <span className="text-[9px] text-slate-500 font-medium italic mt-1 block">Real-time persistent entries</span>
+              </div>
+            </Card>
 
-        <Card className="flex items-center gap-5">
-          <div className="p-4 rounded-2xl flex items-center justify-center shrink-0 text-violet-500 bg-violet-500/10">
-            <Briefcase size={24} />
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Active IT Catalog</p>
-            <h3 className="text-2xl font-black mt-1" style={{ color: isDark ? 'white' : 'black' }}>
-              {servicesSnap?.size || 0} Professional
-            </h3>
-            <span className="text-[9px] text-slate-500 font-medium italic mt-1 block">Full-stack dynamic catalog</span>
-          </div>
-        </Card>
+            <Card className="flex items-center gap-5">
+              <div className="p-4 rounded-2xl flex items-center justify-center shrink-0 text-violet-500 bg-violet-500/10">
+                <Briefcase size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Active IT Catalog</p>
+                <h3 className="text-2xl font-black mt-1" style={{ color: isDark ? 'white' : 'black' }}>
+                  {servicesSnap?.size || 0} Professional
+                </h3>
+                <span className="text-[9px] text-slate-500 font-medium italic mt-1 block">Full-stack dynamic catalog</span>
+              </div>
+            </Card>
 
-        <Card className="flex items-center gap-5">
-          <div className="p-4 rounded-2xl flex items-center justify-center shrink-0 text-rose-500 bg-rose-500/10">
-            <Users size={24} />
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Corporate Accounts</p>
-            <h3 className="text-2xl font-black mt-1" style={{ color: isDark ? 'white' : 'black' }}>
-              {customersSnap?.size || 0} Clients
-            </h3>
-            <span className="text-[9px] text-rose-400 font-extrabold mt-1 block">Searchable & exportable CRM</span>
-          </div>
-        </Card>
+            <Card className="flex items-center gap-5">
+              <div className="p-4 rounded-2xl flex items-center justify-center shrink-0 text-rose-500 bg-rose-500/10">
+                <Users size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Corporate Accounts</p>
+                <h3 className="text-2xl font-black mt-1" style={{ color: isDark ? 'white' : 'black' }}>
+                  {customersSnap?.size || 0} Clients
+                </h3>
+                <span className="text-[9px] text-rose-400 font-extrabold mt-1 block">Searchable & exportable CRM</span>
+              </div>
+            </Card>
+          </>
+        ) : (
+          <>
+            {/* EXECUTIVE MY DATA PIE OUTLINE */}
+            <Card className="flex items-center gap-5">
+              <div className="p-4 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${settings.primaryColor}15`, color: settings.primaryColor }}>
+                <DollarSign size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">My Revenue Generated</p>
+                <h3 className="text-2xl font-black mt-1 text-slate-200" style={{ color: isDark ? 'white' : 'black' }}>
+                  {currencySymbol}{totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                </h3>
+                <span className="text-[9px] text-[#ec4899] font-extrabold flex items-center gap-1 mt-1">
+                  <TrendingUp size={10} /> Personal direct sales
+                </span>
+              </div>
+            </Card>
+
+            <Card className="flex items-center gap-5">
+              <div className="p-4 rounded-2xl flex items-center justify-center shrink-0 text-sky-500 bg-sky-500/10">
+                <ShoppingBag size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">My Daily Sales Volume</p>
+                <h3 className="text-2xl font-black mt-1" style={{ color: isDark ? 'white' : 'black' }}>
+                  {totalTransactionsCount} Orders
+                </h3>
+                <span className="text-[9px] text-slate-500 font-medium italic mt-1 block">Active date scope target</span>
+              </div>
+            </Card>
+
+            <Card className="flex items-center gap-5">
+              <div className="p-4 rounded-2xl flex items-center justify-center shrink-0 text-emerald-500 bg-emerald-500/10">
+                <UserCheck size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Customers Key Closed</p>
+                <h3 className="text-2xl font-black mt-1" style={{ color: isDark ? 'white' : 'black' }}>
+                  {execCustomersClosedCount} Accounts
+                </h3>
+                <span className="text-[9px] font-extrabold text-emerald-400 mt-1 block">Fully paid & settled transactions</span>
+              </div>
+            </Card>
+
+            <Card className="flex items-center gap-5">
+              <div className="p-4 rounded-2xl flex items-center justify-center shrink-0 text-violet-500 bg-violet-500/10">
+                <Users size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Customers Serviced</p>
+                <h3 className="text-2xl font-black mt-1" style={{ color: isDark ? 'white' : 'black' }}>
+                  {execCustomersServedCount} Clients
+                </h3>
+                <span className="text-[9px] font-extrabold text-violet-400 mt-1 block">All registered sales accounts</span>
+              </div>
+            </Card>
+          </>
+        )}
       </section>
 
       {/* ACCESS LEVEL NOTIFIER AT HOME */}
@@ -1541,21 +1639,19 @@ export default function ITSalesDashboard() {
             <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
           )}
         </button>
-        {isUserAdmin && (
-          <button
-            onClick={() => setActiveSubTab('services')}
-            className={cn(
-              "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all cursor-pointer",
-              activeSubTab === 'services' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
-            )}
-            style={activeSubTab === 'services' ? { color: settings.primaryColor } : {}}
-          >
-            Manage Services Database
-            {activeSubTab === 'services' && (
-              <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
-            )}
-          </button>
-        )}
+        <button
+          onClick={() => setActiveSubTab('services')}
+          className={cn(
+            "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all cursor-pointer",
+            activeSubTab === 'services' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
+          )}
+          style={activeSubTab === 'services' ? { color: settings.primaryColor } : {}}
+        >
+          {isUserAdmin ? "🛡️ Manage Services Database" : "🔍 Browse IT Services Catalog"}
+          {activeSubTab === 'services' && (
+            <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
+          )}
+        </button>
         <button
           onClick={() => setActiveSubTab('customers')}
           className={cn(
@@ -1700,34 +1796,55 @@ export default function ITSalesDashboard() {
                   </div>
 
                   {/* Preset quick buttons */}
-                  <div className="flex flex-wrap gap-1.5 bg-slate-900/10 dark:bg-slate-950/40 p-1.5 rounded-2xl border border-slate-800/10 w-full md:w-auto">
-                    {[
-                      { key: 'yesterday', label: 'Yesterday' },
-                      { key: 'this_month', label: 'This Month' },
-                      { key: 'last_month', label: 'Last Month' },
-                      { key: 'maximum', label: 'Maximum (Reset)' }
-                    ].map(p => (
-                      <button
-                        key={p.key}
-                        type="button"
-                        onClick={() => applyPresetFilter(p.key as any)}
-                        className={cn(
-                          "px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer flex-1 md:flex-none text-center",
-                          selectedPreset === p.key
-                            ? "text-white shadow"
-                            : isDark ? "text-slate-400 hover:bg-white/[0.03]" : "text-slate-700 hover:bg-slate-200"
-                        )}
-                        style={selectedPreset === p.key ? { backgroundColor: settings.primaryColor } : {}}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
+                  <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <div className="flex flex-wrap gap-1.5 bg-slate-900/10 dark:bg-slate-950/40 p-1.5 rounded-2xl border border-slate-800/10 flex-1 md:flex-none">
+                      {[
+                        { key: 'yesterday', label: 'Yesterday' },
+                        { key: 'this_month', label: 'This Month' },
+                        { key: 'last_month', label: 'Last Month' },
+                        { key: 'maximum', label: 'Maximum (Reset)' }
+                      ].map(p => (
+                        <button
+                          key={p.key}
+                          type="button"
+                          onClick={() => applyPresetFilter(p.key as any)}
+                          className={cn(
+                            "px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer flex-1 md:flex-none text-center",
+                            selectedPreset === p.key
+                              ? "text-white shadow"
+                              : isDark ? "text-slate-400 hover:bg-white/[0.03]" : "text-slate-700 hover:bg-slate-200"
+                          )}
+                          style={selectedPreset === p.key ? { backgroundColor: settings.primaryColor } : {}}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCalendar(prev => !prev);
+                        toast.success(showCalendar ? "SLA Calendar grid minimized" : "Interactive calendar grid expanded!");
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer border active:scale-95 justify-center md:justify-start h-[38px] shrink-0",
+                        showCalendar 
+                          ? "bg-[#ec4899]/10 border-[#ec4899]/25 text-white shadow-md font-bold" 
+                          : "bg-slate-900/10 border-slate-800/10 text-slate-400 hover:text-white"
+                      )}
+                      style={showCalendar ? { color: settings.primaryColor, backgroundColor: `${settings.primaryColor}15`, borderColor: `${settings.primaryColor}25` } : {}}
+                    >
+                      <Calendar size={11} className={showCalendar ? "animate-spin" : ""} />
+                      <span>{showCalendar ? "Minimize Calendar" : "Calendar Grid"}</span>
+                    </button>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                   {/* CALENDAR NAVIGATION & CELLS GRID COLUMN - Condensed to smaller, compact side view! */}
-                  <div className="md:col-span-5 lg:col-span-4 space-y-3 max-w-[280px] mx-auto md:mx-0">
+                  {showCalendar && (
+                    <div className="md:col-span-5 lg:col-span-4 space-y-3 max-w-[280px] mx-auto md:mx-0 animate-fade-in shrink-0">
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] font-black uppercase tracking-widest text-[#ec4899]" style={{ color: settings.primaryColor }}>
                         Month Explorer
@@ -1823,9 +1940,13 @@ export default function ITSalesDashboard() {
                       })}
                     </div>
                   </div>
+                )}
 
-                  {/* CUSTOM DATE PICKERS & REAL-TIME INTERACTIVE SLATE */}
-                  <div className="md:col-span-7 lg:col-span-8 flex flex-col justify-between space-y-4">
+                {/* CUSTOM DATE PICKERS & REAL-TIME INTERACTIVE SLATE */}
+                <div className={cn(
+                  showCalendar ? "md:col-span-7 lg:col-span-8" : "md:col-span-12",
+                  "flex flex-col justify-between space-y-4"
+                )}>
                     <div className="space-y-4">
                       <span className="text-[10px] font-black uppercase tracking-widest text-[#ec4899]" style={{ color: settings.primaryColor }}>
                         Custom Range & Statistics
@@ -2423,244 +2544,452 @@ export default function ITSalesDashboard() {
           </>
         )}
 
-        {/* TAB 2: IT SERVICES MANAGER */}
-        {activeSubTab === 'services' && isUserAdmin && (
+        {/* TAB 2: IT SERVICES MANAGER OR SEARCHABLE CATALOG */}
+        {activeSubTab === 'services' && (
           <>
-            {/* Left form input */}
-            <div className="col-span-12 lg:col-span-4">
-              <Card className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
-                    <Briefcase style={{ color: settings.primaryColor }} size={20} />
-                    Add Corporate IT Service
-                  </h2>
-                  <p className="text-[10px] text-slate-500 mt-1 italic font-medium">Extend business catalog packages or project scopes details.</p>
+            {isUserAdmin ? (
+              <>
+                {/* Left form input */}
+                <div className="col-span-12 lg:col-span-4">
+                  <Card className="space-y-6">
+                    <div>
+                      <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                        <Briefcase style={{ color: settings.primaryColor }} size={20} />
+                        Add Corporate IT Service
+                      </h2>
+                      <p className="text-[10px] text-slate-500 mt-1 italic font-medium">Extend business catalog packages or project scopes details.</p>
+                    </div>
+
+                    <form onSubmit={handleAddService} className="space-y-4 text-left">
+                      <Input 
+                        label="Service Name"
+                        placeholder="e.g., Scalable Magento/NextJS E-Commerce"
+                        value={serviceName}
+                        onChange={(e) => setServiceName(e.target.value)}
+                        required
+                      />
+                      
+                      <Input 
+                        label={`Base Rate (${currency})`}
+                        placeholder="e.g., 4200"
+                        type="number"
+                        value={servicePrice}
+                        onChange={(e) => setServicePrice(e.target.value)}
+                        required
+                      />
+
+                      <div className="space-y-1.5 animate-fade-in text-left">
+                        <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">Price category / Tier</label>
+                        <select
+                          value={servicePriceTier}
+                          onChange={(e) => setServicePriceTier(e.target.value as any)}
+                          className={cn(
+                            "w-full px-5 py-3.5 border-none rounded-2xl transition-all outline-none text-xs font-semibold appearance-none",
+                            isDark ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900"
+                          )}
+                        >
+                          <option value="High">High Price Tier (Enterprise)</option>
+                          <option value="Low">Low Price Tier (Standard/Micro)</option>
+                        </select>
+                        <span className="text-[8.5px] text-slate-500 pl-1 block">Specify if this is classified as high or low price.</span>
+                      </div>
+
+                      <div className="space-y-1.5 text-left">
+                        <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">Description of Service</label>
+                        <textarea
+                          placeholder="e.g., High performant commerce pipeline configuration, Stripe backend webhooks integration..."
+                          value={serviceDesc}
+                          onChange={(e) => setServiceDesc(e.target.value)}
+                          className={cn(
+                            "w-full px-5 py-4 border-none rounded-2xl transition-all outline-none placeholder:text-slate-500 text-xs font-semibold h-24",
+                            isDark ? "bg-slate-900/70 text-white" : "bg-slate-100/90 text-slate-900"
+                          )}
+                        />
+                      </div>
+
+                      <Button type="submit" className="w-full text-xs font-black uppercase tracking-widest py-4 rounded-2.5xl">
+                        <Check size={14} /> Add Service Offer
+                      </Button>
+                    </form>
+                  </Card>
                 </div>
 
-                <form onSubmit={handleAddService} className="space-y-4 text-left">
-                  <Input 
-                    label="Service Name"
-                    placeholder="e.g., Scalable Magento/NextJS E-Commerce"
-                    value={serviceName}
-                    onChange={(e) => setServiceName(e.target.value)}
-                    required
-                  />
-                  
-                  <Input 
-                    label={`Base Rate (${currency})`}
-                    placeholder="e.g., 4200"
-                    type="number"
-                    value={servicePrice}
-                    onChange={(e) => setServicePrice(e.target.value)}
-                    required
-                  />
+                {/* Service list table right */}
+                <div className="col-span-12 lg:col-span-8">
+                  <Card className="p-0 overflow-hidden">
+                    <div className="p-6 border-b border-slate-800/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div>
+                        <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                          <Database size={16} style={{ color: settings.primaryColor }} />
+                          Live Services & Tiers Catalog ({servicesSnap?.size || 0})
+                        </h3>
+                        <p className="text-[10px] text-slate-500 italic mt-1">Manage corporate prices, tier classifiers (High/Low) and keep status variables below.</p>
+                      </div>
 
-                  <div className="space-y-1.5 animate-fade-in">
-                    <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">Price category / Tier</label>
-                    <select
-                      value={servicePriceTier}
-                      onChange={(e) => setServicePriceTier(e.target.value as any)}
-                      className={cn(
-                        "w-full px-5 py-3.5 border-none rounded-2xl transition-all outline-none text-xs font-semibold appearance-none",
-                        isDark ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900"
-                      )}
-                    >
-                      <option value="High">High Price Tier (Enterprise)</option>
-                      <option value="Low">Low Price Tier (Standard/Micro)</option>
-                    </select>
-                    <span className="text-[8.5px] text-slate-500 pl-1 block">Specify if this is classified as high or low price.</span>
-                  </div>
+                      {/* Admin filter input */}
+                      <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
+                        <input
+                          type="text"
+                          placeholder="Search database..."
+                          value={serviceSearchQuery}
+                          onChange={(e) => setServiceSearchQuery(e.target.value)}
+                          className={cn(
+                            "w-full pl-8 pr-3 py-1.5 rounded-xl text-[11px] font-semibold border-none outline-none",
+                            isDark ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900 border border-slate-205"
+                          )}
+                        />
+                      </div>
+                    </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">Description of Service</label>
-                    <textarea
-                      placeholder="e.g., High performant commerce pipeline configuration, Stripe backend webhooks integration..."
-                      value={serviceDesc}
-                      onChange={(e) => setServiceDesc(e.target.value)}
-                      className={cn(
-                        "w-full px-5 py-4 border-none rounded-2xl transition-all outline-none placeholder:text-slate-500 text-xs font-semibold h-24",
-                        isDark ? "bg-slate-900/70 text-white" : "bg-slate-100/90 text-slate-900"
-                      )}
-                    />
-                  </div>
+                    <div className="divide-y divide-slate-800/10 text-left">
+                      {servicesSnap?.empty ? (
+                        <div className="p-12 text-center text-slate-500 italic">No services listed yet. Populate automatically with the top-right button.</div>
+                      ) : (() => {
+                        const servicesList = servicesSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)) || [];
+                        const filteredServices = servicesList.filter(svc => {
+                          const sQuery = serviceSearchQuery.toLowerCase();
+                          return svc.name.toLowerCase().includes(sQuery) ||
+                                 (svc.description && svc.description.toLowerCase().includes(sQuery));
+                        });
 
-                  <Button type="submit" className="w-full text-xs font-black uppercase tracking-widest py-4 rounded-2.5xl">
-                    <Check size={14} /> Add Service Offer
-                  </Button>
-                </form>
-              </Card>
-            </div>
+                        if (filteredServices.length === 0) {
+                          return <div className="p-12 text-center text-slate-500 font-bold italic">No services match your search query.</div>;
+                        }
 
-            {/* Service list table right */}
-            <div className="col-span-12 lg:col-span-8">
-              <Card className="p-0 overflow-hidden">
-                <div className="p-6 border-b border-slate-800/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
-                    <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                      <Database size={16} style={{ color: settings.primaryColor }} />
-                      Live Services & Tiers Catalog ({servicesSnap?.size || 0})
-                    </h3>
-                    <p className="text-[10px] text-slate-500 italic mt-1">Manage corporate prices, tier classifiers (High/Low) and keep status variables below.</p>
-                  </div>
-                </div>
+                        return filteredServices.map(svc => {
+                          const isEditingThis = editingServiceId === svc.id;
+                          const isKept = svc.status !== 'Muted';
 
-                <div className="divide-y divide-slate-800/10 text-left">
-                  {servicesSnap?.empty ? (
-                    <div className="p-12 text-center text-slate-500 italic">No services listed yet. Populate automatically with the top-right button.</div>
-                  ) : (
-                    servicesSnap?.docs.map(doc => {
-                      const data = doc.data();
-                      const isEditingThis = editingServiceId === doc.id;
-                      const isKept = data.status !== 'Muted';
-
-                      if (isEditingThis) {
-                        return (
-                          <div key={doc.id} className="p-6 bg-slate-500/5 space-y-4 animate-fade-in text-xs">
-                            <span className="font-extrabold text-[9px] text-[#ec4899] uppercase tracking-widest">Inline IT Service Editor</span>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <Input 
-                                label="Service name"
-                                value={editServiceName}
-                                onChange={(e) => setEditServiceName(e.target.value)}
-                                required
-                              />
-                              <Input 
-                                label={`Price (${currency})`}
-                                type="number"
-                                value={editServicePrice}
-                                onChange={(e) => setEditServicePrice(e.target.value)}
-                                required
-                              />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-1.5 text-left">
-                                <label className="text-[10px] pl-1 font-black uppercase tracking-widest text-slate-500">Price Tier Category</label>
-                                <select
-                                  value={editServicePriceTier}
-                                  onChange={(e) => setEditServicePriceTier(e.target.value as any)}
-                                  className="w-full bg-slate-900 text-white border-none rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none transition-all"
-                                  style={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#e2e8f0', color: isDark ? 'white' : 'black' }}
-                                >
-                                  <option value="High">High Price Tier (Enterprise)</option>
-                                  <option value="Low">Low Price Tier (Standard/Micro)</option>
-                                </select>
+                          if (isEditingThis) {
+                            return (
+                              <div key={svc.id} className="p-6 bg-slate-500/5 space-y-4 animate-fade-in text-xs">
+                                <span className="font-extrabold text-[9px] text-[#ec4899] uppercase tracking-widest">Inline IT Service Editor</span>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <Input 
+                                    label="Service name"
+                                    value={editServiceName}
+                                    onChange={(e) => setEditServiceName(e.target.value)}
+                                    required
+                                  />
+                                  <Input 
+                                    label={`Price (${currency})`}
+                                    type="number"
+                                    value={editServicePrice}
+                                    onChange={(e) => setEditServicePrice(e.target.value)}
+                                    required
+                                  />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="space-y-1.5 text-left">
+                                    <label className="text-[10px] pl-1 font-black uppercase tracking-widest text-slate-500">Price Tier Category</label>
+                                    <select
+                                      value={editServicePriceTier}
+                                      onChange={(e) => setEditServicePriceTier(e.target.value as any)}
+                                      className="w-full bg-slate-900 text-white border-none rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none transition-all"
+                                      style={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#e2e8f0', color: isDark ? 'white' : 'black' }}
+                                    >
+                                      <option value="High">High Price Tier (Enterprise)</option>
+                                      <option value="Low">Low Price Tier (Standard/Micro)</option>
+                                    </select>
+                                  </div>
+                                  <Input 
+                                    label="Short description"
+                                    value={editServiceDesc}
+                                    onChange={(e) => setEditServiceDesc(e.target.value)}
+                                  />
+                                </div>
+                                <div className="flex gap-2 justify-end pt-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingServiceId(null)}
+                                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-300 transition-all cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateService(svc.id)}
+                                    className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white transition-all cursor-pointer"
+                                    style={{ backgroundColor: settings.primaryColor }}
+                                  >
+                                    Save Changes
+                                  </button>
+                                </div>
                               </div>
-                              <Input 
-                                label="Short description"
-                                value={editServiceDesc}
-                                onChange={(e) => setEditServiceDesc(e.target.value)}
-                              />
+                            );
+                          }
+
+                          return (
+                            <div key={svc.id} className={cn(
+                              "p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:bg-slate-50/20 transition-all",
+                              !isKept && "opacity-60 bg-slate-950/20"
+                            )}>
+                              <div className="space-y-2 flex-1 text-left min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h4 className="font-bold text-sm tracking-tight" style={{ color: isDark ? 'white' : 'black' }}>{svc.name}</h4>
+                                  
+                                  <span className={cn(
+                                    "px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-widest border shrink-0",
+                                    (svc.priceTier || 'High') === 'High'
+                                      ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                                      : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                  )}>
+                                    {(svc.priceTier || 'High')} Price Tier
+                                  </span>
+
+                                  <span className={cn(
+                                    "px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-widest border shrink-0",
+                                    isKept
+                                      ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                      : "bg-slate-500/10 text-slate-500 border-slate-500/20"
+                                  )}>
+                                    {isKept ? 'Kept (Active)' : 'Muted (Hidden)'}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-slate-500 leading-relaxed font-semibold italic truncate">{svc.description || 'No description provided.'}</p>
+                              </div>
+
+                              <div className="flex items-center gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
+                                <div className="text-right">
+                                  <p className="text-lg font-mono font-black" style={{ color: settings.primaryColor }}>{currencySymbol}{Number(svc.price).toLocaleString()}</p>
+                                  <p className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Base Package Rate</p>
+                                </div>
+
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => handleToggleServiceStatus(svc.id, svc.status)}
+                                    title={isKept ? "Mute Service (Hide from transaction creation)" : "Keep Service (Show in transaction creation)"}
+                                    className={cn(
+                                      "p-2 rounded-xl border transition-all cursor-pointer text-xs font-extrabold uppercase py-1 px-2.5",
+                                      isKept 
+                                        ? "bg-amber-500/15 border-amber-500/20 text-amber-500 hover:bg-amber-500/25" 
+                                        : "bg-blue-500/15 border-blue-500/20 text-blue-400 hover:bg-blue-500/25"
+                                    )}
+                                  >
+                                    {isKept ? "De-select" : "Keep Offer"}
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      setEditingServiceId(svc.id);
+                                      setEditServiceName(svc.name);
+                                      setEditServicePrice(String(svc.price));
+                                      setEditServiceDesc(svc.description || '');
+                                      setEditServicePriceTier(svc.priceTier || 'High');
+                                    }}
+                                    className="p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-xl transition-all cursor-pointer"
+                                    title="Edit Service details"
+                                  >
+                                    <Edit size={14} />
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`Are you absolutely sure you want to delete this IT service offer entirely from the system database? Any record using this service id will remain as-is.`)) {
+                                        handleDeleteService(svc.id);
+                                      }
+                                    }}
+                                    className="p-2 bg-red-500/10 border border-red-500/20 text-slate-400 hover:text-red-500 rounded-xl transition-all cursor-pointer"
+                                    title="Delete Service record"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex gap-2 justify-end pt-2">
-                              <button
-                                type="button"
-                                onClick={() => setEditingServiceId(null)}
-                                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-300 transition-all cursor-pointer"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateService(doc.id)}
-                                className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white transition-all cursor-pointer"
-                                style={{ backgroundColor: settings.primaryColor }}
-                              >
-                                Save Changes
-                              </button>
-                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </Card>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* EXECUTIVE SERVICE SEARCH & SPECS */}
+                <div className="col-span-12 space-y-6">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/5 dark:bg-slate-950/20 p-6 rounded-3xl border border-slate-800/10">
+                    <div className="text-left">
+                      <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-2" style={{ color: isDark ? 'white' : 'black' }}>
+                        <Database className="text-violet-505 animate-pulse" size={22} style={{ color: settings.primaryColor }} />
+                        Professional IT Services Catalog
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-1 italic font-semibold">
+                        Browse active enterprise Cloud solutions, systems development, and database integrations. Click anywhere on any card to view detailed specifications.
+                      </p>
+                    </div>
+
+                    <div className="relative w-full md:w-80 shrink-0">
+                      <Search className="absolute left-4 top-3.5 w-4 h-4 text-slate-500" />
+                      <input
+                        type="text"
+                        placeholder="Search services, products, or price tiers..."
+                        value={serviceSearchQuery}
+                        onChange={(e) => setServiceSearchQuery(e.target.value)}
+                        className={cn(
+                          "w-full pl-11 pr-4 py-3 rounded-2xl text-xs font-semibold outline-none transition-all border",
+                          isDark 
+                            ? "bg-slate-900 border-slate-800 text-white focus:border-slate-700" 
+                            : "bg-white border-slate-200 text-slate-905 focus:border-slate-300 shadow-sm"
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Pricing grid layout */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {(() => {
+                      const servicesList = servicesSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)) || [];
+                      const filteredServices = servicesList.filter(svc => {
+                        if (svc.status === 'Muted') return false;
+                        const sQuery = serviceSearchQuery.toLowerCase();
+                        return svc.name.toLowerCase().includes(sQuery) ||
+                               (svc.description && svc.description.toLowerCase().includes(sQuery)) ||
+                               (svc.priceTier && svc.priceTier.toLowerCase().includes(sQuery));
+                      });
+
+                      if (filteredServices.length === 0) {
+                        return (
+                          <div className="col-span-12 p-16 text-center text-slate-500 font-bold italic bg-slate-900/5 dark:bg-slate-950/10 rounded-3xl border border-slate-805/5">
+                            No service contracts matched "{serviceSearchQuery}". Try redefining query terms.
                           </div>
                         );
                       }
 
-                      return (
-                        <div key={doc.id} className={cn(
-                          "p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:bg-slate-50/20 transition-all",
-                          !isKept && "opacity-60 bg-slate-950/20"
-                        )}>
-                          <div className="space-y-2 flex-1 text-left min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h4 className="font-bold text-sm tracking-tight" style={{ color: isDark ? 'white' : 'black' }}>{data.name}</h4>
-                              
-                              {/* Price level High or Low badge indicator */}
+                      return filteredServices.map(svc => (
+                        <div
+                          key={svc.id}
+                          onClick={() => {
+                            setSelectedServiceDetails(svc);
+                            toast.success(`Retrieved specifications details for ${svc.name}`);
+                          }}
+                          className={cn(
+                            "p-6 rounded-3xl border cursor-pointer select-none text-left flex flex-col justify-between h-56 transition-all hover:-translate-y-1 shadow-sm hover:shadow-xl relative overflow-hidden group",
+                            isDark 
+                              ? "bg-slate-900/40 hover:bg-slate-900/70 border-slate-800/80 hover:border-slate-700" 
+                              : "bg-white hover:bg-slate-50/50 border-slate-200 hover:border-slate-300"
+                          )}
+                        >
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-start gap-2">
                               <span className={cn(
-                                "px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-widest border shrink-0",
-                                (data.priceTier || 'High') === 'High'
+                                "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border",
+                                (svc.priceTier || 'High') === 'High'
                                   ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
                                   : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                               )}>
-                                {(data.priceTier || 'High')} Price Tier
+                                {(svc.priceTier || 'High')} Tier
                               </span>
 
-                              {/* Keep Status Badge */}
-                              <span className={cn(
-                                "px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-widest border shrink-0",
-                                isKept
-                                  ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                                  : "bg-slate-500/10 text-slate-500 border-slate-500/20"
-                              )}>
-                                {isKept ? 'Kept (Active)' : 'Muted (Hidden)'}
+                              <span className="text-[8px] font-black uppercase text-violet-500 tracking-wider bg-violet-50/10 dark:bg-violet-500/5 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                View Specs
                               </span>
                             </div>
-                            <p className="text-xs text-slate-500 leading-relaxed font-semibold italic truncate">{data.description || 'No description provided.'}</p>
+
+                            <h3 className="font-extrabold text-sm line-clamp-2 tracking-tight group-hover:text-white transition-colors" style={{ color: isDark ? 'white' : 'black' }}>
+                              {svc.name}
+                            </h3>
+                            <p className="text-[11px] text-slate-500 font-medium line-clamp-3 leading-relaxed italic">
+                              {svc.description || 'No custom specifications document details compiled.'}
+                            </p>
                           </div>
 
-                          <div className="flex items-center gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
-                            <div className="text-right">
-                              <p className="text-lg font-mono font-black" style={{ color: settings.primaryColor }}>{currencySymbol}{Number(data.price).toLocaleString()}</p>
-                              <p className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Base Package Rate</p>
+                          <div className="border-t border-slate-800/10 dark:border-slate-800/30 pt-4 flex justify-between items-center mt-3">
+                            <div>
+                              <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">Base Contract Offer</span>
+                              <span className="text-lg font-black block mt-0.5" style={{ color: settings.primaryColor }}>
+                                {currencySymbol}{Number(svc.price).toLocaleString()}
+                              </span>
                             </div>
-
-                            <div className="flex items-center gap-1.5">
-                              {/* Keep/Mute variable switch toggle button */}
-                              <button
-                                onClick={() => handleToggleServiceStatus(doc.id, data.status)}
-                                title={isKept ? "Mute Service (Hide from transaction creation)" : "Keep Service (Show in transaction creation)"}
-                                className={cn(
-                                  "p-2 rounded-xl border transition-all cursor-pointer text-xs font-extrabold uppercase py-1 px-2.5",
-                                  isKept 
-                                    ? "bg-amber-500/15 border-amber-500/20 text-amber-500 hover:bg-amber-500/25" 
-                                    : "bg-blue-500/15 border-blue-500/20 text-blue-400 hover:bg-blue-500/25"
-                                )}
-                              >
-                                {isKept ? "De-select" : "Keep Offer"}
-                              </button>
-
-                              {/* Edit Button */}
-                              <button
-                                onClick={() => {
-                                  setEditingServiceId(doc.id);
-                                  setEditServiceName(data.name);
-                                  setEditServicePrice(String(data.price));
-                                  setEditServiceDesc(data.description || '');
-                                  setEditServicePriceTier(data.priceTier || 'High');
-                                }}
-                                className="p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-xl transition-all cursor-pointer"
-                                title="Edit Service details"
-                              >
-                                <Edit size={14} />
-                              </button>
-
-                              {/* Delete Service */}
-                              <button
-                                onClick={() => {
-                                  if (confirm(`Are you absolutely sure you want to delete this IT service offer entirely from the system database? Any record using this service id will remain as-is.`)) {
-                                    handleDeleteService(doc.id);
-                                  }
-                                }}
-                                className="p-2 bg-red-500/10 border border-red-500/20 text-slate-400 hover:text-red-500 rounded-xl transition-all cursor-pointer"
-                                title="Delete Service record"
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                            <div 
+                              className="w-8 h-8 rounded-xl flex items-center justify-center text-white scale-90 group-hover:scale-100 transition-all shadow-md shrink-0"
+                              style={{ backgroundColor: settings.primaryColor }}
+                            >
+                              <ChevronRight size={16} />
                             </div>
                           </div>
                         </div>
-                      );
-                    })
-                  )}
+                      ));
+                    })()}
+                  </div>
                 </div>
-              </Card>
-            </div>
+              </>
+            )}
+
+            {/* DETAILS SERVICE SPECIFICATIONS MODAL DIALOG */}
+            {selectedServiceDetails && (
+              <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+                <div
+                  className={cn(
+                    "w-full max-w-lg rounded-3xl p-8 border text-left shadow-2xl relative space-y-6 animate-scale-up",
+                    isDark ? "bg-[#0c0f1d] border-slate-800" : "bg-white border-slate-100 shadow-xl"
+                  )}
+                >
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="space-y-1">
+                      <span className={cn(
+                        "px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest border block w-fit",
+                        (selectedServiceDetails.priceTier || 'High') === 'High'
+                          ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                          : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                      )}>
+                        {(selectedServiceDetails.priceTier || 'High')} Price Tier
+                      </span>
+                      <h3 className="text-lg font-black tracking-tight mt-2.5" style={{ color: isDark ? 'white' : 'black' }}>
+                        {selectedServiceDetails.name}
+                      </h3>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedServiceDetails(null)}
+                      className="p-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+                    >
+                      ✕ Close
+                    </button>
+                  </div>
+
+                  <hr className="border-slate-800/10" />
+
+                  <div className="space-y-4">
+                    <div>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block">SLA Rate Package</span>
+                      <span className="text-2xl font-mono font-black mt-1 block" style={{ color: settings.primaryColor }}>
+                        {currencySymbol}{Number(selectedServiceDetails.price).toLocaleString()} <span className="text-xs text-slate-500 font-sans font-bold uppercase tracking-wider">Base Rate</span>
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block">Scope of Service</span>
+                      <p className="text-xs leading-relaxed font-semibold italic mt-1.5" style={{ color: isDark ? '#cbd5e1' : '#475569' }}>
+                        {selectedServiceDetails.description || 'No detailed specifications have been compiled for this contract package.'}
+                      </p>
+                    </div>
+
+                    <div className={cn(
+                      "p-4 border rounded-2xl text-[10.5px] leading-relaxed font-semibold space-y-1.5",
+                      isDark ? "bg-slate-950/40 border-slate-800/10 text-slate-400" : "bg-slate-50 border-slate-200/50 text-slate-600"
+                    )}>
+                      <p className="font-extrabold uppercase tracking-wider text-[8px]" style={{ color: settings.primaryColor }}>Contractual SLA Specifications Included:</p>
+                      <ul className="list-disc pl-4 space-y-1">
+                        <li>Standard 30-day dynamic sandbox support logs</li>
+                        <li>High performance API nodes optimization integration</li>
+                        <li>Applied direct sales credited commission and deal tracking</li>
+                        <li>Full secure compliance on customer data registries</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => setSelectedServiceDetails(null)}
+                      className="flex-1 py-3.5 rounded-2xl text-[10px] bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-white font-black uppercase tracking-wider border border-slate-800 transition-all cursor-pointer text-center"
+                    >
+                      Done Browsing
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
 

@@ -6,28 +6,31 @@
     try {
       const desc = Object.getOwnPropertyDescriptor(obj, 'fetch');
       if (desc && !desc.configurable) {
-        // If it exists but is already locked, we shouldn't attempt to re-define
         return;
       }
 
       let originalFetch: any = undefined;
-      try {
-        if (desc && desc.get) {
-          // Avoid calling desc.get with Window.prototype as 'this' context as it triggers Illegal invocation
-          if (obj !== Window.prototype) {
-            originalFetch = desc.get.call(obj);
-          }
-        } else if (desc) {
-          originalFetch = desc.value;
+      if (desc && desc.get) {
+        try {
+          originalFetch = desc.get.call(obj);
+        } catch (_) {
+          originalFetch = (typeof window !== 'undefined' ? window.fetch : undefined) || 
+                          (typeof globalThis !== 'undefined' ? globalThis.fetch : undefined);
         }
-      } catch (err) {
-        // Ignore evaluation errors
+      } else if (desc) {
+        originalFetch = desc.value;
+      } else {
+        try {
+          originalFetch = obj.fetch;
+        } catch (_) {
+          originalFetch = (typeof window !== 'undefined' ? window.fetch : undefined) || 
+                          (typeof globalThis !== 'undefined' ? globalThis.fetch : undefined);
+        }
       }
 
       if (!originalFetch) {
-        originalFetch = obj.fetch || 
-          (typeof window !== 'undefined' ? window.fetch : undefined) || 
-          (typeof globalThis !== 'undefined' ? globalThis.fetch : undefined);
+        originalFetch = (typeof window !== 'undefined' ? window.fetch : undefined) || 
+                        (typeof globalThis !== 'undefined' ? globalThis.fetch : undefined);
       }
 
       let storedFetch = originalFetch;
@@ -39,7 +42,7 @@
           storedFetch = newVal;
         },
         configurable: true,
-        enumerable: desc ? desc.enumerable !== false : true
+        enumerable: true
       });
     } catch (e) {
       // ignore
@@ -56,34 +59,31 @@
     // ignore
   }
 
+  // Intercept HTMLIFrameElement.prototype.contentWindow directly so that ANY iframe's content window
+  // gets its fetch property automatically patched when accessed. This avoids using a Proxy,
+  // preventing any native Javascript Proxy target invariant TypeErrors from being thrown.
   try {
-    const originalCreateElement = document.createElement;
-    document.createElement = function(tagName: string, options?: ElementCreationOptions): HTMLElement {
-      const element = originalCreateElement.call(this, tagName, options);
-      if (tagName && tagName.toLowerCase() === 'iframe') {
-        const descriptor = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'contentWindow');
-        Object.defineProperty(element, 'contentWindow', {
-          get() {
-            const win = (descriptor && descriptor.get) ? descriptor.get.call(this) : (element as any).contentWindow;
-            if (win && !win.__fetch_patched__) {
-              try {
-                win.__fetch_patched__ = true;
-                makeFetchWritable(win);
-                if (win.Window && win.Window.prototype) {
-                  makeFetchWritable(win.Window.prototype);
-                }
-              } catch (err) {
-                // ignore
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'contentWindow');
+    if (descriptor && descriptor.get) {
+      Object.defineProperty(HTMLIFrameElement.prototype, 'contentWindow', {
+        get() {
+          const win = descriptor.get.call(this);
+          if (win) {
+            try {
+              makeFetchWritable(win);
+              if (win.Window && win.Window.prototype) {
+                makeFetchWritable(win.Window.prototype);
               }
+            } catch (err) {
+              // ignore
             }
-            return win;
-          },
-          configurable: true,
-          enumerable: true
-        });
-      }
-      return element;
-    } as any;
+          }
+          return win;
+        },
+        configurable: true,
+        enumerable: true
+      });
+    }
   } catch (e) {
     // ignore
   }

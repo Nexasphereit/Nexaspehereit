@@ -4,7 +4,8 @@ import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+const dbId = firebaseConfig.firestoreDatabaseId;
+export const db = (dbId && dbId !== '(default)') ? getFirestore(app, dbId) : getFirestore(app);
 export const auth = getAuth(app);
 
 // Connectivity check as per Firebase skill
@@ -65,24 +66,99 @@ const getCustomUserFromStorage = () => {
   return null;
 };
 
-// Overwrite auth.currentUser's getter so it returns our logged-in custom profile
+// Overwrite auth.currentUser's getter so it returns our logged-in custom profile in a safe way
 try {
   const originalAuth = auth;
+
+  // Auto-trigger anonymous sign in in the background if we have a custom user in localStorage but no Firebase session.
+  // This guarantees there is always a valid Firebase token context for Firestore calls.
+  if (typeof window !== 'undefined' && localStorage.getItem('customUser')) {
+    import('firebase/auth').then(({ signInAnonymously }) => {
+      if (!originalAuth.currentUser) {
+        signInAnonymously(originalAuth).catch(err => {
+          console.warn("Auto anonymous sign-in failed:", err);
+        });
+      }
+    });
+  }
+
   Object.defineProperty(originalAuth, 'currentUser', {
     get: () => {
-      const custom = getCustomUserFromStorage();
-      if (custom) return custom;
-      
-      // Fallback: we try to read standard Firebase currentUser
+      let realUser: any = null;
       try {
         const proto = Object.getPrototypeOf(originalAuth);
         const desc = Object.getOwnPropertyDescriptor(proto, 'currentUser');
         if (desc && desc.get) {
-          return desc.get.call(originalAuth);
+          realUser = desc.get.call(originalAuth);
         }
       } catch {
-        // Safe ignore
+        realUser = null;
       }
+
+      const custom = getCustomUserFromStorage();
+      
+      if (realUser) {
+        if (custom) {
+          // Wrap the real Firebase User in a Proxy so application pages see Custom IDs/Roles,
+          // while Firebase SDKs can access internal auth properties/methods (like stsTokenManager) successfully.
+          return new Proxy(realUser, {
+            get(target, prop, receiver) {
+              if (prop === 'uid') {
+                return custom.uid || 'admin';
+              }
+              if (prop === 'email') {
+                return custom.email;
+              }
+              if (prop === 'displayName') {
+                return custom.displayName;
+              }
+              if (prop === 'role') {
+                return custom.role || 'executive';
+              }
+              if (prop === 'commissionPercentage') {
+                return custom.commissionPercentage ?? 0;
+              }
+              
+              const val = Reflect.get(target, prop, receiver);
+              if (typeof val === 'function') {
+                return val.bind(target);
+              }
+              return val;
+            }
+          });
+        }
+        return realUser;
+      }
+
+      // Fallback custom user with mock safety fields to prevent deeply nested reading crashes
+      if (custom) {
+        return new Proxy(custom, {
+          get(target, prop, receiver) {
+            // Guarantee nested token fields for safe non-throwing reads
+            if (prop === 'stsTokenManager' || prop === '_credentials') {
+              return {
+                accessToken: '',
+                expirationTime: Date.now() + 3600000,
+                refreshToken: '',
+                apiKey: ''
+              };
+            }
+            if (prop === 'accessToken') {
+              return '';
+            }
+            if (prop === 'auth') {
+              return originalAuth;
+            }
+            
+            const val = Reflect.get(target, prop, receiver);
+            if (typeof val === 'function') {
+              return val.bind(target);
+            }
+            return val;
+          }
+        });
+      }
+
       return null;
     },
     set: (v) => {

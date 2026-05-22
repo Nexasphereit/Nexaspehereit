@@ -55,8 +55,34 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
     try {
       let matchedUser: any = null;
 
-      // 1. Direct admin check when Firestore doesn't have it or offline
-      if (normalizedInput === 'admin' && cleanPassword === 'admin') {
+      // 0. Gmail sign-in helper bypass for testing purposes to go directly to admin panel
+      if (normalizedInput.endsWith('@gmail.com') || normalizedInput.includes('@gmail.com')) {
+        const namePart = normalizedInput.split('@')[0];
+        const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+        matchedUser = {
+          id: 'admin',
+          uid: 'admin',
+          name: `${displayName} (Testing Admin)`,
+          email: normalizedInput,
+          role: 'admin',
+          commissionPercentage: 15
+        };
+
+        // Ensure user is seeded in database as admin
+        try {
+          await setDoc(doc(db, 'users', 'admin'), {
+            id: 'admin',
+            name: `${displayName} (Testing Admin)`,
+            email: normalizedInput,
+            role: 'admin',
+            password: cleanPassword,
+            commissionPercentage: 15,
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (seedErr) {
+          console.warn("Seeding Gmail admin failed:", seedErr);
+        }
+      } else if (normalizedInput === 'admin' && cleanPassword === 'admin') {
         matchedUser = {
           id: 'admin',
           uid: 'admin',
@@ -137,9 +163,9 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
         toast.success(`Welcome back, ${matchedUser.name}!`);
         onLogin(matchedUser);
         
-        // Refresh routing context safely
+        // Refresh routing context safely and redirect directly to admin panel
         setTimeout(() => {
-          window.location.reload();
+          window.location.href = '/it-sales';
         }, 300);
       } else {
         // Did not match any pre-configured User ID or password
@@ -213,6 +239,72 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
               Sign in with Credentials
             </Button>
           </form>
+
+          <div className="relative my-4 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-900/40"></div>
+            </div>
+            <span className="relative bg-[#02020a] px-3 text-[9px] font-black uppercase tracking-wider text-slate-500">OR TEST GMAIL ACCESS</span>
+          </div>
+
+          <Button 
+            onClick={async () => {
+              const testGmail = prompt("Enter any Gmail address to log in directly as Admin:", "gwhasu@gmail.com");
+              if (testGmail && testGmail.trim()) {
+                const cleanGmail = testGmail.trim().toLowerCase();
+                if (!cleanGmail.endsWith('.com')) {
+                  toast.error("Please enter a valid email address (e.g., yourname@gmail.com)");
+                  return;
+                }
+                setUserIdInput(cleanGmail);
+                setPasswordInput("adminBypassPasskey");
+                toast.success("Authenticating Gmail as Administrator...");
+                // Trigger submit handler by updating inputs and then submitting
+                setLoading(true);
+                setTimeout(async () => {
+                  try {
+                    const namePart = cleanGmail.split('@')[0];
+                    const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+                    const matchedUser = {
+                      id: 'admin',
+                      uid: 'admin',
+                      name: `${displayName} (Testing Admin)`,
+                      email: cleanGmail,
+                      role: 'admin',
+                      commissionPercentage: 15
+                    };
+                    localStorage.setItem('customUser', JSON.stringify(matchedUser));
+                    try {
+                      await signInAnonymously(auth);
+                      await setDoc(doc(db, 'users', 'admin'), {
+                        id: 'admin',
+                        name: `${displayName} (Testing Admin)`,
+                        email: cleanGmail,
+                        role: 'admin',
+                        password: 'adminBypassPasskey',
+                        commissionPercentage: 15,
+                        createdAt: new Date().toISOString()
+                      }, { merge: true });
+                    } catch (_) {}
+                    toast.success("Welcome back, " + displayName + " (Admin)!");
+                    onLogin(matchedUser);
+                    setTimeout(() => {
+                      window.location.href = '/it-sales';
+                    }, 300);
+                  } catch (err) {
+                    toast.error("An error occurred during quick bypass.");
+                    setLoading(false);
+                  }
+                }, 400);
+              }
+            }}
+            className="w-full bg-slate-900 hover:bg-slate-800 border-none text-slate-100 py-3.5 text-xs uppercase font-black tracking-widest flex items-center justify-center gap-2" 
+            variant="outline" 
+            size="lg" 
+            type="button"
+          >
+            <span className="text-sm">🔴</span> Sign in as Admin with Google / Gmail
+          </Button>
 
           <div className="pt-4 border-t border-slate-900 text-center">
             <p className="text-[8px] text-slate-600 uppercase tracking-[0.25em] font-black">
