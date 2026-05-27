@@ -85,6 +85,32 @@ export default function Dashboard() {
 
   const hasResults = filteredTools.length > 0 || filteredDocs.length > 0;
 
+  // Cinematic staggered container variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.05
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.97 },
+    show: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 90,
+        damping: 15
+      }
+    }
+  };
+
   return (
     <div className="space-y-8 pb-10">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -219,14 +245,20 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="grid grid-cols-12 gap-6 items-stretch">
+      {/* Cinematic stagger fade-in container */}
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-12 gap-6 items-stretch"
+      >
         {/* Main Hero Card: Quotation */}
         <motion.div
-           initial={{ opacity: 0, scale: 0.95 }}
-           animate={{ opacity: 1, scale: 1 }}
+           variants={itemVariants}
+           whileHover={{ y: -6, scale: 1.005, transition: { duration: 0.2, ease: "easeOut" } }}
            className={cn(
-             "col-span-12 lg:col-span-8 rounded-3xl border shadow-2xl p-8 flex flex-col justify-between group h-full relative overflow-hidden transition-all duration-300 backdrop-blur-xl",
-             isDark ? "bg-slate-950/35 border-white/10 shadow-black/30" : "bg-white border-slate-200"
+             "col-span-12 lg:col-span-8 rounded-[2rem] border shadow-2xl p-8 flex flex-col justify-between group h-full relative overflow-hidden backdrop-blur-xl transition-all duration-300",
+             isDark ? "bg-slate-950/45 border-white/[0.08] shadow-black/40 hover:border-white/20" : "bg-white border-slate-200/80 hover:border-slate-300 shadow-slate-100"
            )}
         >
           <div 
@@ -235,8 +267,9 @@ export default function Dashboard() {
           />
           <div className="relative z-10">
             <div className="flex justify-between items-start">
-              <div 
-                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform shadow-lg"
+              <motion.div 
+                whileHover={{ rotate: [0, -5, 5, 0], scale: 1.05 }}
+                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-8 shadow-lg cursor-pointer"
                 style={{ 
                   backgroundColor: `${settings.primaryColor}15`, 
                   color: settings.primaryColor,
@@ -244,7 +277,7 @@ export default function Dashboard() {
                 }}
               >
                 <FileText size={28} />
-              </div>
+              </motion.div>
               <span 
                 className="text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border"
                 style={{ 
@@ -259,14 +292,14 @@ export default function Dashboard() {
             <h2 className={cn("text-4xl font-black mb-4 tracking-tighter italic uppercase", isDark ? "text-white" : "text-slate-900")}>
               QUOTATION <span style={{ color: settings.primaryColor }}>GENERATOR</span>
             </h2>
-            <p className="text-slate-500 max-w-md leading-relaxed font-medium italic">Create premium, high-converting PDF quotations for your IT clients. Features automated calculations and branding.</p>
+            <p className="text-slate-500 max-w-md leading-relaxed font-semibold italic">Create premium, high-converting PDF quotations for your IT clients. Features automated calculations and branding.</p>
           </div>
           
           <div className="flex items-center justify-between mt-12 relative z-10">
             <div className="flex -space-x-3">
               {[1, 2, 3, 4].map(i => (
                 <div key={i} className={cn(
-                  "w-10 h-10 rounded-full border-4 flex items-center justify-center text-xs font-black",
+                  "w-10 h-10 rounded-full border-4 flex items-center justify-center text-xs font-black transition-all duration-300 hover:scale-110 cursor-alias hover:z-20",
                   isDark ? "border-slate-900" : "border-white",
                   i === 1 && "text-white",
                   i === 4 && (isDark ? "bg-black text-white" : "bg-slate-900 text-white"),
@@ -278,8 +311,10 @@ export default function Dashboard() {
               ))}
             </div>
             <Link to="/quotations">
-              <button 
-                className="text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all active:scale-95 flex items-center gap-3 hover:brightness-110 shadow-2xl"
+              <motion.button 
+                whileHover={{ scale: 1.04, brightness: 1.15 }}
+                whileTap={{ scale: 0.96 }}
+                className="text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center gap-3 shadow-2xl cursor-pointer"
                 style={{ 
                   backgroundColor: settings.primaryColor,
                   boxShadow: `0 12px 24px -10px ${settings.primaryColor}`
@@ -287,16 +322,20 @@ export default function Dashboard() {
               >
                 Create Quotation
                 <ArrowRight size={18} />
-              </button>
+              </motion.button>
             </Link>
           </div>
         </motion.div>
 
         {/* Quick Stats Card */}
-        <div className={cn(
-          "col-span-12 lg:col-span-4 rounded-3xl p-8 flex flex-col justify-between min-h-[300px] h-full relative overflow-hidden transition-all duration-300 shadow-2xl backdrop-blur-xl",
-          isDark ? "bg-slate-950/35 border border-white/10 shadow-black/30 text-white" : "bg-black text-white shadow-black/10"
-        )}>
+        <motion.div 
+          variants={itemVariants}
+          whileHover={{ y: -6, scale: 1.005, transition: { duration: 0.2, ease: "easeOut" } }}
+          className={cn(
+            "col-span-12 lg:col-span-4 rounded-[2rem] p-8 flex flex-col justify-between min-h-[300px] h-full relative overflow-hidden transition-all duration-300 shadow-2xl backdrop-blur-xl border",
+            isDark ? "bg-slate-950/45 border-white/[0.08] hover:border-white/20 shadow-black/40 text-white" : "bg-slate-950 border-slate-800 text-white shadow-black/10"
+          )}
+        >
           <div 
             className="absolute bottom-0 right-0 w-32 h-32 rounded-full -mr-16 -mb-16 blur-3xl opacity-30" 
             style={{ backgroundColor: settings.primaryColor }}
@@ -312,26 +351,28 @@ export default function Dashboard() {
             ></div>
           </div>
           <div className="relative z-10">
-            <div className="text-7xl font-black mb-3 tracking-tighter italic text-white">{totalDocs}</div>
+            <div className="text-7xl font-black mb-1.5 tracking-tighter italic text-white">{totalDocs}</div>
             <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] ml-1">Documents Generated</p>
           </div>
           <div className="space-y-4 relative z-10">
              <div className={cn("h-1.5 w-full rounded-full overflow-hidden", isDark ? "bg-slate-900" : "bg-slate-800")}>
-                <div 
-                  className="h-full transition-all duration-1000" 
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min(totalDocs * 5, 100)}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  className="h-full" 
                   style={{ 
-                    width: `${Math.min(totalDocs * 5, 100)}%`, 
                     backgroundColor: settings.primaryColor,
                     boxShadow: `0 0 10px ${settings.primaryColor}aa`
                   }}
-                ></div>
+                />
              </div>
              <div className="flex justify-between items-center">
                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">Growth Engine</p>
                <p className="text-[10px] font-black" style={{ color: settings.primaryColor }}>+14.2%</p>
              </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Tools Section */}
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -340,77 +381,90 @@ export default function Dashboard() {
              { title: 'Resume Creator', icon: <UserCircle size={22} />, path: '/cvs', desc: 'Professional CV Design' },
              { title: 'Money Receipt', icon: <ReceiptIcon size={22} />, path: '/receipts', desc: 'Payment Invoicing' }
            ].map((tool, i) => (
-             <Link key={i} to={tool.path} className="flex flex-col group">
-               <motion.div 
-                 whileHover={{ y: -5 }}
-                 className={cn(
-                   "p-8 rounded-[2.5rem] border transition-all flex flex-col gap-5 flex-1 relative overflow-hidden",
-                   isDark ? "bg-slate-950/35 border-white/10 hover:bg-white/[0.06] hover:border-white/20 hover:shadow-indigo-500/5 shadow-2xl backdrop-blur-xl" : "bg-white border-slate-200 hover:shadow-2xl hover:shadow-black/5"
-                 )}
-               >
-                 <div className="flex items-center justify-between relative z-10">
-                    <div 
-                      className="p-4 rounded-2xl transition-transform group-hover:scale-110" 
-                      style={{ backgroundColor: 'var(--primary-brand-soft)', color: settings.primaryColor }}
-                    >
-                      {tool.icon}
-                    </div>
-                    <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center border transition-colors",
-                      isDark ? "border-slate-800 group-hover:bg-white group-hover:text-black" : "border-slate-100 group-hover:bg-black group-hover:text-white"
-                    )}>
-                      <ArrowRight size={18} />
-                    </div>
-                 </div>
-                 <div className="relative z-10">
-                   <h3 className={cn("text-xl font-black uppercase tracking-tight italic", isDark ? "text-white" : "text-slate-900")}>{tool.title}</h3>
-                   <p className="text-sm text-slate-500 font-medium italic mt-1">{tool.desc}</p>
-                 </div>
-                 
-                 {/* Decor */}
-                 <div className={cn(
-                   "absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 opacity-30 transition-colors",
-                   isDark ? "bg-white/5" : "bg-slate-50"
-                 )} />
-               </motion.div>
-             </Link>
+             <motion.div 
+               key={i}
+               variants={itemVariants}
+               className="flex flex-col h-full"
+             >
+               <Link to={tool.path} className="flex flex-col h-full group">
+                 <motion.div 
+                   whileHover={{ y: -8, scale: 1.015, transition: { duration: 0.25, ease: "easeOut" } }}
+                   whileTap={{ scale: 0.98 }}
+                   className={cn(
+                     "p-8 rounded-[2rem] border transition-all flex flex-col gap-6 flex-1 relative overflow-hidden",
+                     isDark 
+                       ? "bg-slate-950/45 border-white/[0.08] hover:bg-white/[0.06] hover:border-white/20 hover:shadow-indigo-500/5 shadow-2xl backdrop-blur-xl" 
+                       : "bg-white border-slate-200 hover:shadow-2xl hover:border-slate-300 hover:shadow-black/5"
+                   )}
+                 >
+                   <div className="flex items-center justify-between relative z-10">
+                      <div 
+                        className="p-4 rounded-2xl transition-all duration-300 group-hover:scale-105 group-hover:rotate-3 shadow-md" 
+                        style={{ backgroundColor: `${settings.primaryColor}15`, color: settings.primaryColor }}
+                      >
+                        {tool.icon}
+                      </div>
+                      <div className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center border transition-colors duration-300",
+                        isDark ? "border-slate-850 group-hover:bg-white group-hover:text-black" : "border-slate-100 group-hover:bg-black group-hover:text-white"
+                      )}>
+                        <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
+                      </div>
+                   </div>
+                   <div className="relative z-10 mt-2">
+                     <h3 className={cn("text-xl font-black uppercase tracking-tight italic", isDark ? "text-white" : "text-slate-900")}>{tool.title}</h3>
+                     <p className="text-sm text-slate-500 font-semibold italic mt-1">{tool.desc}</p>
+                   </div>
+                   
+                   {/* Decor */}
+                   <div className={cn(
+                     "absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 opacity-30 transition-colors",
+                     isDark ? "bg-white/5" : "bg-slate-50"
+                   )} />
+                 </motion.div>
+               </Link>
+             </motion.div>
            ))}
         </div>
 
         {/* Pro Tip Card */}
-        <div 
-          className="col-span-12 border rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 group"
+        <motion.div 
+          variants={itemVariants}
+          className="col-span-12 border rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 group relative overflow-hidden"
           style={{ 
             backgroundColor: `${settings.primaryColor}05`,
             borderColor: `${settings.primaryColor}15`
           }}
         >
-          <div className="flex items-center gap-6">
-            <div 
+          <div className="flex items-center gap-6 relative z-10">
+            <motion.div 
+              whileHover={{ rotate: 180, transition: { duration: 0.8 } }}
               className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg"
               style={{ backgroundColor: settings.primaryColor }}
             >
-              <SettingsIcon size={24} className="group-hover:rotate-90 transition-transform duration-500" />
-            </div>
+              <SettingsIcon size={24} />
+            </motion.div>
             <div>
               <p className={cn("font-black uppercase italic", isDark ? "text-white" : "text-slate-900")}>PRO TIP: PERSONALIZATION</p>
-              <p className="text-sm text-slate-500 font-medium italic">Head over to Settings to change your application font and primary theme color!</p>
+              <p className="text-sm text-slate-500 font-semibold italic">Head over to Settings to change your application font and primary theme color!</p>
             </div>
           </div>
-          <Link to="/settings" className="w-full md:w-auto">
-            <button 
-              className="w-full md:w-auto px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all border group-hover:shadow-md"
+          <Link to="/settings" className="w-full md:w-auto relative z-10">
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-full md:w-auto px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all border cursor-pointer hover:shadow-md"
               style={{ 
                 color: settings.primaryColor, 
                 borderColor: `${settings.primaryColor}33`,
-                backgroundColor: isDark ? '#1e293b' : 'white'
+                backgroundColor: isDark ? '#111222' : 'white'
               }}
             >
               Configure Now
-            </button>
+            </motion.button>
           </Link>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
