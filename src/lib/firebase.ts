@@ -133,6 +133,9 @@ try {
               if (prop === 'commissionPercentage') {
                 return custom.commissionPercentage ?? 0;
               }
+              if (prop === 'auth') {
+                return undefined; // Break circular auth reference for external serializers/traversers
+              }
               
               const val = (target as any)[prop];
               if (typeof val === 'function') {
@@ -164,7 +167,7 @@ try {
               return undefined;
             }
             if (prop === 'auth') {
-              return originalAuth;
+              return undefined; // Break circular auth reference for external serializers/traversers
             }
             
             const val = (target as any)[prop];
