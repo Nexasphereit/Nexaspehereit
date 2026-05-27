@@ -125,10 +125,11 @@ export default function ITSalesDashboard() {
   const activeDbError = servicesError || customersError || transactionsError || usersError;
 
   // --- Local Setup & Active Modals State ---
-  const [activeSubTab, setActiveSubTab] = useState<'sales' | 'services' | 'customers' | 'commissions' | 'users'>('sales');
+  const [activeSubTab, setActiveSubTab] = useState<'sales' | 'services' | 'customers' | 'commissions' | 'users' | null>(null);
   
   // Customer Search
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [selectedCustomerIdForDetails, setSelectedCustomerIdForDetails] = useState<string | null>(null);
 
   // New Transaction Form state
@@ -139,6 +140,15 @@ export default function ITSalesDashboard() {
   const [txPhoneSearch, setTxPhoneSearch] = useState('');
   const [txServiceId, setTxServiceId] = useState('');
   const [txQuantity, setTxQuantity] = useState(1);
+  const [txPrice, setTxPrice] = useState('0');
+  const [txItems, setTxItems] = useState<{
+    id: string;
+    serviceId: string;
+    serviceName: string;
+    price: number;
+    quantity: number;
+    totalAmount: number;
+  }[]>([]);
   const [txDate, setTxDate] = useState('2026-05-20');
   const [txExecutiveId, setTxExecutiveId] = useState(''); // defaults to current logged-in user
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
@@ -167,15 +177,15 @@ export default function ITSalesDashboard() {
   // New Service Form state
   const [serviceName, setServiceName] = useState('');
   const [servicePrice, setServicePrice] = useState('');
+  const [serviceQuantity, setServiceQuantity] = useState('1');
   const [serviceDesc, setServiceDesc] = useState('');
-  const [servicePriceTier, setServicePriceTier] = useState<'High' | 'Low'>('High');
 
   // Service Edit Mode states
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [editServiceName, setEditServiceName] = useState('');
   const [editServicePrice, setEditServicePrice] = useState('');
+  const [editServiceQuantity, setEditServiceQuantity] = useState('1');
   const [editServiceDesc, setEditServiceDesc] = useState('');
-  const [editServicePriceTier, setEditServicePriceTier] = useState<'High' | 'Low'>('High');
 
   // Quick User Registration states
   const [quickUserId, setQuickUserId] = useState('');
@@ -264,8 +274,10 @@ export default function ITSalesDashboard() {
       if (existingServices.empty) {
         for (const service of PRESEEDED_SERVICES) {
           await addDoc(collection(db, 'services'), {
-            ...service,
-            priceTier: service.price > 3000 ? 'High' : 'Low',
+            name: service.name,
+            price: service.price,
+            quantity: 1,
+            description: service.description,
             status: 'Kept',
             createdAt: new Date().toISOString()
           });
@@ -373,21 +385,27 @@ export default function ITSalesDashboard() {
       return;
     }
 
+    const qtyNum = parseInt(serviceQuantity, 10);
+    if (isNaN(qtyNum) || qtyNum < 1) {
+      toast.error('Please enter a valid service quantity');
+      return;
+    }
+
     const loadingToast = toast.loading('Adding secure IT service offering...');
     try {
       await addDoc(collection(db, 'services'), {
         name: serviceName,
         price: priceNum,
+        quantity: qtyNum,
         description: serviceDesc,
-        priceTier: servicePriceTier,
         status: 'Kept',
         createdAt: new Date().toISOString()
       });
       toast.success('New Corporate Service registered!', { id: loadingToast });
       setServiceName('');
       setServicePrice('');
+      setServiceQuantity('1');
       setServiceDesc('');
-      setServicePriceTier('High');
     } catch (err: any) {
       const errorMessage = err?.message || err?.code || String(err);
       toast.error(`Error recording service details: ${errorMessage}`, { id: loadingToast });
@@ -401,6 +419,11 @@ export default function ITSalesDashboard() {
       toast.error('Please enter a valid price amount');
       return;
     }
+    const qtyNum = parseInt(editServiceQuantity, 10);
+    if (isNaN(qtyNum) || qtyNum < 1) {
+      toast.error('Please enter a valid service quantity');
+      return;
+    }
     if (!editServiceName.trim()) {
       toast.error('Service Name is required');
       return;
@@ -411,8 +434,8 @@ export default function ITSalesDashboard() {
       await updateDoc(doc(db, 'services', serviceId), {
         name: editServiceName.trim(),
         price: priceNum,
+        quantity: qtyNum,
         description: editServiceDesc.trim(),
-        priceTier: editServicePriceTier,
         updatedAt: new Date().toISOString()
       });
       toast.success('Service updated successfully!', { id: loadingToast });
@@ -483,16 +506,17 @@ export default function ITSalesDashboard() {
       finalCustPhone = chosenCust.data().phone;
     }
 
-    // Load Service Specific Base unit cost
-    const serviceDoc = servicesSnap?.docs.find(s => s.id === txServiceId);
-    if (!serviceDoc) {
-      toast.error('Please choose a valid IT service catalog option.');
+    // Load Services configured in the items list
+    if (txItems.length === 0) {
+      toast.error('Please configure the scope by adding at least one IT corporate service offering.');
       return;
     }
-    const sData = serviceDoc.data();
-    const serviceName = sData.name;
-    const price = Number(sData.price);
-    const totalAmount = price * txQuantity;
+
+    const firstItem = txItems[0];
+    const totalAmount = txItems.reduce((acc, item) => acc + item.totalAmount, 0);
+    const totalQuantity = txItems.reduce((acc, item) => acc + item.quantity, 0);
+    const serviceName = txItems.map(item => `${item.serviceName} (x${item.quantity})`).join(', ');
+    const price = firstItem ? firstItem.price : 0;
 
     let currentExecId = loggedInUser.id;
     let currentExecName = loggedInUser.name;
@@ -534,11 +558,18 @@ export default function ITSalesDashboard() {
       customerId: targetCustomerId,
       customerName: finalCustName,
       customerPhone: finalCustPhone,
-      serviceId: txServiceId,
+      serviceId: firstItem?.serviceId || '',
       serviceName,
       price,
-      quantity: txQuantity,
+      quantity: totalQuantity,
       totalAmount,
+      items: txItems.map(it => ({
+        serviceId: it.serviceId,
+        serviceName: it.serviceName,
+        price: it.price,
+        quantity: it.quantity,
+        totalAmount: it.totalAmount
+      })),
       executiveId: currentExecId,
       executiveName: currentExecName,
       commissionPercentage,
@@ -558,6 +589,8 @@ export default function ITSalesDashboard() {
       // Reset Transaction Form Fields
       setTxServiceId('');
       setTxQuantity(1);
+      setTxPrice('0');
+      setTxItems([]);
       setTxCustomerName('');
       setTxCustomerPhone('');
       setTxCustomerId('');
@@ -606,6 +639,18 @@ export default function ITSalesDashboard() {
     }
     if (filterEndDate && item.date && item.date > filterEndDate) {
       return false;
+    }
+    // 3. Global search query filtering
+    if (globalSearchQuery.trim()) {
+      const gQuery = globalSearchQuery.toLowerCase();
+      const match = 
+        (item.serviceName && item.serviceName.toLowerCase().includes(gQuery)) ||
+        (item.executiveName && item.executiveName.toLowerCase().includes(gQuery)) ||
+        (item.customerName && item.customerName.toLowerCase().includes(gQuery)) ||
+        (item.id && item.id.toLowerCase().includes(gQuery)) ||
+        (item.date && item.date.includes(gQuery)) ||
+        String(item.totalAmount).includes(gQuery);
+      if (!match) return false;
     }
     return true;
   });
@@ -823,6 +868,20 @@ export default function ITSalesDashboard() {
     }
   };
 
+  const handleUpdateUserProperties = async (uId: string, updatedFields: any) => {
+    const loading = toast.loading(`Updating credentials profile...`);
+    try {
+      await updateDoc(doc(db, 'users', uId), {
+        ...updatedFields,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success('Credentials profile updated successfully!', { id: loading });
+    } catch (err) {
+      toast.error('Could not complete credentials update.', { id: loading });
+      handleFirestoreError(err, OperationType.UPDATE, `users/${uId}`);
+    }
+  };
+
   const handleDeleteUser = async (uId: string) => {
     const loading = toast.loading('Deleting staff profile...');
     try {
@@ -884,8 +943,15 @@ export default function ITSalesDashboard() {
   // Filter Customer list based on search bar and dues filter modes
   const searchedCustomers = customerList.filter(cust => {
     // 1. Search Query Match
-    const queryStr = customerSearchQuery.toLowerCase();
-    const matchesSearch = cust.name.toLowerCase().includes(queryStr) || cust.phone.includes(queryStr);
+    const queryStr = (customerSearchQuery || globalSearchQuery).toLowerCase();
+    const matchesSearch = 
+      cust.name.toLowerCase().includes(queryStr) || 
+      cust.phone.includes(queryStr) ||
+      cust.status.toLowerCase().includes(queryStr) ||
+      cust.history.some(tx => 
+        (tx.serviceName && tx.serviceName.toLowerCase().includes(queryStr)) ||
+        (tx.executiveName && tx.executiveName.toLowerCase().includes(queryStr))
+      );
     if (!matchesSearch) return false;
 
     // 2. Dues Section Constraint
@@ -1095,6 +1161,50 @@ export default function ITSalesDashboard() {
     }
   };
 
+  // --- Global Omni Search Matches compiler ---
+  const getGlobalSearchMatches = () => {
+    if (!globalSearchQuery.trim()) return null;
+    const queryStr = globalSearchQuery.trim().toLowerCase();
+
+    // 1. Matching Services
+    const matchingServicesList = (servicesSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)) || []).filter(srv => 
+      (srv.name && srv.name.toLowerCase().includes(queryStr)) ||
+      (srv.description && srv.description.toLowerCase().includes(queryStr))
+    );
+
+    // 2. Matching Customers
+    const matchingCustomersList = customerList.filter(cust => 
+      cust.name.toLowerCase().includes(queryStr) ||
+      cust.phone.toLowerCase().includes(queryStr)
+    );
+
+    // 3. Matching Staff/Users
+    const matchingUsersList = (usersSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)) || []).filter(u => 
+      (u.name && u.name.toLowerCase().includes(queryStr)) ||
+      (u.id && u.id.toLowerCase().includes(queryStr)) ||
+      (u.email && u.email.toLowerCase().includes(queryStr))
+    );
+
+    // 4. Matching Transactions / Deals
+    const matchingTransactionsList = rawTransactions.filter(tx => 
+      (tx.serviceName && tx.serviceName.toLowerCase().includes(queryStr)) ||
+      (tx.executiveName && tx.executiveName.toLowerCase().includes(queryStr)) ||
+      (tx.customerName && tx.customerName.toLowerCase().includes(queryStr)) ||
+      (tx.id && tx.id.toLowerCase().includes(queryStr)) ||
+      (tx.date && tx.date.includes(queryStr))
+    );
+
+    return {
+      services: matchingServicesList,
+      customers: matchingCustomersList,
+      users: matchingUsersList,
+      transactions: matchingTransactionsList,
+      totalMatches: matchingServicesList.length + matchingCustomersList.length + matchingUsersList.length + matchingTransactionsList.length
+    };
+  };
+
+  const omniMatches = getGlobalSearchMatches();
+
   return (
     <div className="space-y-8 pb-20">
       
@@ -1134,6 +1244,31 @@ export default function ITSalesDashboard() {
         {/* Dynamic Sandbox Role Engine to showcase Role Based Access Controls */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto relative z-10">
           
+          {/* Omni Search Bar */}
+          <div className="relative shrink-0 w-full sm:w-auto">
+            <Search className="absolute left-3.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search anything..."
+              value={globalSearchQuery}
+              onChange={(e) => setGlobalSearchQuery(e.target.value)}
+              className={cn(
+                "pl-10 pr-8 py-2 rounded-2xl text-[10px] font-bold w-full sm:w-48 outline-none border transition-all shadow-inner",
+                isDark 
+                  ? "bg-slate-900 border-white/5 text-slate-200 focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/20" 
+                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-rose-400 focus:ring-1 focus:ring-rose-400/20"
+              )}
+            />
+            {globalSearchQuery && (
+              <button 
+                onClick={() => setGlobalSearchQuery('')}
+                className="absolute right-2.5 top-1 text-slate-400 hover:text-rose-520 text-base font-black font-sans cursor-pointer focus:outline-none"
+              >
+                ×
+              </button>
+            )}
+          </div>
+
           {/* Dynamic Interactive Currency Switcher */}
           <div className={cn(
             "p-1.5 rounded-2xl border flex items-center gap-1.5",
@@ -1224,6 +1359,215 @@ export default function ITSalesDashboard() {
           </div>
         </div>
       </header>
+
+      {/* GLOBAL OMNI-SEARCH RESULTS PANEL */}
+      {omniMatches && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "p-6 rounded-[2rem] border space-y-4 relative overflow-hidden shadow-xl text-left",
+            isDark ? "bg-[#0b0c16]/85 border-rose-500/20 backdrop-blur-xl" : "bg-white border-rose-300 shadow-rose-100"
+          )}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-800/10 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2.5 w-2.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+              </span>
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-rose-500">Omni-Search Engine Matrix (সার্বজনীন সার্চ ফলাফল)</h3>
+                <p className="text-[10px] text-slate-500 font-bold italic">Matches found for keyword: "{globalSearchQuery}"</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400 font-mono">
+                {omniMatches.totalMatches} Universal Matches
+              </span>
+              <button
+                onClick={() => setGlobalSearchQuery('')}
+                className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white transition-all cursor-pointer focus:outline-none"
+              >
+                Clear Search
+              </button>
+            </div>
+          </div>
+
+          {omniMatches.totalMatches === 0 ? (
+            <div className="py-6 text-center text-slate-500 font-bold italic text-xs">
+              No services, customers, deals, or staff credentials match "{globalSearchQuery}". Try another keyword!
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-xs">
+              {/* CATEGORY 1: MATCHING DEALS/TRANSACTIONS */}
+              <div className="space-y-2">
+                <h4 className="font-black uppercase text-[10px] text-slate-500 flex items-center justify-between border-b border-slate-800/10 pb-1">
+                  <span>Transactions ({omniMatches.transactions.length})</span>
+                  <span className="font-mono text-[9px] text-slate-400">DEALS</span>
+                </h4>
+                {omniMatches.transactions.length === 0 ? (
+                  <p className="text-[10px] italic text-slate-500">No matching deals</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                    {omniMatches.transactions.slice(0, 5).map(tx => (
+                      <div 
+                        key={tx.id} 
+                        onClick={() => {
+                          setActiveSubTab('commissions');
+                          toast.success(`Redirected to Commission ledger matching transaction ${tx.id.substring(0,8).toUpperCase()}`);
+                        }}
+                        className={cn(
+                          "p-2 rounded-xl border text-[10px] hover:scale-[1.01] transition-all cursor-pointer",
+                          isDark ? "bg-slate-900/40 border-white/5 hover:bg-slate-850" : "bg-slate-100/50 border-slate-200 hover:bg-slate-100"
+                        )}
+                      >
+                        <div className="flex justify-between items-start font-bold">
+                          <span className="truncate max-w-[120px]" style={{ color: isDark ? '#cbd5e1' : '#1e293b' }}>{tx.serviceName}</span>
+                          <span className="text-rose-500 font-mono font-black">{currencySymbol}{tx.totalAmount?.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-[8px] text-slate-500 mt-1">
+                          <span>Client: {tx.customerName}</span>
+                          <span className="font-mono">{tx.date}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {omniMatches.transactions.length > 5 && (
+                      <p className="text-[8px] text-center text-slate-500 italic mt-1 font-bold">+{omniMatches.transactions.length - 5} more transactions</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* CATEGORY 2: MATCHING CUSTOMERS */}
+              <div className="space-y-2">
+                <h4 className="font-black uppercase text-[10px] text-slate-500 flex items-center justify-between border-b border-slate-800/10 pb-1">
+                  <span>Customers ({omniMatches.customers.length})</span>
+                  <span className="font-mono text-[9px] text-slate-400">CRM</span>
+                </h4>
+                {omniMatches.customers.length === 0 ? (
+                  <p className="text-[10px] italic text-slate-500">No matching profiles</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                    {omniMatches.customers.slice(0, 5).map(cust => (
+                      <div 
+                        key={cust.id} 
+                        onClick={() => {
+                          setActiveSubTab('customers');
+                          setSelectedCustomerIdForDetails(cust.id);
+                          toast.success(`Redirected to Customer details for ${cust.name}`);
+                        }}
+                        className={cn(
+                          "p-2 rounded-xl border text-[10px] hover:scale-[1.01] transition-all cursor-pointer",
+                          isDark ? "bg-slate-900/40 border-white/5 hover:bg-slate-850" : "bg-slate-100/50 border-slate-200 hover:bg-slate-100"
+                        )}
+                      >
+                        <div className="font-bold flex justify-between items-center">
+                          <span className="truncate max-w-[120px]" style={{ color: isDark ? '#cbd5e1' : '#1e293b' }}>{cust.name}</span>
+                          <span className={cn(
+                            "px-1.5 py-0.2 rounded text-[7px] font-black uppercase tracking-wider",
+                            cust.status === 'Due' ? "bg-rose-500/10 text-rose-500" : "bg-emerald-500/10 text-emerald-500"
+                          )}>{cust.status}</span>
+                        </div>
+                        <p className="text-[8.5px] text-slate-500 font-mono mt-1">{cust.phone}</p>
+                      </div>
+                    ))}
+                    {omniMatches.customers.length > 5 && (
+                      <p className="text-[8px] text-center text-slate-500 italic mt-1 font-bold">+{omniMatches.customers.length - 5} more profiles</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* CATEGORY 3: MATCHING SERVICES */}
+              <div className="space-y-2">
+                <h4 className="font-black uppercase text-[10px] text-slate-500 flex items-center justify-between border-b border-slate-800/10 pb-1">
+                  <span>Services ({omniMatches.services.length})</span>
+                  <span className="font-mono text-[9px] text-slate-400">CATALOG</span>
+                </h4>
+                {omniMatches.services.length === 0 ? (
+                  <p className="text-[10px] italic text-slate-500">No matching contracts</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                    {omniMatches.services.slice(0, 5).map(srv => {
+                      const desc = srv.description || srv.desc || '';
+                      return (
+                        <div 
+                          key={srv.id} 
+                          onClick={() => {
+                            setActiveSubTab('services');
+                            setSelectedServiceDetails(srv);
+                            toast.success(`Viewing service package ${srv.name}`);
+                          }}
+                          className={cn(
+                            "p-2 rounded-xl border text-[10px] hover:scale-[1.01] transition-all cursor-pointer",
+                            isDark ? "bg-slate-900/40 border-white/5 hover:bg-slate-850" : "bg-slate-100/50 border-slate-200 hover:bg-slate-100"
+                          )}
+                        >
+                          <div className="font-bold flex justify-between items-center">
+                            <span className="truncate max-w-[120px]" style={{ color: isDark ? '#cbd5e1' : '#1e293b' }}>{srv.name}</span>
+                            <span className="text-violet-500 font-mono font-black">{currencySymbol}{srv.price?.toLocaleString()}</span>
+                          </div>
+                          {desc && (
+                            <p className="text-[8px] text-slate-500 italic mt-1 truncate max-w-[180px]">{desc}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {omniMatches.services.length > 5 && (
+                      <p className="text-[8px] text-center text-slate-500 italic mt-1 font-bold">+{omniMatches.services.length - 5} more services</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* CATEGORY 4: MATCHING STAFF & LOGIN CREDENTIALS */}
+              <div className="space-y-2">
+                <h4 className="font-black uppercase text-[10px] text-slate-500 flex items-center justify-between border-b border-slate-800/10 pb-1">
+                  <span>Sales Reps ({omniMatches.users.length})</span>
+                  <span className="font-mono text-[9px] text-slate-400">PEOPLE</span>
+                </h4>
+                {omniMatches.users.length === 0 ? (
+                  <p className="text-[10px] italic text-slate-500">No matching team members</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                    {omniMatches.users.slice(0, 5).map(u => (
+                      <div 
+                        key={u.id} 
+                        onClick={() => {
+                          if (isUserAdmin) {
+                            setActiveSubTab('users');
+                            toast.success(`Active staff list opened on ${u.name}`);
+                          } else {
+                            toast.error('Only Administrators can view staff registrations');
+                          }
+                        }}
+                        className={cn(
+                          "p-2 rounded-xl border text-[10px] hover:scale-[1.01] transition-all cursor-pointer",
+                          isDark ? "bg-slate-900/40 border-white/5 hover:bg-slate-850" : "bg-slate-100/50 border-slate-200 hover:bg-slate-100"
+                        )}
+                      >
+                        <div className="font-bold flex justify-between items-center">
+                          <span className="truncate max-w-[120px]" style={{ color: isDark ? '#cbd5e1' : '#1e293b' }}>{u.name}</span>
+                          <span className="px-1.5 py-0.2 rounded text-[7px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                            {u.role || 'executive'}
+                          </span>
+                        </div>
+                        <p className="text-[8.5px] text-slate-500 font-mono mt-1">{u.email}</p>
+                      </div>
+                    ))}
+                    {omniMatches.users.length > 5 && (
+                      <p className="text-[8px] text-center text-slate-500 italic mt-1 font-bold">+{omniMatches.users.length - 5} more staff</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* NEW SECTION: ACTIVE USER CREDENTIALS SWAPPER, PASSKEY DIRECTORY, & QUICK REGISTRY */}
       <section className={cn(
@@ -1624,79 +1968,340 @@ export default function ITSalesDashboard() {
         </motion.div>
       )}
 
-      {/* SUB-TAB NAVIGATOR FOR SECTIONS */}
-      <div className="flex flex-wrap border-b border-slate-800/40 pb-px gap-y-2">
-        <button
-          onClick={() => setActiveSubTab('sales')}
-          className={cn(
-            "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all cursor-pointer",
-            activeSubTab === 'sales' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
+      {/* COMPACT ENTERPRISE PACKAGE DECK & MENU CONSOLE */}
+      <div className={cn(
+        "rounded-[2.5rem] p-6 border shadow-2xl relative overflow-hidden transition-all text-left",
+        isDark ? "bg-[#0b0c16]/30 border-white/5" : "bg-white border-slate-200 shadow-sm"
+      )}>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-slate-800/20 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                NexaSphere Workspace Services
+              </span>
+            </div>
+            <h2 className={cn("text-base font-black tracking-tight uppercase mt-1", isDark ? "text-slate-200" : "text-slate-850")}>
+              💼 IT Sales Control Console (সার্ভিসেস ও অপশন ডেস্ক)
+            </h2>
+            <p className="text-slate-500 text-[10.5px] mt-0.5">
+              Click any package card below to instantly display its management database, clicking it again will collapse (turn off) the view.
+            </p>
+          </div>
+          {activeSubTab && (
+            <button
+              onClick={() => {
+                setActiveSubTab(null);
+                toast.success('Workspace collapsed successfully!');
+              }}
+              className="px-3 py-1.5 rounded-xl bg-red-600/10 hover:bg-red-600/20 text-red-500 text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-1.5 border border-red-500/20"
+            >
+              <X size={11} /> Turn Off Active View
+            </button>
           )}
-          style={activeSubTab === 'sales' ? { color: settings.primaryColor } : {}}
-        >
-          Sales & Purchases Ledger
-          {activeSubTab === 'sales' && (
-            <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveSubTab('services')}
-          className={cn(
-            "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all cursor-pointer",
-            activeSubTab === 'services' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
-          )}
-          style={activeSubTab === 'services' ? { color: settings.primaryColor } : {}}
-        >
-          {isUserAdmin ? "🛡️ Manage Services Database" : "🔍 Browse IT Services Catalog"}
-          {activeSubTab === 'services' && (
-            <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveSubTab('customers')}
-          className={cn(
-            "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all cursor-pointer",
-            activeSubTab === 'customers' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
-          )}
-          style={activeSubTab === 'customers' ? { color: settings.primaryColor } : {}}
-        >
-          CRM & Customer History
-          {activeSubTab === 'customers' && (
-            <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveSubTab('commissions')}
-          className={cn(
-            "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all cursor-pointer",
-            activeSubTab === 'commissions' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
-          )}
-          style={activeSubTab === 'commissions' ? { color: settings.primaryColor } : {}}
-        >
-          📊 Commission Dashboard
-          {activeSubTab === 'commissions' && (
-            <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
-          )}
-        </button>
-        {isUserAdmin && (
-          <button
-            onClick={() => setActiveSubTab('users')}
+        </div>
+
+        {/* Small Package App Icons Grid - Highly polished, responsive Launchpad Menu */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4 lg:gap-5">
+          
+          {/* PACKAGE 1: SALES MODULE */}
+          <motion.div
+            whileHover={{ y: -4, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              if (activeSubTab === 'sales') {
+                setActiveSubTab(null);
+                toast.success('Sales Ledger collapsed.');
+              } else {
+                setActiveSubTab('sales');
+                toast.success('Opened Sales & Purchases Ledger!');
+              }
+            }}
             className={cn(
-              "px-6 py-4 font-black uppercase text-[11px] tracking-widest relative transition-all cursor-pointer",
-              activeSubTab === 'users' ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
+              "p-4 rounded-[2rem] border transition-all text-center cursor-pointer flex flex-col items-center justify-between min-h-[130px] md:min-h-[140px] relative overflow-hidden group select-none hover:shadow-xl backdrop-blur-md",
+              activeSubTab === 'sales'
+                ? "bg-indigo-500/10 border-indigo-500 shadow-xl ring-2 ring-indigo-500/20 font-bold"
+                : isDark 
+                  ? "bg-slate-900/40 border-white/5 hover:bg-slate-800/60" 
+                  : "bg-slate-50 border-slate-200 hover:bg-slate-100"
             )}
-            style={activeSubTab === 'users' ? { color: settings.primaryColor } : {}}
           >
-            🔑 Passkeys & Ratios
-            {activeSubTab === 'users' && (
-              <motion.div layoutId="it-active-line" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: settings.primaryColor }} />
+            <div 
+              className="p-3.5 rounded-2xl mb-2.5 shrink-0 transition-all group-hover:scale-110 shadow-md"
+              style={{ 
+                backgroundColor: activeSubTab === 'sales' ? `${settings.primaryColor}25` : isDark ? '#1e293b' : '#fff',
+                color: activeSubTab === 'sales' ? settings.primaryColor : '#8e9bb0',
+                border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+              }}
+            >
+              <ShoppingBag size={22} />
+            </div>
+            <div className="text-center w-full">
+              <p className={cn("text-[11px] font-black uppercase tracking-wider leading-none", (activeSubTab === 'sales' ? "text-slate-100 font-extrabold" : isDark ? "text-slate-300" : "text-slate-850"))} style={activeSubTab === 'sales' ? { color: settings.primaryColor } : {}}>
+                Sales Ledger
+              </p>
+              <p className="text-[9.5px] text-slate-500 font-bold mt-1.5 font-sans leading-none">
+                সেলস ও খতিয়ান
+              </p>
+            </div>
+            
+            <div className="absolute top-2.5 right-2.5">
+              <span className={cn(
+                "w-2.5 h-2.5 rounded-full block border shadow-sm",
+                activeSubTab === 'sales' 
+                  ? "bg-emerald-400 border-emerald-300/40 animate-pulse" 
+                  : "bg-slate-600 border-slate-500/30"
+              )} />
+            </div>
+          </motion.div>
+
+          {/* PACKAGE 2: SERVICES CATALOGUE */}
+          <motion.div
+            whileHover={{ y: -4, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              if (activeSubTab === 'services') {
+                setActiveSubTab(null);
+                toast.success('Services Catalog collapsed.');
+              } else {
+                setActiveSubTab('services');
+                toast.success('Opened Service Catalog Repository!');
+              }
+            }}
+            className={cn(
+              "p-4 rounded-[2rem] border transition-all text-center cursor-pointer flex flex-col items-center justify-between min-h-[130px] md:min-h-[140px] relative overflow-hidden group select-none hover:shadow-xl backdrop-blur-md",
+              activeSubTab === 'services'
+                ? "bg-indigo-500/10 border-indigo-500 shadow-xl ring-2 ring-indigo-500/20 font-bold"
+                : isDark 
+                  ? "bg-slate-900/40 border-white/5 hover:bg-slate-800/60" 
+                  : "bg-slate-50 border-slate-200 hover:bg-slate-100"
             )}
-          </button>
-        )}
+          >
+            <div 
+              className="p-3.5 rounded-2xl mb-2.5 shrink-0 transition-all group-hover:scale-110 shadow-md"
+              style={{ 
+                backgroundColor: activeSubTab === 'services' ? `${settings.primaryColor}25` : isDark ? '#1e293b' : '#fff',
+                color: activeSubTab === 'services' ? settings.primaryColor : '#8e9bb0',
+                border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+              }}
+            >
+              <Database size={22} />
+            </div>
+            <div className="text-center w-full">
+              <p className={cn("text-[11px] font-black uppercase tracking-wider leading-none", (activeSubTab === 'services' ? "text-slate-100 font-extrabold" : isDark ? "text-slate-300" : "text-slate-850"))} style={activeSubTab === 'services' ? { color: settings.primaryColor } : {}}>
+                IT Services
+              </p>
+              <p className="text-[9.5px] text-slate-500 font-bold mt-1.5 font-sans leading-none">
+                সার্ভিসেস ক্যাটালগ
+              </p>
+            </div>
+            
+            <div className="absolute top-2.5 right-2.5">
+              <span className={cn(
+                "w-2.5 h-2.5 rounded-full block border shadow-sm",
+                activeSubTab === 'services' 
+                  ? "bg-emerald-400 border-emerald-300/40 animate-pulse" 
+                  : "bg-slate-600 border-slate-500/30"
+              )} />
+            </div>
+          </motion.div>
+
+          {/* PACKAGE 3: CRM DECK */}
+          <motion.div
+            whileHover={{ y: -4, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              if (activeSubTab === 'customers') {
+                setActiveSubTab(null);
+                toast.success('CRM Desk collapsed.');
+              } else {
+                setActiveSubTab('customers');
+                toast.success('Opened Client CRM Registry!');
+              }
+            }}
+            className={cn(
+              "p-4 rounded-[2rem] border transition-all text-center cursor-pointer flex flex-col items-center justify-between min-h-[130px] md:min-h-[140px] relative overflow-hidden group select-none hover:shadow-xl backdrop-blur-md",
+              activeSubTab === 'customers'
+                ? "bg-indigo-500/10 border-indigo-500 shadow-xl ring-2 ring-indigo-500/20 font-bold"
+                : isDark 
+                  ? "bg-slate-900/40 border-white/5 hover:bg-slate-800/60" 
+                  : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+            )}
+          >
+            <div 
+              className="p-3.5 rounded-2xl mb-2.5 shrink-0 transition-all group-hover:scale-110 shadow-md"
+              style={{ 
+                backgroundColor: activeSubTab === 'customers' ? `${settings.primaryColor}25` : isDark ? '#1e293b' : '#fff',
+                color: activeSubTab === 'customers' ? settings.primaryColor : '#8e9bb0',
+                border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+              }}
+            >
+              <Users size={22} />
+            </div>
+            <div className="text-center w-full">
+              <p className={cn("text-[11px] font-black uppercase tracking-wider leading-none", (activeSubTab === 'customers' ? "text-slate-100 font-extrabold" : isDark ? "text-slate-300" : "text-slate-850"))} style={activeSubTab === 'customers' ? { color: settings.primaryColor } : {}}>
+                CRM Contacts
+              </p>
+              <p className="text-[9.5px] text-slate-500 font-bold mt-1.5 font-sans leading-none">
+                ক্লায়েন্ট ডাটাবেজ
+              </p>
+            </div>
+            
+            <div className="absolute top-2.5 right-2.5">
+              <span className={cn(
+                "w-2.5 h-2.5 rounded-full block border shadow-sm",
+                activeSubTab === 'customers' 
+                  ? "bg-emerald-400 border-emerald-300/40 animate-pulse" 
+                  : "bg-slate-600 border-slate-500/30"
+              )} />
+            </div>
+          </motion.div>
+
+          {/* PACKAGE 4: COMMISSIONS REPORT */}
+          <motion.div
+            whileHover={{ y: -4, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              if (activeSubTab === 'commissions') {
+                setActiveSubTab(null);
+                toast.success('Commissions Panel collapsed.');
+              } else {
+                setActiveSubTab('commissions');
+                toast.success('Opened Commissions & Sales Target Analytics!');
+              }
+            }}
+            className={cn(
+              "p-4 rounded-[2rem] border transition-all text-center cursor-pointer flex flex-col items-center justify-between min-h-[130px] md:min-h-[140px] relative overflow-hidden group select-none hover:shadow-xl backdrop-blur-md",
+              activeSubTab === 'commissions'
+                ? "bg-indigo-500/10 border-indigo-500 shadow-xl ring-2 ring-indigo-500/20 font-bold"
+                : isDark 
+                  ? "bg-slate-900/40 border-white/5 hover:bg-slate-800/60" 
+                  : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+            )}
+          >
+            <div 
+              className="p-3.5 rounded-2xl mb-2.5 shrink-0 transition-all group-hover:scale-110 shadow-md"
+              style={{ 
+                backgroundColor: activeSubTab === 'commissions' ? `${settings.primaryColor}25` : isDark ? '#1e293b' : '#fff',
+                color: activeSubTab === 'commissions' ? settings.primaryColor : '#8e9bb0',
+                border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+              }}
+            >
+              <TrendingUp size={22} />
+            </div>
+            <div className="text-center w-full">
+              <p className={cn("text-[11px] font-black uppercase tracking-wider leading-none", (activeSubTab === 'commissions' ? "text-white font-extrabold" : isDark ? "text-slate-300" : "text-slate-850"))} style={activeSubTab === 'commissions' ? { color: settings.primaryColor } : {}}>
+                Commissions
+              </p>
+              <p className="text-[9.5px] text-slate-500 font-bold mt-1.5 font-sans leading-none">
+                টিম লভ্যাংশ ও কাজ
+              </p>
+            </div>
+            
+            <div className="absolute top-2.5 right-2.5">
+              <span className={cn(
+                "w-2.5 h-2.5 rounded-full block border shadow-sm",
+                activeSubTab === 'commissions' 
+                  ? "bg-emerald-400 border-emerald-300/40 animate-pulse" 
+                  : "bg-slate-600 border-slate-500/30"
+              )} />
+            </div>
+          </motion.div>
+
+          {/* PACKAGE 5: PASSKEYS ACCESS & PROFILES MODULE (ADMIN GUARDED) */}
+          {isUserAdmin ? (
+            <motion.div
+              whileHover={{ y: -4, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                if (activeSubTab === 'users') {
+                  setActiveSubTab(null);
+                  toast.success('Staff profiles collapsed.');
+                } else {
+                  setActiveSubTab('users');
+                  toast.success('Opened Passkeys & Executive Management Module!');
+                }
+              }}
+              className={cn(
+                "p-4 rounded-[2rem] border transition-all text-center cursor-pointer flex flex-col items-center justify-between min-h-[130px] md:min-h-[140px] relative overflow-hidden group select-none hover:shadow-xl backdrop-blur-md",
+                activeSubTab === 'users'
+                  ? "bg-indigo-500/10 border-indigo-500 shadow-xl ring-2 ring-indigo-500/20 font-bold"
+                  : isDark 
+                    ? "bg-slate-900/40 border-white/5 hover:bg-slate-800/60" 
+                    : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+              )}
+            >
+              <div 
+                className="p-3.5 rounded-2xl mb-2.5 shrink-0 transition-all group-hover:scale-110 shadow-md"
+                style={{ 
+                  backgroundColor: activeSubTab === 'users' ? `${settings.primaryColor}25` : isDark ? '#1e293b' : '#fff',
+                  color: activeSubTab === 'users' ? settings.primaryColor : '#8e9bb0',
+                  border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+                }}
+              >
+                <UserCheck size={22} />
+              </div>
+              <div className="text-center w-full">
+                <p className={cn("text-[11px] font-black uppercase tracking-wider leading-none", (activeSubTab === 'users' ? "text-white font-extrabold" : isDark ? "text-slate-300" : "text-slate-850"))} style={activeSubTab === 'users' ? { color: settings.primaryColor } : {}}>
+                  Passkeys & Team
+                </p>
+                <p className="text-[9.5px] text-slate-500 font-bold mt-1.5 font-sans leading-none">
+                  কী'স ও একাউন্ট রেশিও
+                </p>
+              </div>
+              
+              <div className="absolute top-2.5 right-2.5">
+                <span className={cn(
+                  "w-2.5 h-2.5 rounded-full block border shadow-sm",
+                  activeSubTab === 'users' 
+                    ? "bg-emerald-400 border-emerald-300/40 animate-pulse" 
+                    : "bg-slate-600 border-slate-500/30"
+                )} />
+              </div>
+            </motion.div>
+          ) : (
+            <div className={cn(
+              "p-4 rounded-[2rem] border transition-all text-center opacity-40 select-none flex flex-col items-center justify-center min-h-[130px] md:min-h-[140px] relative overflow-hidden backdrop-blur-md",
+              isDark ? "bg-slate-950/25 border-white/5 text-slate-600" : "bg-slate-150 border-slate-200 text-slate-400"
+            )}>
+              <ShieldAlert size={22} className="mb-2 text-slate-550" />
+              <p className="text-[10px] font-black uppercase tracking-tight leading-none text-slate-500">Security Gate</p>
+              <p className="text-[9px] italic mt-1 pl-1 text-slate-500">Admin Only Access</p>
+            </div>
+          )}
+
+        </div>
       </div>
       
       {/* SECTION CONTENT SWITCHING */}
       <div className="grid grid-cols-12 gap-8 items-start">
+        
+        {/* LANDING INSTRUCTIONAL COMPACT GUIDE WHEN EVERYTHING IS COLLAPSED */}
+        {activeSubTab === null && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={cn(
+              "col-span-12 p-12 text-center rounded-[2.5rem] border border-dashed flex flex-col items-center justify-center gap-4 transition-all duration-300",
+              isDark ? "border-slate-800 bg-slate-900/10" : "border-slate-200 bg-slate-50"
+            )}
+          >
+            <div className="w-16 h-16 rounded-3xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+              <FolderTree size={24} className="animate-pulse" />
+            </div>
+            <div className="max-w-md">
+              <h3 className={cn("text-xs font-black uppercase tracking-widest text-[#ec4899]")}>
+                Corporate System Standby
+              </h3>
+              <p className={cn("text-base font-black tracking-tight uppercase mt-1", isDark ? "text-slate-100" : "text-slate-800")}>
+                কোনো মডিউল কন্সোল সিলেক্ট করা নেই
+              </p>
+              <p className="text-slate-500 text-xs mt-2.5 font-medium italic">
+                উপরের <strong className="text-slate-400 font-bold">কন্ট্রোল ডেক</strong> প্যানেল থেকে আপনার প্রয়োজনীয় মডিউলে (যেমন: লেজার হিসাব, সার্ভিস তালিকা, ইত্যাদি) ক্লিক করুন। ক্লিক করলে বিস্তারিত ডাটাবেজ কন্সোল সামনে ওপেন হবে এবং পুনরায় সেখানে ক্লিক করলে বা 'Turn Off' করলে মডিউল গুটিয়ে অফ হয়ে যাবে।
+              </p>
+            </div>
+          </motion.div>
+        )}
         
         {/* TAB 1: SALES AND PURCHASES ENGINE */}
         {activeSubTab === 'sales' && (
@@ -2193,41 +2798,234 @@ export default function ITSalesDashboard() {
                     )}
                   </div>
 
-                  {/* Service options from DB */}
-                  <div className="space-y-1.5 text-left">
-                    <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">IT Service Required</label>
-                    <select
-                      value={txServiceId}
-                      onChange={(e) => setTxServiceId(e.target.value)}
-                      required
-                      className={cn(
-                        "w-full px-5 py-3.5 border-none rounded-2xl transition-all outline-none text-xs font-semibold appearance-none",
-                        isDark ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900"
-                      )}
-                    >
-                      <option value="">-- Select Corporate Package --</option>
-                      {servicesSnap?.docs
-                        .filter(doc => doc.data().status !== 'Muted')
-                        .map(doc => {
-                          const data = doc.data();
-                          return (
-                            <option key={doc.id} value={doc.id}>
-                              [{data.priceTier || 'High'} Price] {data.name} - {currencySymbol}{Number(data.price || 0).toLocaleString()}
-                            </option>
-                          );
-                        })}
-                    </select>
-                    <span className="text-[8.5px] text-slate-500 pl-1 block">Only active (kept) services from the catalog are displayed here.</span>
+                  {/* INTERACTIVE MULTIPLE IT SERVICES BUILDER DESIGN */}
+                  <div className="p-4 rounded-2xl bg-slate-900/5 dark:bg-slate-950/40 border border-slate-805/10 dark:border-white/5 space-y-4 text-left">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-800/10 dark:border-white/5">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[#ec4899] block" style={{ color: settings.primaryColor }}>
+                        IT Services & Custom Scope Configurator
+                      </span>
+                      <span className="text-[9px] font-mono p-1 rounded bg-slate-500/10 text-slate-400 font-extrabold uppercase">
+                        {txItems.length} Added
+                      </span>
+                    </div>
+
+                    {/* Simple dynamic select + price value + quantity form to add packages */}
+                    <div className="space-y-3 p-3.5 rounded-xl border border-dashed border-slate-805/30 bg-slate-50/50 dark:bg-slate-950/60">
+                      <div className="space-y-1">
+                        <label className="text-[8.5px] font-black uppercase tracking-wider text-slate-400 block pl-1">Choose Service Offering</label>
+                        <select
+                          value={txServiceId}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setTxServiceId(val);
+                            const orig = servicesSnap?.docs.find(s => s.id === val);
+                            if (orig) {
+                              setTxPrice(String(orig.data().price || 0));
+                            } else {
+                              setTxPrice('0');
+                            }
+                          }}
+                          className={cn(
+                            "w-full px-3 py-2 rounded-xl text-xs font-semibold outline-none",
+                            isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900 border border-slate-200"
+                          )}
+                        >
+                          <option value="">-- Click to select a package --</option>
+                          {servicesSnap?.docs
+                            .filter(doc => doc.data().status !== 'Muted')
+                            .map(doc => {
+                              const d = doc.data();
+                              return (
+                                <option key={doc.id} value={doc.id}>
+                                  {d.name} ({currencySymbol}{Number(d.price || 0).toLocaleString()})
+                                </option>
+                              );
+                            })}
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[8.5px] font-black uppercase tracking-wider text-slate-400 block pl-1">Unit Value ({currencySymbol})</label>
+                          <input
+                            type="number"
+                            value={txPrice}
+                            onChange={(e) => setTxPrice(e.target.value)}
+                            placeholder="Base Price"
+                            className={cn(
+                              "w-full px-3 py-2 rounded-xl text-xs font-bold outline-none",
+                              isDark ? "bg-slate-900 text-white animate-pulse" : "bg-white text-slate-900 border border-slate-200"
+                            )}
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[8.5px] font-black uppercase tracking-wider text-slate-400 block pl-1">Quantity</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={txQuantity}
+                            onChange={(e) => setTxQuantity(parseInt(e.target.value) || 1)}
+                            className={cn(
+                              "w-full px-3 py-2 rounded-xl text-xs font-bold outline-none",
+                              isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900 border border-slate-200"
+                            )}
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const chosenDoc = servicesSnap?.docs.find(s => s.id === txServiceId);
+                          if (!chosenDoc) {
+                            toast.error('Please pick a corporate service offering from the list first.');
+                            return;
+                          }
+                          const sData = chosenDoc.data();
+                          const valNum = parseFloat(txPrice);
+                          if (isNaN(valNum) || valNum < 0) {
+                            toast.error('Please specify a positive unit price value.');
+                            return;
+                          }
+                          if (txQuantity <= 0) {
+                            toast.error('The order quantity must be at least 1.');
+                            return;
+                          }
+
+                          // Check if service is already added, if so, merge or update
+                          const existingIndex = txItems.findIndex(item => item.serviceId === txServiceId);
+                          if (existingIndex > -1) {
+                            const updated = [...txItems];
+                            updated[existingIndex].quantity += txQuantity;
+                            updated[existingIndex].totalAmount = updated[existingIndex].price * updated[existingIndex].quantity;
+                            setTxItems(updated);
+                            toast.success(`Incremented quantity for ${sData.name}!`);
+                          } else {
+                            const newItem = {
+                              id: Math.random().toString(36).substring(2, 9),
+                              serviceId: txServiceId,
+                              serviceName: sData.name,
+                              price: valNum,
+                              quantity: txQuantity,
+                              totalAmount: valNum * txQuantity
+                            };
+                            setTxItems(prev => [...prev, newItem]);
+                            toast.success(`Added ${sData.name} to this custom deal scope.`);
+                          }
+
+                          // Clear selection states
+                          setTxServiceId('');
+                          setTxPrice('0');
+                          setTxQuantity(1);
+                        }}
+                        className="w-full text-[10px] py-2 font-black uppercase tracking-widest text-center cursor-pointer rounded-xl text-white transition-all shadow-md flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-[0.98]"
+                        style={{ backgroundColor: settings.primaryColor }}
+                      >
+                        <Plus size={12} /> Add Scope Service
+                      </button>
+                    </div>
+
+                    {/* Added List card items with editable values and delete option */}
+                    {txItems.length === 0 ? (
+                      <div className="p-6 text-center text-slate-500 italic text-[11px] bg-slate-100/10 dark:bg-slate-900/10 rounded-xl border border-dashed border-slate-800/10">
+                        No services added yet. Select a service package above and click "Add Scope Service" to configure the custom deal dynamically.
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+                        {txItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className={cn(
+                              "p-3 rounded-xl border flex flex-col gap-2 transition-all relative group",
+                              isDark ? "bg-slate-900/40 border-slate-800" : "bg-white border-slate-200 shadow-sm"
+                            )}
+                          >
+                            <div className="flex justify-between items-start gap-4">
+                              <span className="font-extrabold text-[11px] text-slate-200 leading-tight block text-left" style={{ color: isDark ? 'white' : 'black' }}>
+                                {item.serviceName}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setTxItems(prev => prev.filter(it => it.id !== item.id));
+                                  toast.error(`${item.serviceName} removed from configuration scope.`);
+                                }}
+                                className="text-slate-500 hover:text-red-500 transition-colors p-1"
+                                title="Remove item"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 pb-1 border-t border-slate-800/5 dark:border-slate-800/20 pt-2">
+                              {/* Inline price value editor (price adjustments) */}
+                              <div className="space-y-0.5 text-left">
+                                <label className="text-[8px] font-black uppercase text-slate-500 tracking-wider">Unit Value ({currencySymbol})</label>
+                                <input
+                                  type="number"
+                                  value={item.price}
+                                  onChange={(e) => {
+                                    const nextPrice = parseFloat(e.target.value) || 0;
+                                    setTxItems(prev => prev.map(it => {
+                                      if (it.id === item.id) {
+                                        return {
+                                          ...it,
+                                          price: nextPrice,
+                                          totalAmount: nextPrice * it.quantity
+                                        };
+                                      }
+                                      return it;
+                                    }));
+                                  }}
+                                  className={cn(
+                                    "w-full px-2 py-1 rounded-lg text-[11px] font-bold outline-none",
+                                    isDark ? "bg-slate-950 text-emerald-400" : "bg-slate-100 text-slate-900 border border-slate-200"
+                                  )}
+                                />
+                              </div>
+
+                              {/* Inline quantity editor */}
+                              <div className="space-y-0.5 text-left">
+                                <label className="text-[8px] font-black uppercase text-slate-500 tracking-wider">Quantity</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={item.quantity}
+                                  onChange={(e) => {
+                                    const nextQty = parseInt(e.target.value) || 1;
+                                    setTxItems(prev => prev.map(it => {
+                                      if (it.id === item.id) {
+                                        return {
+                                          ...it,
+                                          quantity: nextQty,
+                                          totalAmount: it.price * nextQty
+                                        };
+                                      }
+                                      return it;
+                                    }));
+                                  }}
+                                  className={cn(
+                                    "w-full px-2 py-1 rounded-lg text-[11px] font-bold outline-none",
+                                    isDark ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-900 border border-slate-200"
+                                  )}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex justify-between items-center text-[10px] pt-1 border-t border-slate-800/5 dark:border-slate-800/20 font-bold">
+                              <span className="text-slate-500">Subtotal Amount:</span>
+                              <span className="text-slate-100 font-mono" style={{ color: isDark ? 'white' : 'black' }}>
+                                {currencySymbol}{item.totalAmount.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input 
-                      label="Service Quantity"
-                      type="number"
-                      min="1"
-                      value={txQuantity}
-                      onChange={(e) => setTxQuantity(parseInt(e.target.value) || 1)}
-                    />
+                  <div className="grid grid-cols-1 gap-4">
                     <Input 
                       label="Deal Booking Date"
                       type="date"
@@ -2424,8 +3222,131 @@ export default function ITSalesDashboard() {
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                {/* Dual-Responsive View Wrapper */}
+                <div>
+                  {/* MOBILE-ONLY VIEW (block md:hidden) - Stack of beautiful corporate interactive cards */}
+                  <div className="block md:hidden divide-y divide-slate-800/10 dark:divide-white/10">
+                    {filteredTransactions.length === 0 ? (
+                      <div className="p-8 text-center text-slate-500 italic text-xs">
+                        No IT deals matching filter criteria. Record a transaction or trigger "Seeding Data" to initialize.
+                      </div>
+                    ) : (
+                      filteredTransactions.map((tx, idx) => {
+                        const isExpanded = expandedTxId === (tx.id || `idx-${idx}`);
+                        const hasDues = tx.status !== 'Collected';
+                        return (
+                          <div 
+                            key={tx.id || `tx-mob-${idx}`}
+                            className={cn(
+                              "p-5 transition-all text-left space-y-3.5 select-none cursor-pointer",
+                              isExpanded ? (isDark ? "bg-white/[0.02]" : "bg-slate-50/70") : "",
+                              isDark ? "hover:bg-white/[0.01]" : "hover:bg-slate-50/40"
+                            )}
+                            onClick={() => {
+                              setExpandedTxId(isExpanded ? null : (tx.id || `idx-${idx}`));
+                              toast.success(`Deal ${isExpanded ? 'collapsed' : 'expanded'}: ${tx.dealId || 'No Contract'}`);
+                            }}
+                          >
+                            {/* Card Header row */}
+                            <div className="flex justify-between items-start gap-2">
+                              <div>
+                                <h4 className="font-extrabold text-xs font-sans leading-tight" style={{ color: settings.primaryColor }}>
+                                  👤 {tx.customerName}
+                                </h4>
+                                <p className="text-[10px] text-slate-500 font-mono mt-0.5">{tx.customerPhone}</p>
+                              </div>
+                              <span className={cn(
+                                "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full select-none",
+                                !hasDues ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+                              )}>
+                                ● {!hasDues ? 'Collected' : 'Due'}
+                              </span>
+                            </div>
+
+                            {/* Service and Price block */}
+                            <div className="grid grid-cols-2 gap-3 pt-1">
+                              <div className="col-span-2">
+                                <p className="text-[9px] font-black uppercase text-slate-500 leading-none">IT Service Offer</p>
+                                <p className="font-bold text-xs mt-1 text-slate-200" style={{ color: isDark ? '#f1f5f9' : '#1e293b' }}>
+                                  {tx.serviceName}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-black uppercase text-slate-550 leading-none">Price/Unit</p>
+                                <p className="font-mono text-[10.5px] font-medium mt-1 text-slate-450">
+                                  {currencySymbol}{Number(tx.price).toLocaleString()} <span className="text-[9px] text-slate-500 font-sans">x{tx.quantity}</span>
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[9px] font-black uppercase text-slate-550 leading-none">Booking Value</p>
+                                <p className="font-mono text-xs font-black mt-1" style={{ color: settings.primaryColor }}>
+                                  {currencySymbol}{Number(tx.totalAmount).toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Chevron expand trigger and key descriptors */}
+                            <div className="flex justify-between items-center pt-2.5 border-t border-slate-800/10 dark:border-white/10">
+                              <span className="text-[9px] text-slate-500 font-mono">
+                                Date logged: {tx.date}
+                              </span>
+                              <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                                <span>{isExpanded ? "Collapse" : "Reveal SLA"}</span>
+                                <ChevronRight size={10} className={cn("transition-transform", isExpanded ? "rotate-90" : "")} />
+                              </div>
+                            </div>
+
+                            {/* Expanded Mobile Details Drawer */}
+                            {isExpanded && (
+                              <motion.div 
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="pt-3.5 space-y-3 text-xs font-sans text-left bg-slate-500/5 border border-slate-500/10 p-3 rounded-2xl overflow-hidden"
+                              >
+                                <div>
+                                  <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-500">Corporate Deal Key (Contract ID)</p>
+                                  <p className="font-bold text-amber-500 font-mono mt-0.5 text-[10px] select-all">
+                                    {tx.dealId || `IT-${tx.date.replace(/-/g, '')}-DNL`}
+                                  </p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-500">Sales Representative</p>
+                                    <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-400 text-[8.5px] font-bold max-w-[120px] truncate">
+                                      👤 {tx.executiveName || 'Admin Desk'}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-500">Commission Rate</p>
+                                    <p className="font-extrabold text-[#ec4899] mt-0.5 text-[10px]" style={{ color: settings.primaryColor }}>
+                                      {tx.commissionPercentage || 10}% rate ({currencySymbol}{Number(tx.commissionEarned || 0).toLocaleString()})
+                                    </p>
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-550 mb-1">Contract Operational Life SLA Span</p>
+                                  <div className="flex items-center justify-between bg-slate-950/25 p-2 rounded-xl border border-white/5 text-[9.5px]">
+                                    <div className="flex flex-col">
+                                      <span className="text-slate-500 font-black text-[8px] uppercase">Commencement</span>
+                                      <span className="text-emerald-400 font-bold font-mono">{tx.startDate || tx.date}</span>
+                                    </div>
+                                    <div className="flex flex-col text-right">
+                                      <span className="text-slate-500 font-black text-[8px] uppercase">Termination SLA</span>
+                                      <span className="text-pink-400 font-bold font-mono">{tx.endDate || tx.date}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* DESKTOP/TABLET VIEW (hidden md:block) - Standard elegant enterprise table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left text-xs">
                     <thead>
                       <tr className={cn(
                         "border-b font-black uppercase text-[10px] tracking-widest text-slate-400",
@@ -2539,6 +3460,7 @@ export default function ITSalesDashboard() {
                     </tbody>
                   </table>
                 </div>
+                </div>
               </Card>
             </div>
           </>
@@ -2547,375 +3469,242 @@ export default function ITSalesDashboard() {
         {/* TAB 2: IT SERVICES MANAGER OR SEARCHABLE CATALOG */}
         {activeSubTab === 'services' && (
           <>
-            {isUserAdmin ? (
-              <>
-                {/* Left form input */}
-                <div className="col-span-12 lg:col-span-4">
-                  <Card className="space-y-6">
-                    <div>
-                      <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
-                        <Briefcase style={{ color: settings.primaryColor }} size={20} />
-                        Add Corporate IT Service
-                      </h2>
-                      <p className="text-[10px] text-slate-500 mt-1 italic font-medium">Extend business catalog packages or project scopes details.</p>
-                    </div>
-
-                    <form onSubmit={handleAddService} className="space-y-4 text-left">
-                      <Input 
-                        label="Service Name"
-                        placeholder="e.g., Scalable Magento/NextJS E-Commerce"
-                        value={serviceName}
-                        onChange={(e) => setServiceName(e.target.value)}
-                        required
-                      />
-                      
-                      <Input 
-                        label={`Base Rate (${currency})`}
-                        placeholder="e.g., 4200"
-                        type="number"
-                        value={servicePrice}
-                        onChange={(e) => setServicePrice(e.target.value)}
-                        required
-                      />
-
-                      <div className="space-y-1.5 animate-fade-in text-left">
-                        <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">Price category / Tier</label>
-                        <select
-                          value={servicePriceTier}
-                          onChange={(e) => setServicePriceTier(e.target.value as any)}
-                          className={cn(
-                            "w-full px-5 py-3.5 border-none rounded-2xl transition-all outline-none text-xs font-semibold appearance-none",
-                            isDark ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900"
-                          )}
-                        >
-                          <option value="High">High Price Tier (Enterprise)</option>
-                          <option value="Low">Low Price Tier (Standard/Micro)</option>
-                        </select>
-                        <span className="text-[8.5px] text-slate-500 pl-1 block">Specify if this is classified as high or low price.</span>
-                      </div>
-
-                      <div className="space-y-1.5 text-left">
-                        <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">Description of Service</label>
-                        <textarea
-                          placeholder="e.g., High performant commerce pipeline configuration, Stripe backend webhooks integration..."
-                          value={serviceDesc}
-                          onChange={(e) => setServiceDesc(e.target.value)}
-                          className={cn(
-                            "w-full px-5 py-4 border-none rounded-2xl transition-all outline-none placeholder:text-slate-500 text-xs font-semibold h-24",
-                            isDark ? "bg-slate-900/70 text-white" : "bg-slate-100/90 text-slate-900"
-                          )}
-                        />
-                      </div>
-
-                      <Button type="submit" className="w-full text-xs font-black uppercase tracking-widest py-4 rounded-2.5xl">
-                        <Check size={14} /> Add Service Offer
-                      </Button>
-                    </form>
-                  </Card>
+            {/* Left Column: Form to Add Corporate IT Service */}
+            <div className="col-span-12 lg:col-span-4 animate-fade-in">
+              <Card className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                    <Briefcase style={{ color: settings.primaryColor }} size={20} />
+                    Add Corporate IT Service
+                  </h2>
+                  <p className="text-[10px] text-slate-500 mt-1 italic font-medium">Extend business catalog packages or project scopes details.</p>
                 </div>
 
-                {/* Service list table right */}
-                <div className="col-span-12 lg:col-span-8">
-                  <Card className="p-0 overflow-hidden">
-                    <div className="p-6 border-b border-slate-800/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                      <div>
-                        <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                          <Database size={16} style={{ color: settings.primaryColor }} />
-                          Live Services & Tiers Catalog ({servicesSnap?.size || 0})
-                        </h3>
-                        <p className="text-[10px] text-slate-500 italic mt-1">Manage corporate prices, tier classifiers (High/Low) and keep status variables below.</p>
-                      </div>
+                <form onSubmit={handleAddService} className="space-y-4 text-left">
+                  <Input 
+                    label="Service Name"
+                    placeholder="e.g., Facebook ads"
+                    value={serviceName}
+                    onChange={(e) => setServiceName(e.target.value)}
+                    required
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input 
+                      label={`Base Rate (${currency})`}
+                      placeholder="e.g., 145"
+                      type="number"
+                      value={servicePrice}
+                      onChange={(e) => setServicePrice(e.target.value)}
+                      required
+                    />
 
-                      {/* Admin filter input */}
-                      <div className="relative w-full sm:w-64">
-                        <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
-                        <input
-                          type="text"
-                          placeholder="Search database..."
-                          value={serviceSearchQuery}
-                          onChange={(e) => setServiceSearchQuery(e.target.value)}
-                          className={cn(
-                            "w-full pl-8 pr-3 py-1.5 rounded-xl text-[11px] font-semibold border-none outline-none",
-                            isDark ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900 border border-slate-205"
-                          )}
-                        />
-                      </div>
-                    </div>
+                    <Input 
+                      label="Service Quantity"
+                      placeholder="e.g., 1"
+                      type="number"
+                      min="1"
+                      value={serviceQuantity}
+                      onChange={(e) => setServiceQuantity(e.target.value)}
+                      required
+                    />
+                  </div>
 
-                    <div className="divide-y divide-slate-800/10 text-left">
-                      {servicesSnap?.empty ? (
-                        <div className="p-12 text-center text-slate-500 italic">No services listed yet. Populate automatically with the top-right button.</div>
-                      ) : (() => {
-                        const servicesList = servicesSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)) || [];
-                        const filteredServices = servicesList.filter(svc => {
-                          const sQuery = serviceSearchQuery.toLowerCase();
-                          return svc.name.toLowerCase().includes(sQuery) ||
-                                 (svc.description && svc.description.toLowerCase().includes(sQuery));
-                        });
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-[10px] pl-1 font-black uppercase tracking-[0.2em] text-slate-400 italic">Description of Service</label>
+                    <textarea
+                      placeholder="e.g., Meta/Facebook marketing campaign management, pixel setup, and conversion API audit..."
+                      value={serviceDesc}
+                      onChange={(e) => setServiceDesc(e.target.value)}
+                      className={cn(
+                        "w-full px-4 py-3 border-none rounded-2xl transition-all outline-none placeholder:text-slate-500 text-xs font-semibold h-24 whitespace-pre-wrap",
+                        isDark ? "bg-slate-900/70 text-white" : "bg-slate-100/90 text-slate-900"
+                      )}
+                    />
+                  </div>
 
-                        if (filteredServices.length === 0) {
-                          return <div className="p-12 text-center text-slate-500 font-bold italic">No services match your search query.</div>;
-                        }
+                  <Button type="submit" className="w-full text-xs font-black uppercase tracking-widest py-4 rounded-2.5xl">
+                    <Check size={14} /> Add Service Offer
+                  </Button>
+                </form>
+              </Card>
+            </div>
 
-                        return filteredServices.map(svc => {
-                          const isEditingThis = editingServiceId === svc.id;
-                          const isKept = svc.status !== 'Muted';
+            {/* Right Column: Service list table right */}
+            <div className="col-span-12 lg:col-span-8 animate-fade-in">
+              <Card className="p-0 overflow-hidden">
+                <div className="p-6 border-b border-slate-800/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
+                      <Database size={16} style={{ color: settings.primaryColor }} />
+                      Live Services Catalog ({servicesSnap?.size || 0})
+                    </h3>
+                    <p className="text-[10px] text-slate-500 italic mt-1 font-semibold">Manage corporate services, prices, and quantities below.</p>
+                  </div>
 
-                          if (isEditingThis) {
-                            return (
-                              <div key={svc.id} className="p-6 bg-slate-500/5 space-y-4 animate-fade-in text-xs">
-                                <span className="font-extrabold text-[9px] text-[#ec4899] uppercase tracking-widest">Inline IT Service Editor</span>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <Input 
-                                    label="Service name"
-                                    value={editServiceName}
-                                    onChange={(e) => setEditServiceName(e.target.value)}
-                                    required
-                                  />
-                                  <Input 
-                                    label={`Price (${currency})`}
-                                    type="number"
-                                    value={editServicePrice}
-                                    onChange={(e) => setEditServicePrice(e.target.value)}
-                                    required
-                                  />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="space-y-1.5 text-left">
-                                    <label className="text-[10px] pl-1 font-black uppercase tracking-widest text-slate-500">Price Tier Category</label>
-                                    <select
-                                      value={editServicePriceTier}
-                                      onChange={(e) => setEditServicePriceTier(e.target.value as any)}
-                                      className="w-full bg-slate-900 text-white border-none rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none transition-all"
-                                      style={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#e2e8f0', color: isDark ? 'white' : 'black' }}
-                                    >
-                                      <option value="High">High Price Tier (Enterprise)</option>
-                                      <option value="Low">Low Price Tier (Standard/Micro)</option>
-                                    </select>
-                                  </div>
-                                  <Input 
-                                    label="Short description"
-                                    value={editServiceDesc}
-                                    onChange={(e) => setEditServiceDesc(e.target.value)}
-                                  />
-                                </div>
-                                <div className="flex gap-2 justify-end pt-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditingServiceId(null)}
-                                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-300 transition-all cursor-pointer"
-                                  >
-                                    Cancel
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleUpdateService(svc.id)}
-                                    className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white transition-all cursor-pointer"
-                                    style={{ backgroundColor: settings.primaryColor }}
-                                  >
-                                    Save Changes
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          }
-
-                          return (
-                            <div key={svc.id} className={cn(
-                              "p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:bg-slate-50/20 transition-all",
-                              !isKept && "opacity-60 bg-slate-950/20"
-                            )}>
-                              <div className="space-y-2 flex-1 text-left min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <h4 className="font-bold text-sm tracking-tight" style={{ color: isDark ? 'white' : 'black' }}>{svc.name}</h4>
-                                  
-                                  <span className={cn(
-                                    "px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-widest border shrink-0",
-                                    (svc.priceTier || 'High') === 'High'
-                                      ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
-                                      : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                  )}>
-                                    {(svc.priceTier || 'High')} Price Tier
-                                  </span>
-
-                                  <span className={cn(
-                                    "px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-widest border shrink-0",
-                                    isKept
-                                      ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                                      : "bg-slate-500/10 text-slate-500 border-slate-500/20"
-                                  )}>
-                                    {isKept ? 'Kept (Active)' : 'Muted (Hidden)'}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-slate-500 leading-relaxed font-semibold italic truncate">{svc.description || 'No description provided.'}</p>
-                              </div>
-
-                              <div className="flex items-center gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
-                                <div className="text-right">
-                                  <p className="text-lg font-mono font-black" style={{ color: settings.primaryColor }}>{currencySymbol}{Number(svc.price).toLocaleString()}</p>
-                                  <p className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Base Package Rate</p>
-                                </div>
-
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    onClick={() => handleToggleServiceStatus(svc.id, svc.status)}
-                                    title={isKept ? "Mute Service (Hide from transaction creation)" : "Keep Service (Show in transaction creation)"}
-                                    className={cn(
-                                      "p-2 rounded-xl border transition-all cursor-pointer text-xs font-extrabold uppercase py-1 px-2.5",
-                                      isKept 
-                                        ? "bg-amber-500/15 border-amber-500/20 text-amber-500 hover:bg-amber-500/25" 
-                                        : "bg-blue-500/15 border-blue-500/20 text-blue-400 hover:bg-blue-500/25"
-                                    )}
-                                  >
-                                    {isKept ? "De-select" : "Keep Offer"}
-                                  </button>
-
-                                  <button
-                                    onClick={() => {
-                                      setEditingServiceId(svc.id);
-                                      setEditServiceName(svc.name);
-                                      setEditServicePrice(String(svc.price));
-                                      setEditServiceDesc(svc.description || '');
-                                      setEditServicePriceTier(svc.priceTier || 'High');
-                                    }}
-                                    className="p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-xl transition-all cursor-pointer"
-                                    title="Edit Service details"
-                                  >
-                                    <Edit size={14} />
-                                  </button>
-
-                                  <button
-                                    onClick={() => {
-                                      if (confirm(`Are you absolutely sure you want to delete this IT service offer entirely from the system database? Any record using this service id will remain as-is.`)) {
-                                        handleDeleteService(svc.id);
-                                      }
-                                    }}
-                                    className="p-2 bg-red-500/10 border border-red-500/20 text-slate-400 hover:text-red-500 rounded-xl transition-all cursor-pointer"
-                                    title="Delete Service record"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
-                  </Card>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* EXECUTIVE SERVICE SEARCH & SPECS */}
-                <div className="col-span-12 space-y-6">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/5 dark:bg-slate-950/20 p-6 rounded-3xl border border-slate-800/10">
-                    <div className="text-left">
-                      <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-2" style={{ color: isDark ? 'white' : 'black' }}>
-                        <Database className="text-violet-505 animate-pulse" size={22} style={{ color: settings.primaryColor }} />
-                        Professional IT Services Catalog
-                      </h2>
-                      <p className="text-xs text-slate-500 mt-1 italic font-semibold">
-                        Browse active enterprise Cloud solutions, systems development, and database integrations. Click anywhere on any card to view detailed specifications.
-                      </p>
-                    </div>
-
-                    <div className="relative w-full md:w-80 shrink-0">
-                      <Search className="absolute left-4 top-3.5 w-4 h-4 text-slate-500" />
+                  <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    {/* Admin filter input */}
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
                       <input
                         type="text"
-                        placeholder="Search services, products, or price tiers..."
+                        placeholder="Search services..."
                         value={serviceSearchQuery}
                         onChange={(e) => setServiceSearchQuery(e.target.value)}
                         className={cn(
-                          "w-full pl-11 pr-4 py-3 rounded-2xl text-xs font-semibold outline-none transition-all border",
-                          isDark 
-                            ? "bg-slate-900 border-slate-800 text-white focus:border-slate-700" 
-                            : "bg-white border-slate-200 text-slate-905 focus:border-slate-300 shadow-sm"
+                          "w-full pl-8 pr-3 py-1.5 rounded-xl text-[11px] font-semibold border-none outline-none",
+                          isDark ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900 border border-slate-205"
                         )}
                       />
                     </div>
+
+                    <button
+                      onClick={handleSeedData}
+                      className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider text-white transition-all hover:opacity-90 whitespace-nowrap"
+                      style={{ backgroundColor: settings.primaryColor }}
+                    >
+                      <RefreshCw size={12} className="inline mr-1" /> Seed Templates
+                    </button>
                   </div>
+                </div>
 
-                  {/* Pricing grid layout */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {(() => {
-                      const servicesList = servicesSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)) || [];
-                      const filteredServices = servicesList.filter(svc => {
-                        if (svc.status === 'Muted') return false;
-                        const sQuery = serviceSearchQuery.toLowerCase();
-                        return svc.name.toLowerCase().includes(sQuery) ||
-                               (svc.description && svc.description.toLowerCase().includes(sQuery)) ||
-                               (svc.priceTier && svc.priceTier.toLowerCase().includes(sQuery));
-                      });
+                <div className="divide-y divide-slate-800/10 text-left">
+                  {servicesSnap?.empty ? (
+                    <div className="p-12 text-center text-slate-500 italic flex flex-col items-center justify-center gap-4">
+                      <p>No services listed yet in this workspace. Restructure or populate now.</p>
+                      <button
+                        onClick={handleSeedData}
+                        className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-white transition-all hover:scale-[1.01]"
+                        style={{ backgroundColor: settings.primaryColor }}
+                      >
+                        Populate Template IT Services
+                      </button>
+                    </div>
+                  ) : (() => {
+                    const servicesList = servicesSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)) || [];
+                    const filteredServices = servicesList.filter(svc => {
+                      const sQuery = (serviceSearchQuery || globalSearchQuery).toLowerCase();
+                      return svc.name.toLowerCase().includes(sQuery) ||
+                             (svc.description && svc.description.toLowerCase().includes(sQuery)) ||
+                             String(svc.price).includes(sQuery);
+                    });
 
-                      if (filteredServices.length === 0) {
+                    if (filteredServices.length === 0) {
+                      return <div className="p-12 text-center text-slate-500 font-bold italic">No services match your search query.</div>;
+                    }
+
+                    return filteredServices.map(svc => {
+                      const isEditingThis = editingServiceId === svc.id;
+
+                      if (isEditingThis) {
                         return (
-                          <div className="col-span-12 p-16 text-center text-slate-500 font-bold italic bg-slate-900/5 dark:bg-slate-950/10 rounded-3xl border border-slate-805/5">
-                            No service contracts matched "{serviceSearchQuery}". Try redefining query terms.
+                          <div key={svc.id} className="p-6 bg-slate-500/5 space-y-4 animate-fade-in text-xs text-left">
+                            <span className="font-extrabold text-[9px] text-[#ec4899] uppercase tracking-widest">Inline IT Service Editor</span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <Input 
+                                label="Service name"
+                                value={editServiceName}
+                                onChange={(e) => setEditServiceName(e.target.value)}
+                                required
+                              />
+                              <Input 
+                                label={`Price (${currency})`}
+                                type="number"
+                                value={editServicePrice}
+                                onChange={(e) => setEditServicePrice(e.target.value)}
+                                required
+                              />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <Input 
+                                label="Service Quantity"
+                                type="number"
+                                min="1"
+                                value={editServiceQuantity}
+                                onChange={(e) => setEditServiceQuantity(e.target.value)}
+                                required
+                              />
+                              <Input 
+                                label="Short description"
+                                value={editServiceDesc}
+                                onChange={(e) => setEditServiceDesc(e.target.value)}
+                              />
+                            </div>
+                            <div className="flex gap-2 justify-end pt-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditingServiceId(null)}
+                                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-300 transition-all cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateService(svc.id)}
+                                className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white transition-all cursor-pointer"
+                                style={{ backgroundColor: settings.primaryColor }}
+                              >
+                                Save Changes
+                              </button>
+                            </div>
                           </div>
                         );
                       }
 
-                      return filteredServices.map(svc => (
-                        <div
-                          key={svc.id}
-                          onClick={() => {
-                            setSelectedServiceDetails(svc);
-                            toast.success(`Retrieved specifications details for ${svc.name}`);
-                          }}
-                          className={cn(
-                            "p-6 rounded-3xl border cursor-pointer select-none text-left flex flex-col justify-between h-56 transition-all hover:-translate-y-1 shadow-sm hover:shadow-xl relative overflow-hidden group",
-                            isDark 
-                              ? "bg-slate-900/40 hover:bg-slate-900/70 border-slate-800/80 hover:border-slate-700" 
-                              : "bg-white hover:bg-slate-50/50 border-slate-200 hover:border-slate-300"
-                          )}
-                        >
-                          <div className="space-y-3">
-                            <div className="flex justify-between items-start gap-2">
-                              <span className={cn(
-                                "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border",
-                                (svc.priceTier || 'High') === 'High'
-                                  ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
-                                  : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                              )}>
-                                {(svc.priceTier || 'High')} Tier
-                              </span>
-
-                              <span className="text-[8px] font-black uppercase text-violet-500 tracking-wider bg-violet-50/10 dark:bg-violet-500/5 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                                View Specs
+                      return (
+                        <div key={svc.id} className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:bg-slate-50/20 transition-all">
+                          <div className="space-y-2 flex-1 text-left min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="font-bold text-sm tracking-tight" style={{ color: isDark ? 'white' : 'black' }}>{svc.name}</h4>
+                              
+                              <span className="px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-widest border shrink-0 bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                                Quantity: {svc.quantity || 1}
                               </span>
                             </div>
-
-                            <h3 className="font-extrabold text-sm line-clamp-2 tracking-tight group-hover:text-white transition-colors" style={{ color: isDark ? 'white' : 'black' }}>
-                              {svc.name}
-                            </h3>
-                            <p className="text-[11px] text-slate-500 font-medium line-clamp-3 leading-relaxed italic">
-                              {svc.description || 'No custom specifications document details compiled.'}
-                            </p>
+                            <p className="text-xs text-slate-500 leading-relaxed font-semibold italic truncate">{svc.description || 'No description provided.'}</p>
                           </div>
 
-                          <div className="border-t border-slate-800/10 dark:border-slate-800/30 pt-4 flex justify-between items-center mt-3">
-                            <div>
-                              <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">Base Contract Offer</span>
-                              <span className="text-lg font-black block mt-0.5" style={{ color: settings.primaryColor }}>
-                                {currencySymbol}{Number(svc.price).toLocaleString()}
-                              </span>
+                          <div className="flex items-center gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
+                            <div className="text-right">
+                              <p className="text-lg font-mono font-black" style={{ color: settings.primaryColor }}>{currencySymbol}{Number(svc.price).toLocaleString()}</p>
+                              <p className="text-[8px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Per Unit Rate</p>
                             </div>
-                            <div 
-                              className="w-8 h-8 rounded-xl flex items-center justify-center text-white scale-90 group-hover:scale-100 transition-all shadow-md shrink-0"
-                              style={{ backgroundColor: settings.primaryColor }}
-                            >
-                              <ChevronRight size={16} />
+
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setEditingServiceId(svc.id);
+                                  setEditServiceName(svc.name);
+                                  setEditServicePrice(String(svc.price));
+                                  setEditServiceQuantity(String(svc.quantity || 1));
+                                  setEditServiceDesc(svc.description || '');
+                                }}
+                                className="p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-xl transition-all cursor-pointer"
+                                title="Edit Service details"
+                              >
+                                <Edit size={14} />
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  if (confirm(`Are you absolutely sure you want to delete this IT service offer entirely from the system database? Any record using this service id will remain as-is.`)) {
+                                    handleDeleteService(svc.id);
+                                  }
+                                }}
+                                className="p-2 bg-red-500/10 border border-red-500/20 text-slate-400 hover:text-red-500 rounded-xl transition-all cursor-pointer"
+                                title="Delete Service record"
+                              >
+                                <Trash2 size={14} />
+                              </button>
                             </div>
                           </div>
                         </div>
-                      ));
-                    })()}
-                  </div>
+                      );
+                    });
+                  })()}
                 </div>
-              </>
-            )}
+              </Card>
+            </div>
 
             {/* DETAILS SERVICE SPECIFICATIONS MODAL DIALOG */}
             {selectedServiceDetails && (
@@ -2927,14 +3716,9 @@ export default function ITSalesDashboard() {
                   )}
                 >
                   <div className="flex justify-between items-start gap-4">
-                    <div className="space-y-1">
-                      <span className={cn(
-                        "px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest border block w-fit",
-                        (selectedServiceDetails.priceTier || 'High') === 'High'
-                          ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
-                          : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                      )}>
-                        {(selectedServiceDetails.priceTier || 'High')} Price Tier
+                    <div className="space-y-1 text-left">
+                      <span className="px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest border block w-fit bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                        Quantity: {selectedServiceDetails.quantity || 1}
                       </span>
                       <h3 className="text-lg font-black tracking-tight mt-2.5" style={{ color: isDark ? 'white' : 'black' }}>
                         {selectedServiceDetails.name}
@@ -3734,7 +4518,7 @@ export default function ITSalesDashboard() {
               activeRole={activeRole}
               currencySymbol={currencySymbol}
               rawTransactions={rawTransactions}
-              usersList={usersSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() })) || []}
+              usersList={usersSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)) || []}
               onTogglePaymentStatus={handleTogglePaymentStatus}
             />
           </div>
@@ -3746,9 +4530,18 @@ export default function ITSalesDashboard() {
             <StaffManager
               isDark={isDark}
               settings={settings}
-              usersList={usersSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() })) || []}
+              usersList={(usersSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)) || []).filter(u => {
+                if (!globalSearchQuery) return true;
+                const sq = globalSearchQuery.toLowerCase();
+                return (u.name && u.name.toLowerCase().includes(sq)) || 
+                       (u.id && u.id.toLowerCase().includes(sq)) || 
+                       (u.email && u.email.toLowerCase().includes(sq));
+              })}
+              rawTransactions={rawTransactions}
+              currencySymbol={currencySymbol}
               onAddUser={handleAddUser}
               onUpdateUserCommission={handleUpdateUserCommission}
+              onUpdateUserProperties={handleUpdateUserProperties}
               onDeleteUser={handleDeleteUser}
             />
           </div>

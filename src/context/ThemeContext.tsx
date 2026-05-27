@@ -6,6 +6,7 @@ type ThemeSettings = {
   fontFamily: string;
   sidebarTheme: 'light' | 'dark';
   companyLogo?: string;
+  customFonts?: { name: string; id: string; urlName?: string }[];
 };
 
 interface ThemeContextType {
@@ -20,9 +21,36 @@ const defaultSettings: ThemeSettings = {
   fontFamily: 'font-sans',
   sidebarTheme: 'light',
   companyLogo: '',
+  customFonts: [
+    { name: 'Default Sans (Outfit)', id: 'font-sans' },
+    { name: 'Lora (Classic Elegant)', id: 'Lora' },
+    { name: 'Inter (Sleek Modern)', id: 'Inter' },
+    { name: 'Hind Siliguri (Bengali)', id: 'Hind Siliguri' },
+    { name: 'Playfair Display (Serif)', id: 'Playfair Display' },
+    { name: 'Fira Code (Technical)', id: 'font-mono' },
+  ],
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+function loadGoogleFont(fontName: string) {
+  if (!fontName) return;
+  const isPresetClass = ['font-sans', 'font-serif', 'font-mono'].includes(fontName);
+  if (isPresetClass) return;
+  
+  const linkId = `google-font-${fontName.replace(/\s+/g, '-').toLowerCase()}`;
+  if (document.getElementById(linkId)) return;
+  
+  try {
+    const link = document.createElement('link');
+    link.id = linkId;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&display=swap`;
+    document.head.appendChild(link);
+  } catch (e) {
+    console.error('Failed to load Google Font:', fontName, e);
+  }
+}
 
 function hexToRgb(hex: string) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -78,7 +106,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Apply font to body
     const body = document.body;
     body.classList.remove('font-sans', 'font-serif', 'font-mono');
-    body.classList.add(settings.fontFamily);
+    
+    const font = settings.fontFamily || 'font-sans';
+    if (['font-sans', 'font-serif', 'font-mono'].includes(font)) {
+      body.classList.add(font);
+      document.documentElement.style.removeProperty('--font-sans');
+    } else {
+      loadGoogleFont(font);
+      document.documentElement.style.setProperty('--font-sans', `"${font}", ui-sans-serif, system-ui, sans-serif`);
+      body.classList.add('font-sans');
+    }
   }, [settings]);
 
   return (

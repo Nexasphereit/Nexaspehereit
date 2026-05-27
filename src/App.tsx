@@ -6,7 +6,6 @@ import Dashboard from './pages/Dashboard';
 import QuotationGenerator from './pages/QuotationGenerator';
 import CVGenerator from './pages/CVGenerator';
 import ReceiptGenerator from './pages/ReceiptGenerator';
-import MenuGenerator from './pages/MenuGenerator';
 import History from './pages/History';
 import Settings from './pages/Settings';
 import ITSalesDashboard from './pages/ITSalesDashboard';
@@ -72,7 +71,7 @@ function AppContent() {
 
   return (
     <Router>
-      <div className={cn("flex min-h-screen transition-colors duration-300 relative overflow-hidden", settings.fontFamily, settings.sidebarTheme === 'dark' ? 'bg-[#02020a] text-white' : 'bg-slate-50 text-slate-900')}>
+      <div className={cn("flex min-h-screen transition-colors duration-300 relative overflow-hidden", ['font-sans', 'font-serif', 'font-mono'].includes(settings.fontFamily) ? settings.fontFamily : 'font-sans', settings.sidebarTheme === 'dark' ? 'bg-[#02020a] text-white' : 'bg-slate-50 text-slate-900')}>
         {settings.sidebarTheme === 'dark' && <GalaxyBackground />}
         <Sidebar />
         <main className={cn("flex-1 md:ml-[280px] pt-20 pb-24 px-4 md:p-8 transition-all relative z-10", settings.sidebarTheme === 'dark' ? 'bg-transparent' : 'bg-slate-50')}>

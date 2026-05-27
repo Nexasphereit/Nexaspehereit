@@ -3,7 +3,9 @@ import {
   signInAnonymously,
   signInWithEmailAndPassword,
   User,
-  signOut
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import { db, auth } from '../lib/firebase';
 import { doc, getDoc, setDoc, query, collection, where, getDocs } from 'firebase/firestore';
@@ -249,7 +251,51 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
 
           <Button 
             onClick={async () => {
-              const testGmail = prompt("Enter any Gmail address to log in directly as Admin:", "gwhasu@gmail.com");
+              setLoading(true);
+              try {
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                const u = result.user;
+                if (u && u.email) {
+                  const namePart = u.email.split('@')[0];
+                  const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+                  const matchedUser = {
+                    id: 'admin',
+                    uid: 'admin',
+                    name: `${displayName} (Testing Admin)`,
+                    email: u.email,
+                    role: 'admin',
+                    commissionPercentage: 15
+                  };
+                  localStorage.setItem('customUser', JSON.stringify(matchedUser));
+                  try {
+                    await setDoc(doc(db, 'users', 'admin'), {
+                      id: 'admin',
+                      name: `${displayName} (Testing Admin)`,
+                      email: u.email,
+                      role: 'admin',
+                      password: 'adminBypassPasskey',
+                      commissionPercentage: 15,
+                      createdAt: new Date().toISOString()
+                    }, { merge: true });
+                  } catch (e) {
+                    console.warn("Saving Google admin info failed:", e);
+                  }
+                  toast.success(`Welcome back, ${displayName} (Admin)!`);
+                  onLogin(matchedUser);
+                  setTimeout(() => {
+                    window.location.href = '/it-sales';
+                  }, 300);
+                  return;
+                }
+              } catch (popupErr: any) {
+                console.warn("Iframe popup sign-in blocked or failed, falling back to manual email prompt...", popupErr);
+              } finally {
+                setLoading(false);
+              }
+
+              // Fallback for sandboxed preview iframe structures 
+              const testGmail = prompt("Enter any Gmail address to log in directly as Admin (Iframe Bypass):", "gwhasu@gmail.com");
               if (testGmail && testGmail.trim()) {
                 const cleanGmail = testGmail.trim().toLowerCase();
                 if (!cleanGmail.endsWith('.com')) {

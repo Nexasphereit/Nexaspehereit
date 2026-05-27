@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -11,11 +11,11 @@ import {
   LogOut,
   Sun,
   Moon,
-  Utensils,
-  Building2
+  Building2,
+  Sparkles
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/src/lib/utils';
 import { useTheme } from '../../context/ThemeContext';
 import { auth } from '../../lib/firebase';
@@ -33,7 +33,9 @@ const sidebarItems = [
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
   const { settings, toggleDarkMode } = useTheme();
+  const location = useLocation();
   const isDark = settings.sidebarTheme === 'dark';
 
   useEffect(() => {
@@ -48,6 +50,16 @@ export default function Sidebar() {
     await signOut(auth);
     window.location.reload();
   };
+
+  const isDocCreationActive = ['/quotations', '/cvs', '/receipts'].some(p => location.pathname.startsWith(p));
+
+  const mobileNavItems = [
+    { icon: LayoutDashboard, label: 'Home', path: '/' },
+    { icon: Building2, label: 'Sales', path: '/it-sales' },
+    { isCreateCenter: true },
+    { icon: History, label: 'History', path: '/history' },
+    { icon: SettingsIcon, label: 'Settings', path: '/settings' },
+  ];
 
   return (
     <>
@@ -115,36 +127,134 @@ export default function Sidebar() {
 
       {/* Mobile Elevated Bottom Floating Dock Bar */}
       <div className={cn(
-        "fixed bottom-4 left-4 right-4 h-16 z-40 md:hidden print:hidden flex items-center justify-around px-3 rounded-full border shadow-2xl backdrop-blur-xl transition-all",
+        "fixed bottom-4 left-4 right-4 h-16 z-40 md:hidden print:hidden flex items-center justify-around px-2 rounded-full border shadow-[0_16px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_16px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all",
         isDark 
-          ? "bg-slate-950/40 border-slate-900/40 shadow-black/80 text-white" 
-          : "bg-white/95 border-slate-100 shadow-slate-200/50 text-slate-900"
+          ? "bg-slate-950/70 border-slate-800/80 text-white" 
+          : "bg-white/95 border-slate-100 text-slate-900"
       )}>
-        {sidebarItems.map((item) => {
-          const Icon = item.icon;
+        {mobileNavItems.map((item, idx) => {
+          if (item.isCreateCenter) {
+            return (
+              <button
+                key="mob-ctr"
+                onClick={() => setIsToolsOpen(!isToolsOpen)}
+                className="w-12 h-12 rounded-full flex flex-col items-center justify-center transition-all relative shrink-0 active:scale-90"
+                style={{
+                  backgroundColor: isDocCreationActive ? settings.primaryColor : 'transparent',
+                  color: isDocCreationActive ? '#ffffff' : (isDark ? '#94a3b8' : '#64748b'),
+                  boxShadow: isDocCreationActive ? `0 8px 16px -4px ${settings.primaryColor}88` : 'none',
+                  border: isDocCreationActive ? 'none' : '1px dashed currentColor'
+                }}
+              >
+                <Sparkles size={18} className="shrink-0" />
+                <span className="text-[7px] font-black uppercase tracking-wider mt-0.5 max-w-full truncate">
+                  Create
+                </span>
+              </button>
+            );
+          }
+
+          const Icon = item.icon!;
+          const isActive = location.pathname === item.path;
+
           return (
             <NavLink
               key={item.path}
               to={item.path}
-              className={({ isActive }) => cn(
+              className={cn(
                 "w-12 h-12 rounded-full flex flex-col items-center justify-center transition-all relative group touch-manipulation",
                 isActive 
                   ? "text-white scale-105" 
-                  : isDark ? "text-slate-500" : "text-slate-400 hover:text-slate-800"
+                  : isDark ? "text-slate-400" : "text-slate-500"
               )}
-              style={({ isActive }) => isActive ? {
+              style={isActive ? {
                 backgroundColor: settings.primaryColor,
-                boxShadow: `0 8px 16px -4px ${settings.primaryColor}66`
+                boxShadow: `0 8px 16px -4px ${settings.primaryColor}88`
               } : {}}
             >
-              <Icon size={20} className="shrink-0" />
-              <span className="text-[7px] font-black uppercase tracking-wider scale-90 mt-0.5 max-w-full truncate">
-                {item.label === 'CV / Resume' ? 'CV' : item.label === 'Money Receipt' ? 'Receipt' : item.label}
+              <Icon size={18} className="shrink-0" />
+              <span className="text-[7px] font-black uppercase tracking-wider mt-0.5 max-w-full truncate">
+                {item.label}
               </span>
             </NavLink>
           );
         })}
       </div>
+
+      {/* Mobile Bottom Tools sliding Drawer */}
+      <AnimatePresence>
+        {isToolsOpen && (
+          <>
+            {/* Dark blur overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.6 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsToolsOpen(false)}
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 md:hidden"
+            />
+            {/* Bottom Drawer */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className={cn(
+                "fixed bottom-0 left-0 right-0 rounded-t-[2.5rem] z-50 p-6 pb-28 md:hidden shadow-[0_-12px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.8)] border-t",
+                isDark 
+                  ? "bg-slate-950/95 border-slate-800 text-white" 
+                  : "bg-white border-slate-100 text-slate-900"
+              )}
+            >
+              {/* Grab bar indicator */}
+              <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6" />
+
+              <div className="text-center mb-6">
+                <h3 className="text-sm font-black uppercase tracking-widest text-slate-500">
+                  Document Suite
+                </h3>
+                <p className="text-[10px] text-slate-400 font-medium italic mt-1">Select a creator blueprint to get started</p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { icon: FileText, label: 'Quotation', path: '/quotations', desc: 'SLA Prices', color: settings.primaryColor },
+                  { icon: UserCircle, label: 'Resume / CV', path: '/cvs', desc: 'Profiles', color: '#10b981' },
+                  { icon: ReceiptIcon, label: 'Receipt', path: '/receipts', desc: 'Record bills', color: '#ec4899' },
+                ].map((tool) => {
+                  const ToolIcon = tool.icon;
+                  return (
+                    <NavLink
+                      key={tool.path}
+                      to={tool.path}
+                      onClick={() => setIsToolsOpen(false)}
+                      className={cn(
+                        "flex flex-col items-center justify-center p-4 rounded-3xl transition-all border text-left",
+                        isDark 
+                          ? "bg-slate-900/60 border-slate-800/80 hover:bg-slate-800/80" 
+                          : "bg-slate-50/50 border-slate-100 hover:bg-slate-100/50"
+                      )}
+                    >
+                      <div 
+                        className="w-11 h-11 rounded-2xl flex items-center justify-center mb-2.5 shadow-sm"
+                        style={{ backgroundColor: `${tool.color}15`, color: tool.color }}
+                      >
+                        <ToolIcon size={20} />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-wide text-center truncate w-full">
+                        {tool.label === 'Resume / CV' ? 'Resume' : tool.label}
+                      </span>
+                      <span className="text-[8px] text-slate-400 font-bold truncate w-full text-center mt-1 uppercase tracking-widest">
+                        {tool.desc}
+                      </span>
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Sidebar Container - Desktop */}
       <motion.aside

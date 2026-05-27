@@ -295,14 +295,14 @@ export default function Dashboard() {
         {/* Quick Stats Card */}
         <div className={cn(
           "col-span-12 lg:col-span-4 rounded-3xl p-8 flex flex-col justify-between min-h-[300px] h-full relative overflow-hidden transition-all duration-300 shadow-2xl backdrop-blur-xl",
-          isDark ? "bg-slate-950/35 border border-white/10 shadow-black/30" : "bg-black text-white shadow-black/10"
+          isDark ? "bg-slate-950/35 border border-white/10 shadow-black/30 text-white" : "bg-black text-white shadow-black/10"
         )}>
           <div 
             className="absolute bottom-0 right-0 w-32 h-32 rounded-full -mr-16 -mb-16 blur-3xl opacity-30" 
             style={{ backgroundColor: settings.primaryColor }}
           />
           <div className="flex justify-between items-center relative z-10">
-            <span className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Global Status</span>
+            <span className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Global Status</span>
             <div 
               className="w-2.5 h-2.5 rounded-full animate-pulse"
               style={{ 
@@ -313,7 +313,7 @@ export default function Dashboard() {
           </div>
           <div className="relative z-10">
             <div className="text-7xl font-black mb-3 tracking-tighter italic text-white">{totalDocs}</div>
-            <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] ml-1">Documents Generated</p>
+            <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] ml-1">Documents Generated</p>
           </div>
           <div className="space-y-4 relative z-10">
              <div className={cn("h-1.5 w-full rounded-full overflow-hidden", isDark ? "bg-slate-900" : "bg-slate-800")}>
@@ -327,7 +327,7 @@ export default function Dashboard() {
                 ></div>
              </div>
              <div className="flex justify-between items-center">
-               <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest">Growth Engine</p>
+               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">Growth Engine</p>
                <p className="text-[10px] font-black" style={{ color: settings.primaryColor }}>+14.2%</p>
              </div>
           </div>

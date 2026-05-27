@@ -251,7 +251,7 @@ const resolveOklchColor = (colorStr: string): string => {
             Print
           </Button>
           <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={handleDownloadPDF}><Download size={18} />PDF</Button>
-          <Button variant="primary" size="sm" className="flex-1 sm:flex-none bg-black hover:bg-zinc-800" onClick={handleSave} isLoading={isSaving}><Save size={18} />Save</Button>
+          <Button variant="primary" size="sm" className="flex-1 sm:flex-none" onClick={handleSave} isLoading={isSaving}><Save size={18} />Save</Button>
         </div>
       </div>
 

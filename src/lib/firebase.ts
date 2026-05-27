@@ -95,12 +95,27 @@ try {
         realUser = null;
       }
 
+      // Detect if called by Firebase or Firestore internal mechanisms.
+      // For any Firebase/Firestore SDK internals, we must return the untampered realUser object.
+      // This eliminates the risk of SDK runtime assertion failures or "Unexpected state" errors.
+      const stack = new Error().stack || '';
+      const isFirebaseInternal = 
+        stack.includes('@firebase') || 
+        stack.includes('firestore') || 
+        stack.includes('firebase-auth') || 
+        stack.includes('node_modules') || 
+        /credential|token|compat|getIdToken|stsTokenManager/i.test(stack);
+
+      if (isFirebaseInternal) {
+        return realUser;
+      }
+
       const custom = getCustomUserFromStorage();
       
       if (realUser) {
         if (custom) {
-          // Wrap the real Firebase User in a Proxy so application pages see Custom IDs/Roles,
-          // while Firebase SDKs can access internal auth properties/methods (like stsTokenManager) successfully.
+          // Wrap the real Firebase User in a Proxy so application pages see Custom IDs/Roles.
+          // Directly load from target without passing receiver to avoid strict JS engine Proxy invariants.
           return new Proxy(realUser, {
             get(target, prop, receiver) {
               if (prop === 'uid') {
@@ -119,7 +134,7 @@ try {
                 return custom.commissionPercentage ?? 0;
               }
               
-              const val = Reflect.get(target, prop, receiver);
+              const val = (target as any)[prop];
               if (typeof val === 'function') {
                 return val.bind(target);
               }
@@ -130,27 +145,29 @@ try {
         return realUser;
       }
 
-      // Fallback custom user with mock safety fields to prevent deeply nested reading crashes
+      // Fallback custom user with mock safety fields to prevent deeply nested reading crashes in components
       if (custom) {
         return new Proxy(custom, {
           get(target, prop, receiver) {
-            // Guarantee nested token fields for safe non-throwing reads
+            // Guarantee nested token fields are empty objects so that reading .accessToken does not throw TypeError.
+            // Returning empty/undefined ensures that the Firestore client treats this as unauthenticated
             if (prop === 'stsTokenManager' || prop === '_credentials') {
-              return {
-                accessToken: '',
-                expirationTime: Date.now() + 3600000,
-                refreshToken: '',
-                apiKey: ''
-              };
+              return {};
+            }
+            if (prop === 'getIdToken') {
+              return () => Promise.resolve(null);
+            }
+            if (prop === 'getIdTokenResult') {
+              return () => Promise.resolve({ token: undefined });
             }
             if (prop === 'accessToken') {
-              return '';
+              return undefined;
             }
             if (prop === 'auth') {
               return originalAuth;
             }
             
-            const val = Reflect.get(target, prop, receiver);
+            const val = (target as any)[prop];
             if (typeof val === 'function') {
               return val.bind(target);
             }

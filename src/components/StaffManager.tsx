@@ -16,8 +16,11 @@ interface StaffManagerProps {
   isDark: boolean;
   settings: any;
   usersList: any[];
+  rawTransactions?: any[];
+  currencySymbol?: string;
   onAddUser: (userPayload: any) => Promise<void>;
   onUpdateUserCommission: (userId: string, newPct: number) => Promise<void>;
+  onUpdateUserProperties: (userId: string, updatedFields: any) => Promise<void>;
   onDeleteUser: (userId: string) => Promise<void>;
 }
 
@@ -25,8 +28,11 @@ export default function StaffManager({
   isDark,
   settings,
   usersList,
+  rawTransactions = [],
+  currencySymbol = '$',
   onAddUser,
   onUpdateUserCommission,
+  onUpdateUserProperties,
   onDeleteUser
 }: StaffManagerProps) {
   // Add user Form states
@@ -38,9 +44,13 @@ export default function StaffManager({
   const [newCommission, setNewCommission] = useState('10');
   const [submitting, setSubmitting] = useState(false);
 
-  // Edit commission percentage state
-  const [editingCommissionId, setEditingCommissionId] = useState<string | null>(null);
-  const [editCommissionVal, setEditCommissionVal] = useState('10');
+  // Edit fields states
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editFullName, setEditFullName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [editRole, setEditRole] = useState<'admin' | 'executive'>('executive');
+  const [editCommission, setEditCommission] = useState('10');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,20 +112,48 @@ export default function StaffManager({
     }
   };
 
-  const handleUpdateCommission = async (id: string) => {
-    const rate = parseFloat(editCommissionVal);
-    if (isNaN(rate) || rate < 0 || rate > 100) {
-      toast.error('Please enter a valid percentage ratio (0 - 100)!');
+  const handleSaveUserProfile = async (id: string) => {
+    if (!editFullName.trim()) {
+      toast.error('Name cannot be blank!');
+      return;
+    }
+    const commPct = parseFloat(editCommission);
+    if (isNaN(commPct) || commPct < 0 || commPct > 100) {
+      toast.error('Commission rate must be a valid percentage ratio (0 - 100)!');
       return;
     }
 
+    const payload = {
+      name: editFullName.trim(),
+      email: editEmail.trim(),
+      password: editPassword.trim(),
+      role: editRole,
+      commissionPercentage: commPct
+    };
+
     try {
-      await onUpdateUserCommission(id, rate);
-      toast.success(`Commission rate updated successfully to ${rate}%!`);
-      setEditingCommissionId(null);
+      await onUpdateUserProperties(id, payload);
+      setEditingUserId(null);
     } catch (err: any) {
-      toast.error('Could not modify commission parameter: ' + err.message);
+      toast.error('Could not modify user profile: ' + err.message);
     }
+  };
+
+  const getUserStats = (userId: string) => {
+    let totalSold = 0;
+    let totalCommission = 0;
+    if (rawTransactions && rawTransactions.length > 0) {
+      rawTransactions.forEach(tx => {
+        if (tx.executiveId === userId) {
+          const total = tx.totalAmount || 0;
+          const rate = tx.commissionPercentage !== undefined ? tx.commissionPercentage : 10;
+          const earned = total * (rate / 100);
+          totalSold += total;
+          totalCommission += earned;
+        }
+      });
+    }
+    return { totalSold, totalCommission };
   };
 
   return (
@@ -267,22 +305,118 @@ export default function StaffManager({
               <tbody className="divide-y divide-slate-800/5 font-semibold text-slate-300">
                 {usersList.map(user => {
                   const isAdminRole = user.role === 'admin';
-                  const isEditingThis = editingCommissionId === user.id;
+                  const isEditingThis = editingUserId === user.id;
+
+                  if (isEditingThis) {
+                    return (
+                      <tr key={user.id} className="bg-slate-800/10 transition-all text-slate-300">
+                        {/* Name & Email inputs */}
+                        <td className="py-4 px-2">
+                          <div className="space-y-1.5 max-w-[180px]">
+                            <input
+                              type="text"
+                              value={editFullName}
+                              onChange={(e) => setEditFullName(e.target.value)}
+                              placeholder="Full Name"
+                              className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-705 text-white font-bold text-[11px] focus:ring-1 focus:ring-orange-500"
+                            />
+                            <input
+                              type="email"
+                              value={editEmail}
+                              onChange={(e) => setEditEmail(e.target.value)}
+                              placeholder="Email Address"
+                              className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-705 text-white font-mono text-[9px] focus:ring-1 focus:ring-orange-500"
+                            />
+                          </div>
+                        </td>
+
+                        {/* Role selection select dropdown */}
+                        <td className="py-4">
+                          <select
+                            value={editRole}
+                            onChange={(e) => setEditRole(e.target.value as any)}
+                            className="px-2 py-1.5 rounded bg-slate-900 border border-slate-705 text-[10px] text-white font-black uppercase tracking-wider focus:ring-1 focus:ring-orange-500"
+                          >
+                            <option value="executive">Executive</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        </td>
+
+                        {/* System Passkey password input */}
+                        <td className="py-4 font-mono">
+                          <input
+                            type="text"
+                            value={editPassword}
+                            onChange={(e) => setEditPassword(e.target.value)}
+                            placeholder="Password/Passkey"
+                            className="w-full max-w-[120px] px-2 py-1 rounded bg-slate-900 border border-slate-705 text-white font-mono text-[11px] font-bold focus:ring-1 focus:ring-orange-500"
+                          />
+                        </td>
+
+                        {/* Sales dynamic commission percentage ratio */}
+                        <td className="py-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5 max-w-[90px] mx-auto">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.1"
+                              value={editCommission}
+                              onChange={(e) => setEditCommission(e.target.value)}
+                              className="w-14 px-2 py-1 rounded bg-slate-900 border border-slate-705 text-white font-mono text-[11px] text-center font-black focus:ring-1 focus:ring-orange-500"
+                            />
+                            <span className="text-[10px] font-black text-slate-400">%</span>
+                          </div>
+                        </td>
+
+                        {/* Action buttons (Save vs Cancel) */}
+                        <td className="py-2 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleSaveUserProfile(user.id)}
+                              className="px-3 py-1.5 rounded bg-green-600 hover:bg-green-500 text-[9px] font-black text-white uppercase tracking-wider transition-all cursor-pointer shadow shadow-green-900/40"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingUserId(null)}
+                              className="px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-[9px] font-black text-slate-200 uppercase tracking-wider transition-all cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  const stats = getUserStats(user.id);
 
                   return (
                     <tr key={user.id} className="hover:bg-slate-800/5 transition-all text-slate-300">
-                      
                       {/* Name & ID */}
                       <td className="py-4 px-2">
-                        <span className="font-bold block" style={{ color: isDark ? 'white' : 'black' }}>{user.name}</span>
-                        <span className="text-[9px] text-slate-500 font-black font-mono">ID: {user.id} • {user.email}</span>
+                        <div className="flex flex-col gap-1 justify-center">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-bold text-xs" style={{ color: isDark ? 'white' : 'black' }}>{user.name}</span>
+                            
+                            {/* Inline display of Sales & Commissions */}
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5">
+                              Sales: <strong className="font-mono font-black">{currencySymbol}{stats.totalSold.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong>
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20 text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5">
+                              Comm: <strong className="font-mono font-black">{currencySymbol}{stats.totalCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong>
+                            </span>
+                          </div>
+                          <span className="text-[9px] text-slate-500 font-black font-mono">ID: {user.id} • {user.email}</span>
+                        </div>
                       </td>
 
                       {/* Access Level Badge */}
                       <td className="py-4">
                         <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
-                          isAdminRole 
-                            ? "bg-rose-500/10 text-rose-500 border border-rose-500/20" 
+                          isAdminRole
+                            ? "bg-rose-500/10 text-rose-500 border border-rose-500/20"
                             : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
                         }`}>
                           {user.role}
@@ -296,60 +430,46 @@ export default function StaffManager({
 
                       {/* Commission rate */}
                       <td className="py-4 text-center">
-                        {isEditingThis ? (
-                          <div className="flex items-center justify-center gap-1.5 max-w-[120px] mx-auto animate-fade-in">
-                            <input 
-                              type="number"
-                              className="w-16 px-2 py-1 rounded bg-slate-900 border border-slate-800 text-white font-mono text-[10px] text-center"
-                              value={editCommissionVal}
-                              onChange={(e) => setEditCommissionVal(e.target.value)}
-                            />
-                            <button
-                              onClick={() => handleUpdateCommission(user.id)}
-                              className="px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-[8px] font-extrabold text-white uppercase text-center cursor-pointer"
-                            >
-                              Save
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="font-black font-mono text-xs" style={{ color: isDark ? 'white' : 'black' }}>
-                              {user.commissionPercentage !== undefined ? user.commissionPercentage : 10}%
-                            </span>
-                            {!isAdminRole && (
-                              <button
-                                onClick={() => {
-                                  setEditingCommissionId(user.id);
-                                  setEditCommissionVal(String(user.commissionPercentage ?? 10));
-                                }}
-                                className="text-[8px] text-[#ec4899] font-black tracking-wider hover:underline uppercase cursor-pointer"
-                              >
-                                Edit ratio
-                              </button>
-                            )}
-                          </div>
-                        )}
+                        <span className="font-black font-mono text-xs" style={{ color: isDark ? 'white' : 'black' }}>
+                          {user.commissionPercentage !== undefined ? user.commissionPercentage : 10}%
+                        </span>
                       </td>
 
-                      {/* Delete Action (Do not allow deleting 'admin' directly from dashboard for safety) */}
+                      {/* Action buttons */}
                       <td className="py-4 text-center">
-                        {user.id !== 'admin' ? (
+                        <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => {
-                              if (confirm(`Are you absolutely sure you want to terminate the login credentials and profile for ${user.name}? This will revoke access immediately.`)) {
-                                onDeleteUser(user.id);
-                              }
+                              setEditingUserId(user.id);
+                              setEditFullName(user.name);
+                              setEditEmail(user.email || '');
+                              setEditPassword(user.password || '');
+                              setEditRole(user.role || 'executive');
+                              setEditCommission(String(user.commissionPercentage ?? 10));
                             }}
-                            className="p-2 hover:bg-red-500/10 text-slate-500 hover:text-red-500 rounded-xl transition-all cursor-pointer"
-                            title="Delete Credential Account"
+                            className="px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-black text-[9px] uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer"
+                            title="Edit profile credentials and percentage ratios"
                           >
-                            <Trash2 size={14} />
+                            Edit
                           </button>
-                        ) : (
-                          <span className="text-[8.5px] text-slate-600 font-bold uppercase tracking-wider">Root Protected</span>
-                        )}
-                      </td>
 
+                          {user.id !== 'admin' ? (
+                            <button
+                              onClick={() => {
+                                if (confirm(`Are you absolutely sure you want to terminate the login credentials and profile for ${user.name}? This will revoke access immediately.`)) {
+                                  onDeleteUser(user.id);
+                                }
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-black text-[9px] uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer"
+                              title="Delete staff account"
+                            >
+                              Delete
+                            </button>
+                          ) : (
+                            <span className="text-[8.5px] text-slate-500 font-bold uppercase tracking-wider pl-1">Root Protected</span>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
