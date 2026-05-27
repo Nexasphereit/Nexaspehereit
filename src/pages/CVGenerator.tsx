@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Download, Printer, Save, UserCircle, ArrowLeft, Globe, Mail, Phone, MapPin, ImageIcon, Briefcase, GraduationCap } from 'lucide-react';
+import { Plus, Trash2, Download, Printer, Save, UserCircle, ArrowLeft, Globe, Mail, Phone, MapPin, ImageIcon, Briefcase, GraduationCap, Sparkles, Wand2 } from 'lucide-react';
 import { Button, Input, Card, ImageUpload } from '../components/common/UI';
 import { cn } from '../lib/utils';
 import { CV, Experience, Education } from '../types';
@@ -18,6 +18,49 @@ export default function CVGenerator() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
+  
+  // Node.js AI CV endpoints state
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [showAiCvPanel, setShowAiCvPanel] = useState(false);
+  const [aiFocusArea, setAiFocusArea] = useState('');
+
+  const handleAiCvEnhance = async () => {
+    if (!cv.profession.trim()) {
+      return toast.error("Please enter your profession first (e.g. Senior Software Engineer)");
+    }
+    
+    setIsAiLoading(true);
+    const toastId = toast.loading('Consulting NexaSphere Node.js AI Writer...', { duration: 0 });
+    try {
+      const res = await fetch('/api/ai/enhance-cv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: cv.profession,
+          focusArea: aiFocusArea || "Modern enterprise-grade technologies"
+        })
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        setCv(prev => ({
+          ...prev,
+          aboutMe: data.summary || prev.aboutMe,
+          skills: data.skills && data.skills.length > 0 ? data.skills : prev.skills
+        }));
+        toast.success('Successfully enhanced your Profile & Skills!', { id: toastId });
+        setShowAiCvPanel(false);
+      } else {
+        toast.error('Failed to parse from target Node.js endpoint.', { id: toastId });
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Connection failure to Node.js backend API.', { id: toastId });
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
   const [cv, setCv] = useState<CV>({
     userId: auth.currentUser?.uid || 'admin',
     fullName: '',
@@ -308,9 +351,53 @@ const resolveOklchColor = (colorStr: string): string => {
             <Input label="Address" value={cv.address || ''} onChange={e => setCv(p => ({...p, address: e.target.value}))} />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1 italic">Summary</label>
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1 italic">Summary</label>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowAiCvPanel(!showAiCvPanel)}
+                className="text-rose-600 dark:text-rose-400 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+              >
+                <Sparkles size={13} /> Optimize Summary with AI
+              </Button>
+            </div>
+
+            {showAiCvPanel && (
+              <div className="p-4 bg-rose-50/20 dark:bg-rose-950/10 border border-rose-100/30 dark:border-rose-950/45 rounded-2xl space-y-3.5 transition-all mb-3 text-slate-900 dark:text-white">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-rose-500" />
+                  <p className="text-xs font-black uppercase tracking-wider text-rose-950 dark:text-rose-200">
+                    NexaSphere Resume AI Optimiser (Node.js API)
+                  </p>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed font-semibold italic">
+                  Provide custom focus keywords or specialized expertise parameters (e.g. "React development, AWS serverless design") to instantly generate and inject a highly-optimized profile summary and skill tags matching your role: <strong className="text-black dark:text-white">"{cv.profession || 'not specified yet'}"</strong>.
+                </p>
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <Input 
+                      placeholder="e.g. Cloud Security, High Performance UI Optimization" 
+                      value={aiFocusArea}
+                      onChange={e => setAiFocusArea(e.target.value)}
+                      className="bg-white dark:bg-slate-900"
+                    />
+                  </div>
+                  <Button 
+                    variant="primary" 
+                    size="sm" 
+                    onClick={handleAiCvEnhance} 
+                    isLoading={isAiLoading}
+                    className="p-3 shadow-lg"
+                  >
+                    <Wand2 size={16} />
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <textarea 
-              className="w-full px-5 py-4 bg-slate-50 border-none rounded-3xl focus:ring-1 focus:ring-black transition-all outline-none text-slate-900 h-32 text-sm font-medium"
+              className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-850/45 border-none rounded-3xl focus:ring-1 focus:ring-black dark:text-white transition-all outline-none text-slate-900 h-32 text-sm font-medium"
               value={cv.aboutMe || ''}
               placeholder="Describe your professional career..."
               onChange={e => setCv(p => ({...p, aboutMe: e.target.value}))}

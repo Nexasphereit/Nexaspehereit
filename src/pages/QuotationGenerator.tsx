@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Download, Printer, Save, FileText, ArrowLeft, ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Download, Printer, Save, FileText, ArrowLeft, ImageIcon, Sparkles, Wand2 } from 'lucide-react';
 import { Button, Input, Card, ImageUpload } from '../components/common/UI';
 import { cn } from '../lib/utils';
 import { Quotation, QuotationItem } from '../types';
@@ -17,6 +17,12 @@ export default function QuotationGenerator() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
+  
+  // Premium Node.js AI endpoint state
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiCategory, setAiCategory] = useState('');
+  const [showAiPanel, setShowAiPanel] = useState(false);
+
   const [quotation, setQuotation] = useState<Quotation>({
     userId: auth.currentUser?.uid || 'admin',
     quotationNumber: `QT-${Date.now().toString().slice(-6)}`,
@@ -34,6 +40,50 @@ export default function QuotationGenerator() {
   });
 
   const { settings } = useTheme();
+
+  const handleAiSuggest = async () => {
+    if (!aiCategory.trim()) {
+      return toast.error('Please specify a service area (e.g. Node.js backend development)');
+    }
+    
+    setIsAiLoading(true);
+    const toastId = toast.loading('Consulting NexaSphere Node.js AI Engine...', { duration: 0 });
+    try {
+      const res = await fetch('/api/ai/suggest-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: aiCategory,
+          clientName: quotation.clientName
+        })
+      });
+      
+      const data = await res.json();
+      if (data.success && data.items) {
+        setQuotation(prev => ({
+          ...prev,
+          items: data.items.map((it: any) => ({
+            id: Math.random().toString(36).substring(2, 11),
+            serviceName: it.serviceName,
+            description: it.description,
+            price: Number(it.price) || 0,
+            quantity: Number(it.quantity) || 1,
+            total: (Number(it.price) || 0) * (Number(it.quantity) || 1)
+          })),
+          notes: data.notes || prev.notes
+        }));
+        toast.success('Successfully generated premium draft items!', { id: toastId });
+        setShowAiPanel(false);
+      } else {
+        toast.error('Failed to parse suggestions from the API server.', { id: toastId });
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to communicate with the Node.js API server.', { id: toastId });
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -360,12 +410,55 @@ const resolveOklchColor = (colorStr: string): string => {
           </div>
 
           <div className="space-y-4 pt-6 border-t border-slate-100">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-2">
               <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Line Items</h3>
-              <Button variant="ghost" size="sm" onClick={handleAddItem} className="text-black font-black uppercase tracking-widest">
-                <Plus size={16} /> Add Entry
-              </Button>
+              <div className="flex gap-2.5">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowAiPanel(!showAiPanel)}
+                  className="text-rose-600 dark:text-rose-400 font-black text-[10px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Sparkles size={14} /> AI Draft Suggestion
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleAddItem} className="text-black dark:text-white font-black text-[10px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer">
+                  <Plus size={14} /> Add Entry
+                </Button>
+              </div>
             </div>
+
+            {showAiPanel && (
+              <div className="p-4 bg-rose-50/20 dark:bg-rose-950/10 border border-rose-100/30 dark:border-rose-950/45 rounded-2xl space-y-3.5 transition-all">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-rose-500" />
+                  <p className="text-xs font-black uppercase tracking-wider text-rose-950 dark:text-rose-200">
+                    NexaSphere AI Consulting Assistant (Node.js API)
+                  </p>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed font-semibold italic">
+                  Specify your project focus (e.g., "Full Stack Web App Development", "Cybersecurity Audit", "Devops Migration") to automatically calculate premium items, detailed descriptions, and custom proposal scope.
+                </p>
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <Input 
+                      placeholder="e.g. Node.js backend and React frontend dashboard" 
+                      value={aiCategory}
+                      onChange={e => setAiCategory(e.target.value)}
+                      className="bg-white dark:bg-slate-900"
+                    />
+                  </div>
+                  <Button 
+                    variant="primary" 
+                    size="sm" 
+                    onClick={handleAiSuggest} 
+                    isLoading={isAiLoading}
+                    className="p-3 shadow-lg"
+                  >
+                    <Wand2 size={16} />
+                  </Button>
+                </div>
+              </div>
+            )}
             
             <div className="space-y-4">
               {quotation.items.map((item, idx) => (
