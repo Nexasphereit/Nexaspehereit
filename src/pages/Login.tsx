@@ -13,8 +13,10 @@ import { Button, Card } from '../components/common/UI';
 import { LogIn, ShieldAlert, KeyRound, User as UserIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GalaxyBackground } from '../components/common/GalaxyBackground';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
+  const { settings } = useTheme();
   const [userIdInput, setUserIdInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -125,7 +127,16 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
             // Check secondary check by email
             const qEmail = query(collection(db, 'users'), where('email', '==', normalizedInput));
             const qEmailSnap = await getDocs(qEmail);
-            const foundDoc = qEmailSnap.docs[0];
+            let foundDoc = qEmailSnap.docs[0];
+            
+            // Fallback: Case-insensitive scan of users collection in case the email is stored in a different case
+            if (!foundDoc) {
+              const allUsersSnap = await getDocs(collection(db, 'users'));
+              foundDoc = allUsersSnap.docs.find(d => {
+                const mail = d.data().email;
+                return mail && typeof mail === 'string' && mail.toLowerCase() === normalizedInput;
+              });
+            }
             
             if (foundDoc) {
               const data = foundDoc.data();
@@ -142,6 +153,58 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
           }
           console.warn("Firestore database checks skipped or failed:", dbError);
         }
+
+        // Standard Firebase Auth (Email/Password) fallback if no user was matched in Firestore
+        if (!matchedUser && normalizedInput.includes('@')) {
+          try {
+            const userCredential = await signInWithEmailAndPassword(auth, normalizedInput, cleanPassword);
+            const fbUser = userCredential.user;
+            if (fbUser) {
+              let dbUser: any = null;
+              try {
+                const userRef = doc(db, 'users', fbUser.uid);
+                const userDoc = await getDoc(userRef);
+                if (userDoc.exists()) {
+                  dbUser = userDoc.data();
+                } else {
+                  // Check secondary check by email
+                  const qEmail = query(collection(db, 'users'), where('email', '==', fbUser.email));
+                  const qEmailSnap = await getDocs(qEmail);
+                  let foundDoc = qEmailSnap.docs[0];
+                  if (!foundDoc) {
+                    const allUsersSnap = await getDocs(collection(db, 'users'));
+                    foundDoc = allUsersSnap.docs.find(d => {
+                      const mail = d.data().email;
+                      return mail && typeof mail === 'string' && mail.toLowerCase() === (fbUser.email?.toLowerCase() || '');
+                    });
+                  }
+                  if (foundDoc) {
+                    dbUser = foundDoc.data();
+                  }
+                }
+              } catch (e) {
+                console.warn("Could not retrieve user document for standard Firebase Auth user:", e);
+              }
+
+              matchedUser = {
+                id: fbUser.uid,
+                uid: fbUser.uid,
+                name: dbUser?.name || fbUser.displayName || fbUser.email?.split('@')[0] || 'Authenticated User',
+                email: fbUser.email,
+                role: dbUser?.role || 'executive',
+                commissionPercentage: dbUser?.commissionPercentage || 0,
+                ...dbUser
+              };
+            }
+          } catch (authErr: any) {
+            console.warn("Standard Firebase Auth sign-in failed:", authErr);
+            if (authErr && (authErr.code === 'auth/wrong-password' || authErr.code === 'auth/invalid-credential')) {
+              throw new Error("Incorrect password for this secure email account!");
+            } else if (authErr && authErr.code === 'auth/user-not-found') {
+              throw new Error("No registered account found with this email!");
+            }
+          }
+        }
       }
 
       if (matchedUser) {
@@ -155,9 +218,11 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
           commissionPercentage: matchedUser.commissionPercentage || 0
         }));
 
-        // Trigger Standard Firebase Auth in the background (Anonymous session) to enable Firestore rules
+        // Trigger Standard Firebase Auth in the background (Anonymous session) to enable Firestore rules only if not already authenticated
         try {
-          await signInAnonymously(auth);
+          if (!auth.currentUser || auth.currentUser.isAnonymous) {
+            await signInAnonymously(auth);
+          }
         } catch (authError) {
           console.warn("Firebase Auth Anonymous Session skipped (operating in offline fallback):", authError);
         }
@@ -189,9 +254,15 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-red-600/5 rounded-full -ml-16 -mb-16 blur-2xl" />
         
         <div className="text-center space-y-6 relative z-10 px-4 py-6">
-          <div className="w-24 h-24 bg-gradient-to-br from-rose-600 to-red-800 rounded-[2.5rem] mx-auto flex items-center justify-center rotate-6 shadow-2xl shadow-rose-900/40 border border-rose-500/30">
-            <ShieldAlert size={48} className="text-white" />
-          </div>
+          {settings.companyLogo ? (
+            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-2xl bg-white border border-slate-200 p-3 transition-transform hover:scale-105 duration-300">
+              <img src={settings.companyLogo} alt="Company Logo" className="max-w-full max-h-full object-contain" />
+            </div>
+          ) : (
+            <div className="w-24 h-24 bg-gradient-to-br from-rose-600 to-red-800 rounded-[2.5rem] mx-auto flex items-center justify-center rotate-6 shadow-2xl shadow-rose-900/40 border border-rose-500/30">
+              <ShieldAlert size={48} className="text-white" />
+            </div>
+          )}
           <div>
             <div className="inline-flex items-center gap-2 mb-2">
               <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />

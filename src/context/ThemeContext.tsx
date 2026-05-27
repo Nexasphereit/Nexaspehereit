@@ -116,6 +116,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       document.documentElement.style.setProperty('--font-sans', `"${font}", ui-sans-serif, system-ui, sans-serif`);
       body.classList.add('font-sans');
     }
+
+    // Dynamically update the web browser tab icon (favicon) with active company logo
+    if (settings.companyLogo) {
+      let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        link.type = 'image/png';
+        document.head.appendChild(link);
+      }
+      link.href = settings.companyLogo;
+    }
   }, [settings]);
 
   return (
