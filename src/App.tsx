@@ -1,5 +1,5 @@
 import { Toaster } from 'react-hot-toast';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import Sidebar from './components/common/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -17,6 +17,21 @@ import { auth } from './lib/firebase';
 import Login from './pages/Login';
 import { GalaxyBackground } from './components/common/GalaxyBackground';
 import { Sparkles } from 'lucide-react';
+
+// Nexora Digital agency pages
+import NexoraHeader from './components/nexora/NexoraHeader';
+import NexoraFooter from './components/nexora/NexoraFooter';
+import NexoraHome from './pages/nexora/NexoraHome';
+import NexoraAbout from './pages/nexora/NexoraAbout';
+import NexoraServices from './pages/nexora/NexoraServices';
+import NexoraPortfolio from './pages/nexora/NexoraPortfolio';
+import NexoraCaseStudies from './pages/nexora/NexoraCaseStudies';
+import NexoraPricing from './pages/nexora/NexoraPricing';
+import NexoraBlog from './pages/nexora/NexoraBlog';
+import NexoraContact from './pages/nexora/NexoraContact';
+import NexoraAdmin from './pages/nexora/NexoraAdmin';
+import NexoraTerms from './pages/nexora/NexoraTerms';
+import NexoraPrivacy from './pages/nexora/NexoraPrivacy';
 
 function AppContent() {
   const [user, setUser] = useState<any>(null);
@@ -137,12 +152,90 @@ function AppContent() {
     );
   }
 
-  if (!user) {
-    return <Login onLogin={setUser} />;
-  }
-
   const isDark = settings.sidebarTheme === 'dark';
 
+  // Compute Route Divisions
+  const publicPaths = ['/about', '/services', '/portfolio', '/case-studies', '/pricing', '/blog', '/contact', '/terms', '/privacy'];
+  const isPublicRoute = publicPaths.includes(location.pathname) || location.pathname === '/';
+  
+  const privatePaths = ['/dashboard', '/it-sales', '/quotations', '/cvs', '/receipts', '/history', '/settings', '/admin'];
+  const isPrivateRoute = privatePaths.some(p => location.pathname === p || location.pathname.startsWith(p));
+
+  const isLoginPath = location.pathname === '/login';
+
+  // Check login routes
+  if (isLoginPath || (isPrivateRoute && !user)) {
+    return (
+      <div className="min-h-screen bg-[#02020a] text-white flex flex-col justify-between">
+        <NexoraHeader />
+        <div className="flex-1 pt-16 flex items-center justify-center">
+          <Login onLogin={(u) => {
+            setUser(u);
+          }} />
+        </div>
+        <NexoraFooter />
+        <Toaster position="bottom-right" />
+      </div>
+    );
+  }
+
+  // PUBLIC AGENCY WEBSITE WRAPPER (Nexora Digital)
+  if (isPublicRoute || (!isPrivateRoute && !isLoginPath)) {
+    return (
+      <div className={cn("min-h-screen flex flex-col justify-between transition-colors duration-300 relative overflow-hidden bg-[#02020a] text-white font-sans")}>
+        {/* Top Loading Progress Bar */}
+        <AnimatePresence>
+          {isNavigating && (
+            <motion.div
+              initial={{ opacity: 1, width: '0%' }}
+              animate={{ width: `${navProgress}%` }}
+              exit={{ opacity: 0, transition: { duration: 0.25 } }}
+              className="fixed top-0 left-0 h-[3px] z-50 pointer-events-none"
+              style={{
+                backgroundColor: settings.primaryColor || '#f43f5e',
+                boxShadow: `0 2px 12px ${settings.primaryColor || '#f43f5e'}dd`
+              }}
+            />
+          )}
+        </AnimatePresence>
+        
+        {isDark && <GalaxyBackground />}
+        <NexoraHeader />
+        
+        <main className="flex-1 relative z-10 w-full">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 15, filter: 'blur(3px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -12, filter: 'blur(3px)' }}
+              transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Routes>
+                <Route path="/" element={<NexoraHome />} />
+                <Route path="/about" element={<NexoraAbout />} />
+                <Route path="/services" element={<NexoraServices />} />
+                <Route path="/portfolio" element={<NexoraPortfolio />} />
+                <Route path="/case-studies" element={<NexoraCaseStudies />} />
+                <Route path="/pricing" element={<NexoraPricing />} />
+                <Route path="/blog" element={<NexoraBlog />} />
+                <Route path="/contact" element={<NexoraContact />} />
+                <Route path="/admin" element={<NexoraAdmin />} />
+                <Route path="/terms" element={<NexoraTerms />} />
+                <Route path="/privacy" element={<NexoraPrivacy />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </motion.div>
+          </AnimatePresence>
+        </main>
+        
+        <NexoraFooter />
+        <Toaster position="bottom-right" />
+      </div>
+    );
+  }
+
+  // PRIVATE WORKSPACE DESKTOP LAYOUT (NexaSphere)
   return (
     <div className={cn("flex min-h-screen transition-colors duration-300 relative overflow-hidden", ['font-sans', 'font-serif', 'font-mono'].includes(settings.fontFamily) ? settings.fontFamily : 'font-sans', isDark ? 'bg-[#02020a] text-white' : 'bg-slate-50 text-slate-900')}>
       {/* Top Loading Progress Bar */}
@@ -163,8 +256,8 @@ function AppContent() {
 
       {isDark && <GalaxyBackground />}
       <Sidebar />
-      <main className={cn("flex-1 md:ml-[280px] pt-20 pb-24 px-4 md:p-8 transition-all relative z-10", isDark ? 'bg-transparent' : 'bg-slate-50')}>
-        {/* Animated Page Transitions using key and location updates */}
+      <main className={cn("flex-1 md:ml-[280px] pt-14 pb-24 px-4 md:p-8 transition-all relative z-10", isDark ? 'bg-transparent' : 'bg-slate-50')}>
+        {/* Animated Page Transitions */}
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -173,14 +266,16 @@ function AppContent() {
             exit={{ opacity: 0, y: -12, filter: 'blur(3px)' }}
             transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
           >
-            <Routes location={location}>
-              <Route path="/" element={<Dashboard />} />
+            <Routes>
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/it-sales" element={<ITSalesDashboard />} />
               <Route path="/quotations/:id?" element={<QuotationGenerator />} />
               <Route path="/cvs/:id?" element={<CVGenerator />} />
               <Route path="/receipts/:id?" element={<ReceiptGenerator />} />
               <Route path="/history" element={<History />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/admin" element={<NexoraAdmin />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </motion.div>
         </AnimatePresence>

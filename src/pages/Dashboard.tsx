@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileText, UserCircle, Receipt as ReceiptIcon, ArrowRight, Settings as SettingsIcon, Search, Sparkles, History as HistoryIcon, Building2 } from 'lucide-react';
+import { FileText, UserCircle, Receipt as ReceiptIcon, ArrowRight, Settings as SettingsIcon, Search, Sparkles, History as HistoryIcon, Building2, Sliders } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, where } from 'firebase/firestore';
@@ -427,43 +427,78 @@ export default function Dashboard() {
            ))}
         </div>
 
-        {/* Pro Tip Card */}
-        <motion.div 
-          variants={itemVariants}
-          className="col-span-12 border rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 group relative overflow-hidden"
-          style={{ 
-            backgroundColor: `${settings.primaryColor}05`,
-            borderColor: `${settings.primaryColor}15`
-          }}
-        >
-          <div className="flex items-center gap-6 relative z-10">
-            <motion.div 
-              whileHover={{ rotate: 180, transition: { duration: 0.8 } }}
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg"
-              style={{ backgroundColor: settings.primaryColor }}
-            >
-              <SettingsIcon size={24} />
-            </motion.div>
-            <div>
-              <p className={cn("font-black uppercase italic", isDark ? "text-white" : "text-slate-900")}>PRO TIP: PERSONALIZATION</p>
-              <p className="text-sm text-slate-500 font-semibold italic">Head over to Settings to change your application font and primary theme color!</p>
+        {/* Actions & Personalization Cards Grid */}
+        <div className="col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Pro Tip Card */}
+          <motion.div 
+            variants={itemVariants}
+            className="border rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 group relative overflow-hidden"
+            style={{ 
+              backgroundColor: `${settings.primaryColor}05`,
+              borderColor: `${settings.primaryColor}15`
+            }}
+          >
+            <div className="flex items-center gap-5 relative z-10">
+              <motion.div 
+                whileHover={{ rotate: 180, transition: { duration: 0.8 } }}
+                className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg"
+                style={{ backgroundColor: settings.primaryColor }}
+              >
+                <SettingsIcon size={22} />
+              </motion.div>
+              <div>
+                <p className={cn("font-black uppercase italic text-xs tracking-wider", isDark ? "text-white" : "text-slate-900")}>Workspace Themes</p>
+                <p className="text-[11px] text-slate-500 font-semibold italic mt-0.5">Change your workspace fonts and primary brand design aesthetics.</p>
+              </div>
             </div>
-          </div>
-          <Link to="/settings" className="w-full md:w-auto relative z-10">
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-full md:w-auto px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all border cursor-pointer hover:shadow-md"
-              style={{ 
-                color: settings.primaryColor, 
-                borderColor: `${settings.primaryColor}33`,
-                backgroundColor: isDark ? '#111222' : 'white'
-              }}
-            >
-              Configure Now
-            </motion.button>
-          </Link>
-        </motion.div>
+            <Link to="/settings" className="w-full sm:w-auto relative z-10 shrink-0">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all border cursor-pointer hover:shadow-md"
+                style={{ 
+                  color: settings.primaryColor, 
+                  borderColor: `${settings.primaryColor}33`,
+                  backgroundColor: isDark ? '#111222' : 'white'
+                }}
+              >
+                Configure
+              </motion.button>
+            </Link>
+          </motion.div>
+
+          {/* Website Customizer Card */}
+          <motion.div 
+            variants={itemVariants}
+            className="border rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 group relative overflow-hidden"
+            style={{ 
+              backgroundColor: `rgba(99, 102, 241, 0.05)`,
+              borderColor: `rgba(99, 102, 241, 0.15)`
+            }}
+          >
+            <div className="flex items-center gap-5 relative z-10">
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 15 }}
+                className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg bg-indigo-600"
+              >
+                <Sliders size={22} />
+              </motion.div>
+              <div>
+                <p className={cn("font-black uppercase italic text-xs tracking-wider", isDark ? "text-white" : "text-slate-900")}>Website Customizer</p>
+                <p className="text-[11px] text-slate-500 font-semibold italic mt-0.5">Modify hero, team, FAQs, and bottom terms/privacy disclosures instantly.</p>
+              </div>
+            </div>
+            <Link to="/admin" className="w-full sm:w-auto relative z-10 shrink-0">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all border cursor-pointer hover:shadow-md bg-indigo-600 border-indigo-500 text-white shadow-lg"
+              >
+                Customize
+              </motion.button>
+            </Link>
+          </motion.div>
+        </div>
       </motion.div>
     </div>
   );

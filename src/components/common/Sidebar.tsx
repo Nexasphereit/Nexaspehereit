@@ -12,7 +12,8 @@ import {
   Sun,
   Moon,
   Building2,
-  Sparkles
+  Sparkles,
+  Sliders
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -21,22 +22,35 @@ import { useTheme } from '../../context/ThemeContext';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
 
-const sidebarItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-  { icon: Building2, label: 'IT Sales Hub', path: '/it-sales' },
-  { icon: FileText, label: 'Quotation', path: '/quotations' },
-  { icon: UserCircle, label: 'CV / Resume', path: '/cvs' },
-  { icon: ReceiptIcon, label: 'Money Receipt', path: '/receipts' },
-  { icon: History, label: 'History', path: '/history' },
-  { icon: SettingsIcon, label: 'Settings', path: '/settings' },
-];
-
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isToolsOpen, setIsToolsOpen] = useState(false);
   const { settings, toggleDarkMode } = useTheme();
   const location = useLocation();
   const isDark = settings.sidebarTheme === 'dark';
+
+  let userRole = 'executive';
+  const savedCustomUser = localStorage.getItem('customUser');
+  if (savedCustomUser) {
+    try {
+      userRole = JSON.parse(savedCustomUser)?.role || 'executive';
+    } catch (e) {}
+  } else if ((auth.currentUser as any)?.role) {
+    userRole = (auth.currentUser as any).role;
+  }
+  const isAdmin = userRole === 'admin';
+
+  const sidebarItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: Sparkles, label: 'Agency View', path: '/' },
+    { icon: Building2, label: 'IT Sales Hub', path: '/it-sales' },
+    { icon: FileText, label: 'Quotation', path: '/quotations' },
+    { icon: UserCircle, label: 'CV / Resume', path: '/cvs' },
+    { icon: ReceiptIcon, label: 'Money Receipt', path: '/receipts' },
+    { icon: History, label: 'History', path: '/history' },
+    { icon: SettingsIcon, label: 'Settings', path: '/settings' },
+    { icon: Sliders, label: 'Website Customizer', path: '/admin' }
+  ];
 
   useEffect(() => {
     // Set open by default on desktop
@@ -54,8 +68,8 @@ export default function Sidebar() {
   const isDocCreationActive = ['/quotations', '/cvs', '/receipts'].some(p => location.pathname.startsWith(p));
 
   const mobileNavItems = [
-    { icon: LayoutDashboard, label: 'Home', path: '/' },
-    { icon: Building2, label: 'Sales', path: '/it-sales' },
+    { icon: LayoutDashboard, label: 'Home', path: '/dashboard' },
+    { icon: Sparkles, label: 'Agency', path: '/' },
     { isCreateCenter: true },
     { icon: History, label: 'History', path: '/history' },
     { icon: SettingsIcon, label: 'Settings', path: '/settings' },
