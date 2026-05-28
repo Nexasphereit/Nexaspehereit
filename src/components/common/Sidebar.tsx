@@ -116,7 +116,7 @@ export default function Sidebar() {
           </NavLink>
 
           <button 
-            onClick={() => signOut(auth)}
+            onClick={handleLogout}
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
             title="Sign Out"
           >

@@ -20,6 +20,78 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
   const [userIdInput, setUserIdInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [dbUsers, setDbUsers] = useState<any[]>([]);
+  const [showGmailBypass, setShowGmailBypass] = useState(false);
+  const [bypassEmail, setBypassEmail] = useState('');
+
+  // Fetch all Firestore users for sandbox simulation
+  useEffect(() => {
+    const fetchDbUsers = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'users'));
+        const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+        // Ensure there is at least 'admin'
+        if (!list.some(u => u.id === 'admin')) {
+          list.unshift({
+            id: 'admin',
+            name: 'Main Administrator',
+            email: 'admin@nexasphere.it',
+            role: 'admin',
+            password: 'admin',
+            commissionPercentage: 10
+          });
+        }
+        setDbUsers(list);
+      } catch (e) {
+        console.warn("Could not fetch user list for sandbox fallback login:", e);
+        setDbUsers([{
+          id: 'admin',
+          name: 'Main Administrator',
+          email: 'admin@nexasphere.it',
+          role: 'admin',
+          password: 'admin',
+          commissionPercentage: 10
+        }]);
+      }
+    };
+    fetchDbUsers();
+  }, []);
+
+  const handleQuickLogin = async (userObj: any) => {
+    setLoading(true);
+    try {
+      setUserIdInput(userObj.id);
+      setPasswordInput(userObj.password || 'admin');
+      
+      const matchedUser = {
+        id: userObj.id,
+        uid: userObj.id,
+        name: userObj.name,
+        email: userObj.email,
+        role: userObj.role || 'executive',
+        commissionPercentage: userObj.commissionPercentage || 10
+      };
+
+      localStorage.setItem('customUser', JSON.stringify(matchedUser));
+
+      try {
+        if (!auth.currentUser || auth.currentUser.isAnonymous) {
+          await signInAnonymously(auth);
+        }
+      } catch (_) {}
+
+      toast.success(`Sandbox Access Granted: Logged in as ${userObj.name}!`);
+      onLogin(matchedUser);
+
+      setTimeout(() => {
+        window.location.href = '/it-sales';
+      }, 300);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to log in.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Automatically seed standard Administrator credentials on startup 
   useEffect(() => {
@@ -360,60 +432,14 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
                   return;
                 }
               } catch (popupErr: any) {
-                console.warn("Iframe popup sign-in blocked or failed, falling back to manual email prompt...", popupErr);
+                console.warn("Iframe popup sign-in blocked or failed, falling back to inline email bypass...", popupErr);
               } finally {
                 setLoading(false);
               }
 
-              // Fallback for sandboxed preview iframe structures 
-              const testGmail = prompt("Enter any Gmail address to log in directly as Admin (Iframe Bypass):", "gwhasu@gmail.com");
-              if (testGmail && testGmail.trim()) {
-                const cleanGmail = testGmail.trim().toLowerCase();
-                if (!cleanGmail.endsWith('.com')) {
-                  toast.error("Please enter a valid email address (e.g., yourname@gmail.com)");
-                  return;
-                }
-                setUserIdInput(cleanGmail);
-                setPasswordInput("adminBypassPasskey");
-                toast.success("Authenticating Gmail as Administrator...");
-                // Trigger submit handler by updating inputs and then submitting
-                setLoading(true);
-                setTimeout(async () => {
-                  try {
-                    const namePart = cleanGmail.split('@')[0];
-                    const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-                    const matchedUser = {
-                      id: 'admin',
-                      uid: 'admin',
-                      name: `${displayName} (Testing Admin)`,
-                      email: cleanGmail,
-                      role: 'admin',
-                      commissionPercentage: 15
-                    };
-                    localStorage.setItem('customUser', JSON.stringify(matchedUser));
-                    try {
-                      await signInAnonymously(auth);
-                      await setDoc(doc(db, 'users', 'admin'), {
-                        id: 'admin',
-                        name: `${displayName} (Testing Admin)`,
-                        email: cleanGmail,
-                        role: 'admin',
-                        password: 'adminBypassPasskey',
-                        commissionPercentage: 15,
-                        createdAt: new Date().toISOString()
-                      }, { merge: true });
-                    } catch (_) {}
-                    toast.success("Welcome back, " + displayName + " (Admin)!");
-                    onLogin(matchedUser);
-                    setTimeout(() => {
-                      window.location.href = '/it-sales';
-                    }, 300);
-                  } catch (err) {
-                    toast.error("An error occurred during quick bypass.");
-                    setLoading(false);
-                  }
-                }, 400);
-              }
+              // Fallback for sandboxed preview iframe structures: trigger beautifully simulated inline form
+              setShowGmailBypass(true);
+              toast.success("Standard Google login redirected. Enter your testing email below!");
             }}
             className="w-full bg-slate-900 hover:bg-slate-800 border-none text-slate-100 py-3.5 text-xs uppercase font-black tracking-widest flex items-center justify-center gap-2" 
             variant="outline" 
@@ -422,6 +448,101 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
           >
             <span className="text-sm">🔴</span> Sign in as Admin with Google / Gmail
           </Button>
+
+          {/* ELEGANT INLINE GMAIL BYPASS INPUT FORM */}
+          {showGmailBypass && (
+            <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 text-left space-y-3 mt-4">
+              <p className="text-[10px] uppercase font-black tracking-widest text-rose-500">Iframe Sandboxed Google Bypass</p>
+              <p className="text-[9px] text-slate-400 font-semibold leading-relaxed">
+                Your browser blocked the Google authorization popup due to cross-domain container sandboxing. Please enter any Gmail or company email address below to log in directly:
+              </p>
+              <div className="relative">
+                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                <input 
+                  type="email"
+                  placeholder="e.g. gwhasu@gmail.com"
+                  value={bypassEmail}
+                  onChange={(e) => setBypassEmail(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-850 focus:border-rose-500 text-white rounded-xl pl-11 pr-4 py-3 text-xs font-semibold outline-none transition-all placeholder:text-slate-600"
+                />
+              </div>
+              <Button 
+                onClick={async () => {
+                  if (!bypassEmail.trim() || !bypassEmail.includes('@')) {
+                    toast.error("Please enter a valid Gmail address or corporate account!");
+                    return;
+                  }
+                  setLoading(true);
+                  const cleanGmail = bypassEmail.trim().toLowerCase();
+                  const namePart = cleanGmail.split('@')[0];
+                  const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+                  const matchedUser = {
+                    id: 'admin',
+                    uid: 'admin',
+                    name: `${displayName} (Testing Admin)`,
+                    email: cleanGmail,
+                    role: 'admin',
+                    commissionPercentage: 15
+                  };
+                  localStorage.setItem('customUser', JSON.stringify(matchedUser));
+                  try {
+                    await signInAnonymously(auth);
+                    await setDoc(doc(db, 'users', 'admin'), {
+                      id: 'admin',
+                      name: `${displayName} (Testing Admin)`,
+                      email: cleanGmail,
+                      role: 'admin',
+                      password: 'adminBypassPasskey',
+                      commissionPercentage: 15,
+                      createdAt: new Date().toISOString()
+                    }, { merge: true });
+                  } catch (_) {}
+                  toast.success(`Sandbox Authorized! Welcome ${displayName} (Admin).`);
+                  onLogin(matchedUser);
+                  setTimeout(() => {
+                    window.location.href = '/it-sales';
+                  }, 300);
+                }}
+                className="w-full bg-rose-600 hover:bg-rose-700 text-white text-[10px] py-2.5 font-black tracking-widest uppercase rounded-xl"
+                type="button"
+              >
+                Validate and Authorize Client
+              </Button>
+            </div>
+          )}
+
+          {/* DYNAMIC LIST OF AUTHORIZED SANDBOX STAFF PROFILES */}
+          {dbUsers.length > 0 && (
+            <div className="pt-6 border-t border-slate-900/60 text-left space-y-3 mt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Authorized Staff Credentials</span>
+                <span className="text-[8px] bg-slate-900 border border-slate-800 text-rose-500 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">SANDBOX TRACE</span>
+              </div>
+              <p className="text-[9px] text-slate-500 font-semibold leading-relaxed">
+                Tap any pre-configured employee or administrative profile below to bypass and authenticate instantly, or type username/password above (e.g. admin):
+              </p>
+              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+                {dbUsers.map((u) => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => handleQuickLogin(u)}
+                    className="flex flex-col items-start p-2.5 bg-slate-900/30 border border-slate-900/80 hover:border-rose-500/35 hover:bg-rose-500/5 rounded-xl transition-all text-left group"
+                  >
+                    <span className="text-xs font-bold text-slate-300 group-hover:text-rose-400 transition-colors truncate w-full">{u.name}</span>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="text-[8px] px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-400 font-extrabold uppercase tracking-widest font-mono">
+                        {u.role || 'executive'}
+                      </span>
+                      <span className="text-[8px] text-slate-600 font-semibold truncate uppercase max-w-[80px]">
+                        ID: {u.id}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="pt-4 border-t border-slate-900 text-center">
             <p className="text-[8px] text-slate-600 uppercase tracking-[0.25em] font-black">
