@@ -96,6 +96,12 @@ export default function NexoraAdmin() {
   });
 
   const [customTeam, setCustomTeam] = useState<any[]>([]);
+  const [ceoProfile, setCeoProfile] = useState({
+    name: "Md. Shakhawat Hossain",
+    role: "Founder & Chief Executive Officer",
+    exp: "Leads the creative vision, high quality standards, and growth strategy for Nexasphere IT.",
+    image: "/src/assets/images/shakhawat_portrait_1780314607048.png"
+  });
   const [customMilestones, setCustomMilestones] = useState<any[]>([]);
   const [customPricing, setCustomPricing] = useState<any[]>([]);
   const [customFaqs, setCustomFaqs] = useState<any[]>([]);
@@ -208,9 +214,95 @@ export default function NexoraAdmin() {
 
   const loadDefaultTeam = () => {
     setCustomTeam([
-      { id: 'local_t1', name: "Julian Sterling", role: "Founder & Chief Marketing Architect", exp: "Ex-Google Ads Elite team. Scaled 12+ SaaS products to successful IPO exits.", initial: "JS" },
-      { id: 'local_t2', name: "Sienna Martinez", role: "Creative Director & Hook Engineer", exp: "Award-winning visual storyteller. Designs high-impact social frameworks.", initial: "SM" },
-      { id: 'local_t3', name: "Dax Thornton", role: "Head of Funnels & Conversion Analytics", exp: "Full-stack Shopify engineer. Passionate about custom React pixel tracking.", initial: "DT" }
+      {
+        id: 'ceo_member',
+        name: "Md. Shakhawat Hossain",
+        role: "Founder & Chief Executive Officer",
+        dep: "Executive Leadership",
+        image: "/src/assets/images/shakhawat_portrait_1780314607048.png",
+        avatar: "/src/assets/images/shakhawat_portrait_1780314607048.png",
+        exp: "Leads the creative vision, high quality standards, and growth strategy for Nexasphere IT.",
+        bio: "Leads the creative vision, high quality standards, and growth strategy for Nexasphere IT.",
+        initial: "MS",
+        isCEO: true
+      },
+      {
+        id: 'local_t2',
+        name: "Asaduzzaman Tohin",
+        role: "Head of Sales & Strategy",
+        dep: "Sales & Client Relations",
+        image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Designs growth blueprints for large corporate accounts and guides our project planning.",
+        bio: "Designs growth blueprints for large corporate accounts and guides our project planning.",
+        initial: "AT"
+      },
+      {
+        id: 'local_t3',
+        name: "Sani Hosen",
+        role: "Business Development Executive",
+        dep: "Corporate Growth",
+        image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Partners with national businesses to expand their reach and digital success rate.",
+        bio: "Partners with national businesses to expand their reach and digital success rate.",
+        initial: "SH"
+      },
+      {
+        id: 'local_t4',
+        name: "Nurnnabi Nobi",
+        role: "Graphics & Motion Lead Artist",
+        dep: "Creative Arts",
+        image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Creates gorgeous digital brand identities, corporate logos, and high-converting video promos.",
+        bio: "Creates gorgeous digital brand identities, corporate logos, and high-converting video promos.",
+        initial: "NN"
+      },
+      {
+        id: 'local_t5',
+        name: "Hamim Rahman",
+        role: "Web Design & Development Lead",
+        dep: "Engineering Dept",
+        image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Builds high-speed, secure, and gorgeous web portals with modern React systems.",
+        bio: "Builds high-speed, secure, and gorgeous web portals with modern React systems.",
+        initial: "HR"
+      },
+      {
+        id: 'local_t6',
+        name: "Sadia Yeasmin Sudha",
+        role: "Legal Advisor & Corporate Counsel",
+        dep: "Corporate Law",
+        image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Guarantees brand protection, legal safety, and trustful contract terms for all global clients.",
+        bio: "Guarantees brand protection, legal safety, and trustful contract terms for all global clients.",
+        initial: "SS"
+      },
+      {
+        id: 'local_t7',
+        name: "Rony Islam Abid",
+        role: "Technical Project Manager",
+        dep: "Operations",
+        image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Maintains smooth delivery schedules, coordinates teams, and keeps projects organized.",
+        bio: "Maintains smooth delivery schedules, coordinates teams, and keeps projects organized.",
+        initial: "RA"
+      },
+      {
+        id: 'local_t8',
+        name: "Nur Hasan",
+        role: "Digital Marketing Expert",
+        dep: "Marketing & Growth",
+        image: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Sets up profitable Meta, Google, and video marketing campaigns that double your client base.",
+        bio: "Sets up profitable Meta, Google, and video marketing campaigns that double your client base.",
+        initial: "NH"
+      }
     ]);
   };
 
@@ -305,9 +397,95 @@ export default function NexoraAdmin() {
 
     const backupTeam = JSON.parse(localStorage.getItem('nexora_team_backup') || '[]');
     setCustomTeam(backupTeam.length > 0 ? backupTeam : [
-      { id: 'local_t1', name: "Julian Sterling", role: "Founder & Chief Marketing Architect", exp: "Ex-Google Ads Elite team. Scaled 12+ SaaS products to successful IPO exits.", initial: "JS" },
-      { id: 'local_t2', name: "Sienna Martinez", role: "Creative Director & Hook Engineer", exp: "Award-winning visual storyteller. Designs high-impact social frameworks.", initial: "SM" },
-      { id: 'local_t3', name: "Dax Thornton", role: "Head of Funnels & Conversion Analytics", exp: "Full-stack Shopify engineer. Passionate about custom React pixel tracking.", initial: "DT" }
+      {
+        id: 'ceo_member',
+        name: "Md. Shakhawat Hossain",
+        role: "Founder & Chief Executive Officer",
+        dep: "Executive Leadership",
+        image: "/src/assets/images/shakhawat_portrait_1780314607048.png",
+        avatar: "/src/assets/images/shakhawat_portrait_1780314607048.png",
+        exp: "Leads the creative vision, high quality standards, and growth strategy for Nexasphere IT.",
+        bio: "Leads the creative vision, high quality standards, and growth strategy for Nexasphere IT.",
+        initial: "MS",
+        isCEO: true
+      },
+      {
+        id: 'local_t2',
+        name: "Asaduzzaman Tohin",
+        role: "Head of Sales & Strategy",
+        dep: "Sales & Client Relations",
+        image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Designs growth blueprints for large corporate accounts and guides our project planning.",
+        bio: "Designs growth blueprints for large corporate accounts and guides our project planning.",
+        initial: "AT"
+      },
+      {
+        id: 'local_t3',
+        name: "Sani Hosen",
+        role: "Business Development Executive",
+        dep: "Corporate Growth",
+        image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Partners with national businesses to expand their reach and digital success rate.",
+        bio: "Partners with national businesses to expand their reach and digital success rate.",
+        initial: "SH"
+      },
+      {
+        id: 'local_t4',
+        name: "Nurnnabi Nobi",
+        role: "Graphics & Motion Lead Artist",
+        dep: "Creative Arts",
+        image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Creates gorgeous digital brand identities, corporate logos, and high-converting video promos.",
+        bio: "Creates gorgeous digital brand identities, corporate logos, and high-converting video promos.",
+        initial: "NN"
+      },
+      {
+        id: 'local_t5',
+        name: "Hamim Rahman",
+        role: "Web Design & Development Lead",
+        dep: "Engineering Dept",
+        image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Builds high-speed, secure, and gorgeous web portals with modern React systems.",
+        bio: "Builds high-speed, secure, and gorgeous web portals with modern React systems.",
+        initial: "HR"
+      },
+      {
+        id: 'local_t6',
+        name: "Sadia Yeasmin Sudha",
+        role: "Legal Advisor & Corporate Counsel",
+        dep: "Corporate Law",
+        image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Guarantees brand protection, legal safety, and trustful contract terms for all global clients.",
+        bio: "Guarantees brand protection, legal safety, and trustful contract terms for all global clients.",
+        initial: "SS"
+      },
+      {
+        id: 'local_t7',
+        name: "Rony Islam Abid",
+        role: "Technical Project Manager",
+        dep: "Operations",
+        image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Maintains smooth delivery schedules, coordinates teams, and keeps projects organized.",
+        bio: "Maintains smooth delivery schedules, coordinates teams, and keeps projects organized.",
+        initial: "RA"
+      },
+      {
+        id: 'local_t8',
+        name: "Nur Hasan",
+        role: "Digital Marketing Expert",
+        dep: "Marketing & Growth",
+        image: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&h=450&q=80",
+        avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&h=450&q=80",
+        exp: "Sets up profitable Meta, Google, and video marketing campaigns that double your client base.",
+        bio: "Sets up profitable Meta, Google, and video marketing campaigns that double your client base.",
+        initial: "NH"
+      }
     ]);
 
     const backupMilestones = JSON.parse(localStorage.getItem('nexora_milestones_backup') || '[]');
@@ -363,6 +541,20 @@ export default function NexoraAdmin() {
   useEffect(() => {
     loadDatabaseAssets();
   }, []);
+
+  useEffect(() => {
+    const ceo = customTeam.find(t => t.isCEO || t.id === 'ceo_member');
+    if (ceo) {
+      setCeoProfile({
+        name: ceo.name,
+        role: ceo.role,
+        exp: ceo.exp || ceo.bio || "",
+        image: ceo.image || ceo.avatar || "/src/assets/images/shakhawat_portrait_1780314607048.png"
+      });
+    } else if (heroConfig.featureImage) {
+      setCeoProfile(p => ({ ...p, image: heroConfig.featureImage }));
+    }
+  }, [customTeam, heroConfig]);
 
   // Update a Lead Status
   const updateLeadStatus = async (id: string, newStatus: string) => {
@@ -612,7 +804,74 @@ export default function NexoraAdmin() {
     }
   };
 
-  // Team Member Lists
+  // Team Member Lists & Image Processing
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>, isCEO: boolean) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1.2 * 1024 * 1024) {
+        toast.error("Portrait image must be less than 1.2MB for quick cloud storage!");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const b64 = reader.result as string;
+        if (isCEO) {
+          setCeoProfile(prev => ({ ...prev, image: b64 }));
+        } else {
+          setNewTeamMember(prev => ({ ...prev, image: b64 }));
+        }
+        toast.success("Portrait photo loaded and prepared!");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveCeoProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ceoProfile.name.trim() || !ceoProfile.role.trim()) {
+      toast.error("Please fill CEO Name and Role!");
+      return;
+    }
+
+    const updatedCeo = {
+      id: 'ceo_member',
+      name: ceoProfile.name,
+      role: ceoProfile.role,
+      dep: 'Executive Leadership',
+      image: ceoProfile.image,
+      avatar: ceoProfile.image,
+      exp: ceoProfile.exp,
+      bio: ceoProfile.exp,
+      initial: ceoProfile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+      isCEO: true
+    };
+
+    // Update in customTeam list instantly
+    const teamWithCEO = customTeam.some(t => t.id === 'ceo_member' || t.isCEO)
+      ? customTeam.map(t => (t.id === 'ceo_member' || t.isCEO) ? updatedCeo : t)
+      : [updatedCeo, ...customTeam];
+
+    setCustomTeam(teamWithCEO);
+
+    // Update heroConfig featureImage also, so that it reflects in the homepage hero banner!
+    const updatedHero = { ...heroConfig, featureImage: ceoProfile.image };
+    setHeroConfig(updatedHero);
+
+    try {
+      await setDoc(doc(db, 'nexora_team', 'ceo_member'), updatedCeo);
+      await setDoc(doc(db, 'nexora_config', 'landing_hero'), updatedHero);
+
+      localStorage.setItem('nexora_team_backup', JSON.stringify(teamWithCEO));
+      localStorage.setItem('nexora_hero_backup', JSON.stringify(updatedHero));
+
+      toast.success("Executive profile updated globally across the website!");
+    } catch (err) {
+      localStorage.setItem('nexora_team_backup', JSON.stringify(teamWithCEO));
+      localStorage.setItem('nexora_hero_backup', JSON.stringify(updatedHero));
+      toast.success("Executive updated locally (offline fallback verified)!");
+    }
+  };
+
   const handleAddTeamMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTeamMember.name.trim() || !newTeamMember.role.trim()) {
@@ -620,12 +879,33 @@ export default function NexoraAdmin() {
       return;
     }
     const initial = newTeamMember.initial || newTeamMember.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    const member = { ...newTeamMember, initial };
+    
+    // Determine department dynamically based on role text for automatic categorizing in landing pages
+    const roleText = newTeamMember.role;
+    const dep = roleText.includes("Design") || roleText.includes("Artist") || roleText.includes("Creative")
+      ? "Creative Dept"
+      : roleText.includes("Lead") || roleText.includes("Chief") || roleText.includes("Founder") || roleText.includes("CEO") || roleText.includes("Executive")
+      ? "Executive Leadership"
+      : roleText.includes("Sales") || roleText.includes("Account") || roleText.includes("Relations") || roleText.includes("Client")
+      ? "Sales & Client Relations"
+      : "Operations";
+
+    // Set redundant fields for 100% cross-compatibility between About and Home pages
+    const member = { 
+      ...newTeamMember, 
+      initial, 
+      dep,
+      avatar: newTeamMember.image, // mirror
+      bio: newTeamMember.exp,      // mirror
+      isCEO: false
+    };
     
     try {
       const docRef = await addDoc(collection(db, 'nexora_team'), member);
       const added = { id: docRef.id, ...member };
-      setCustomTeam([...customTeam, added]);
+      const list = [...customTeam, added];
+      setCustomTeam(list);
+      localStorage.setItem('nexora_team_backup', JSON.stringify(list));
       setNewTeamMember({ name: '', role: '', exp: '', initial: '', image: '' });
       toast.success("Team member saved to cloud!");
     } catch (err) {
@@ -641,10 +921,11 @@ export default function NexoraAdmin() {
 
   const handleDeleteTeamMember = async (id: string) => {
     try {
-      if (id.startsWith('local_') || id.length < 5) {
+      if (id.startsWith('local_') || id.length < 5 || id === 'ceo_member') {
         const list = customTeam.filter(t => t.id !== id);
         setCustomTeam(list);
         localStorage.setItem('nexora_team_backup', JSON.stringify(list));
+        toast.success("Deleted team member locally.");
       } else {
         await deleteDoc(doc(db, 'nexora_team', id));
         setCustomTeam(customTeam.filter(t => t.id !== id));
@@ -2014,9 +2295,111 @@ export default function NexoraAdmin() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
                   
                   {/* Team Members List Editor */}
-                  <div className="lg:col-span-6 space-y-6">
+                  <div className="lg:col-span-6 space-y-8">
+                    
+                    {/* 👑 EXECUTIVE LEADERSHIP FORM (GLOBAL SYNC) */}
+                    <div className="bg-gradient-to-br from-indigo-950/20 to-slate-950/80 p-6 rounded-[2rem] border border-indigo-500/10 space-y-4 text-xs font-semibold relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl -mr-10 -mt-10" />
+                      
+                      <div className="flex items-center justify-between border-b border-white/[0.04] pb-3">
+                        <div>
+                          <span className="text-[9px] font-mono font-black uppercase text-indigo-400 block tracking-widest">GLOBAL ADMINISTRATIVE TARGET</span>
+                          <h4 className="text-sm font-black font-sans text-white uppercase tracking-tight flex items-center gap-1.5 mt-0.5">
+                            👑 Executive Leadership Profile
+                          </h4>
+                        </div>
+                        <span className="text-[8px] px-2 py-0.5 rounded bg-indigo-600/20 text-indigo-300 font-mono tracking-widest font-bold">CEO / FOUNDER</span>
+                      </div>
+
+                      <form onSubmit={handleSaveCeoProfile} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[8px] font-mono text-slate-450 uppercase">LEADER FULL NAME *</label>
+                            <input
+                              type="text"
+                              required
+                              value={ceoProfile.name}
+                              onChange={e => setCeoProfile({ ...ceoProfile, name: e.target.value })}
+                              className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2.5 px-3 focus:border-indigo-500 outline-none text-white font-bold"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[8px] font-mono text-slate-450 uppercase">DESIGNATION / POSITION *</label>
+                            <input
+                              type="text"
+                              required
+                              value={ceoProfile.role}
+                              onChange={e => setCeoProfile({ ...ceoProfile, role: e.target.value })}
+                              className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2.5 px-3 focus:border-indigo-500 outline-none text-white font-bold"
+                            />
+                          </div>
+                        </div>
+
+                        {/* File Upload Selector */}
+                        <div className="p-3 bg-[#020208] border border-white/[0.04] rounded-xl flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-slate-900 border border-white/[0.08] overflow-hidden flex items-center justify-center shrink-0 relative group">
+                            {ceoProfile.image ? (
+                              <img src={ceoProfile.image} alt="CEO Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] text-slate-500 font-mono">No Pic</span>
+                            )}
+                          </div>
+                          <div className="flex-1 space-y-1.5">
+                            <label className="text-[8px] font-mono text-slate-450 uppercase block">Portrait Picture (Base64 File Uploader)</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={e => handleImageFileChange(e, true)}
+                                className="hidden"
+                                id="ceo-photo-file-picker"
+                              />
+                              <label
+                                htmlFor="ceo-photo-file-picker"
+                                className="px-3 py-1.5 bg-indigo-650 hover:bg-indigo-600 text-white text-[9px] font-mono rounded-lg transition-colors cursor-pointer block text-center"
+                              >
+                                SELECT IMAGE FILE...
+                              </label>
+                              <span className="text-[8px] font-mono text-slate-500">Max 1.2MB limit</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-455 uppercase font-semibold">Alternatively: Direct Image URL</label>
+                          <input
+                            type="text"
+                            placeholder="Or paste self-hosting portrait URL link..."
+                            value={ceoProfile.image}
+                            onChange={e => setCeoProfile({ ...ceoProfile, image: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2 px-3 focus:border-indigo-500 outline-none text-white"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-455 uppercase font-semibold">CEO Biography / Professional Vision Statements</label>
+                          <textarea
+                            rows={2}
+                            required
+                            placeholder="Leads creative vision, standards, and customer growth codes..."
+                            value={ceoProfile.exp}
+                            onChange={e => setCeoProfile({ ...ceoProfile, exp: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2 px-3 focus:border-indigo-500 outline-none text-white resize-none font-sans"
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="w-full py-3.5 bg-gradient-to-r from-indigo-650 to-indigo-550 hover:from-indigo-600 hover:to-indigo-500 text-white font-sans uppercase text-[9px] font-black tracking-widest rounded-xl transition-all cursor-pointer shadow-lg shadow-indigo-500/10 flex items-center justify-center gap-2"
+                        >
+                          Update Executive Leadership Globally
+                        </button>
+                      </form>
+                    </div>
+
+                    {/* Standard Team Member Register Form */}
                     <form onSubmit={handleAddTeamMember} className="bg-slate-950/75 p-6 rounded-[2rem] border border-white/[0.04] space-y-4 text-xs font-semibold">
-                      <span className="text-[9px] font-mono font-black uppercase text-indigo-400 block">REGISTER TEAM OFFICER</span>
+                      <span className="text-[9px] font-mono font-black uppercase text-indigo-400 block tracking-widest border-b border-white/[0.03] pb-2">ENROLL NEW TEAM ASSOCIATE / OFFICER</span>
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
@@ -2043,12 +2426,42 @@ export default function NexoraAdmin() {
                         </div>
                       </div>
 
+                      {/* File Upload Selector for team member */}
+                      <div className="p-3 bg-[#020208] border border-white/[0.04] rounded-xl flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-900 border border-white/[0.08] overflow-hidden flex items-center justify-center shrink-0 relative">
+                          {newTeamMember.image ? (
+                            <img src={newTeamMember.image} alt="Officer Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[9px] text-slate-500 font-mono">No Pic</span>
+                          )}
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase block">Portrait Picture Upload File</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={e => handleImageFileChange(e, false)}
+                              className="hidden"
+                              id="officer-photo-file-picker"
+                            />
+                            <label
+                              htmlFor="officer-photo-file-picker"
+                              className="px-3 py-1 bg-white/[0.04] hover:bg-white/[0.08] text-white text-[9px] font-mono border border-white/[0.08] rounded-lg transition-colors cursor-pointer block text-center"
+                            >
+                              CHOOSE IMAGE FILE...
+                            </label>
+                            <span className="text-[7.5px] font-mono text-slate-500">Max 1.2MB</span>
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <label className="text-[8px] font-mono text-slate-455 uppercase font-black font-semibold">BIO INITIAL (OPTIONAL)</label>
                           <input
                             type="text"
-                            placeholder="Leave blank for initials auto-gen"
+                            placeholder="Leave blank for auto-gen"
                             value={newTeamMember.initial}
                             onChange={e => setNewTeamMember({ ...newTeamMember, initial: e.target.value })}
                             className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2 px-3 focus:border-indigo-500 outline-none text-white"
@@ -2058,7 +2471,7 @@ export default function NexoraAdmin() {
                           <label className="text-[8px] font-mono text-slate-455 uppercase font-black font-semibold">PORTRAIT IMAGE URL (OPTIONAL)</label>
                           <input
                             type="text"
-                            placeholder="Paste corporate portrait URL..."
+                            placeholder="Or paste image URL link..."
                             value={newTeamMember.image || ''}
                             onChange={e => setNewTeamMember({ ...newTeamMember, image: e.target.value })}
                             className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2 px-3 focus:border-indigo-500 outline-none text-white"
@@ -2070,7 +2483,7 @@ export default function NexoraAdmin() {
                         <label className="text-[8px] font-mono text-slate-455 uppercase font-semibold">EXP / PROFESSIONAL CHRONOLOGY DESCRIPTION</label>
                         <textarea
                           rows={2}
-                          placeholder="Ex-Google Ads senior specialist. Scaled SaaS metrics..."
+                          placeholder="Experienced growth specialist. Sets up profitable scales..."
                           value={newTeamMember.exp}
                           onChange={e => setNewTeamMember({ ...newTeamMember, exp: e.target.value })}
                           className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2.5 px-3 focus:border-indigo-500 outline-none text-white resize-none"
@@ -2079,7 +2492,7 @@ export default function NexoraAdmin() {
 
                       <button
                         type="submit"
-                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-550 text-white font-sans uppercase text-[9px] font-black tracking-widest rounded-xl transition-all cursor-pointer shadow-lg"
+                        className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-550 text-white font-sans uppercase text-[9px] font-black tracking-widest rounded-xl transition-all cursor-pointer shadow-lg"
                       >
                         Enroll Executive Member
                       </button>
@@ -2093,14 +2506,19 @@ export default function NexoraAdmin() {
                           <div key={t.id} className="p-4 bg-[#03030c] border border-white/[0.03] rounded-2xl flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-black text-sm border border-indigo-500/20 overflow-hidden shrink-0">
-                                {t.image ? (
-                                  <img src={t.image} alt={t.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                                {t.image || t.avatar ? (
+                                  <img src={t.image || t.avatar} alt={t.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                                 ) : (
                                   t.initial
                                 )}
                               </div>
                               <div>
-                                <h6 className="font-extrabold text-white text-xs">{t.name}</h6>
+                                <h6 className="font-extrabold text-white text-xs flex items-center gap-1.5">
+                                  {t.name}
+                                  {(t.isCEO || t.id === 'ceo_member') && (
+                                    <span className="text-[7.5px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/10 uppercase tracking-widest">CEO</span>
+                                  )}
+                                </h6>
                                 <p className="text-[9px] font-mono text-indigo-400 uppercase tracking-widest font-bold">{t.role}</p>
                               </div>
                             </div>

@@ -315,6 +315,12 @@ export default function NexoraHome() {
         }
       } catch (err) {
         console.warn("Fallback to offline state assets.");
+        const backupHero = localStorage.getItem('nexora_hero_backup');
+        if (backupHero) setHeroConfig(JSON.parse(backupHero));
+        const backupStats = localStorage.getItem('nexora_stats_backup');
+        if (backupStats) setStatsConfig(JSON.parse(backupStats));
+        const backupPages = localStorage.getItem('nexora_pages_backup');
+        if (backupPages) setPagesConfig(JSON.parse(backupPages));
       }
     };
     fetchConfigsAndFaqs();
