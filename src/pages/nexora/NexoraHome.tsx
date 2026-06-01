@@ -18,6 +18,10 @@ export default function NexoraHome() {
     { q: "Can we track our marketing work and check orders?", a: "Yes. Every partner gets access to our premium digital portal, where you can view your bills, track your active orders, and see exact sales metrics in real-time.", open: false }
   ]);
 
+  const toggleFaq = (index: number) => {
+    setFaqs(p => p.map((f, i) => i === index ? { ...f, open: !f.open } : f));
+  };
+
   const [heroConfig, setHeroConfig] = useState({
     floatingCapsule: "NEXORA WORLD-CLASS CREATIVE AGENCY",
     headline: "WE BUILD BEAUTIFUL WEBSITES",
@@ -44,6 +48,10 @@ export default function NexoraHome() {
     stat3_suffix: "% Success-Rate",
     stat3_label: "Dedicated Care and Delivery"
   });
+
+  const [counter1, setCounter1] = useState(0);
+  const [counter2, setCounter2] = useState(0);
+  const [counter3, setCounter3] = useState(0);
 
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -311,6 +319,25 @@ export default function NexoraHome() {
     };
     fetchConfigsAndFaqs();
   }, []);
+
+  useEffect(() => {
+    const target1 = statsConfig.stat1_val || 150;
+    const target2 = statsConfig.stat2_val || 450;
+    const target3 = statsConfig.stat3_val || 100;
+
+    setCounter1(0);
+    setCounter2(0);
+    setCounter3(0);
+
+    const i1 = setInterval(() => setCounter1(p => p < target1 ? p + Math.ceil(target1 / 30) : target1), 30);
+    const i2 = setInterval(() => setCounter2(p => p < target2 ? p + Math.ceil(target2 / 30) : target2), 25);
+    const i3 = setInterval(() => setCounter3(p => p < target3 ? p + Math.ceil(target3 / 30) : target3), 35);
+    return () => {
+      clearInterval(i1);
+      clearInterval(i2);
+      clearInterval(i3);
+    };
+  }, [statsConfig]);
 
   return (
     <div className="min-h-screen bg-[#02020a] text-white overflow-hidden relative font-sans pt-14 selection:bg-indigo-500/30">
