@@ -13,8 +13,11 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
+import { useTheme } from '../../context/ThemeContext';
+import { ImageUpload } from '../../components/common/UI';
 
 export default function NexoraAdmin() {
+  const { settings, updateSettings } = useTheme();
   const userRole = (auth.currentUser as any)?.role || 'guest';
   const isAdmin = userRole === 'admin' || userRole === 'guest';
 
@@ -68,6 +71,30 @@ export default function NexoraAdmin() {
     stat3_label: 'Average Lead Scale Efficiency'
   });
 
+  const [pagesConfig, setPagesConfig] = useState({
+    servicesCapsule: 'OUR SCALE MATRIX',
+    servicesTitle: 'SCALABLE ACQUISITION BLUEPRINTS',
+    servicesSubtitle: 'Each service card details our standard metrics parameters. Browse our 10 primary digital capabilities, or configure special bundles below.',
+    servicesCtaText: 'Secure Retainer Blueprint',
+    portfolioCapsule: 'OUR HISTORIC ROAS DELIVERY',
+    portfolioTitle: 'VERIFIED BRAND ACHIEVEMENTS',
+    portfolioSubtitle: 'See the direct, data-driven transformation results of our campaigns. Tap any card below to launch its client feedback details and case summary.',
+    pricingCapsule: 'TRANSPARENT RECOV_ALLOCATIONS',
+    pricingTitle: 'ELITE SCALE RETAINERS',
+    pricingSubtitle: 'Zero hidden fees. Full SLA transparency. Choose the growth blueprint aligned to your seven-figure scaling parameters.',
+    blogCapsule: 'INSIGHTS MATRIX & MANUALS',
+    blogTitle: 'GROWTH EDITORIAL KNOWLEDGE',
+    blogSubtitle: 'Written directly by our executive partners. Subscribe below to receive advanced metrics reports and UGC ad hook concepts.',
+    contactCapsule: 'SECURE SYSTEM ALLOCATION',
+    contactTitle: 'INITIAL CORE STRATEGY DEBIEF',
+    contactSubtitle: "Let's build your multi-million scaling blueprint. Complete our target parameters form and our lead marketing architects will execute a custom ROAS analysis within 24 hours.",
+    contactFormHeading: "TARGET METRICS PARAMETERS FORM",
+    contactButtonText: "REQUEST ARCHITECT STRATEGY CODES",
+    heroCtaPrimaryLink: '/contact',
+    heroCtaSecondaryLink: '/services',
+    servicesCtaLink: '/contact'
+  });
+
   const [customTeam, setCustomTeam] = useState<any[]>([]);
   const [customMilestones, setCustomMilestones] = useState<any[]>([]);
   const [customPricing, setCustomPricing] = useState<any[]>([]);
@@ -80,7 +107,7 @@ export default function NexoraAdmin() {
   const [newFaq, setNewFaq] = useState({ q: '', a: '' });
 
   // Customizer active sub-tab switching
-  const [customizerSubTab, setCustomizerSubTab] = useState<'hero' | 'about' | 'team_chrono' | 'pricing' | 'faqs' | 'footer_terms'>('hero');
+  const [customizerSubTab, setCustomizerSubTab] = useState<'identity' | 'hero' | 'about' | 'pages' | 'team_chrono' | 'pricing' | 'faqs' | 'footer_terms'>('identity');
 
   // Multiple Ads Creation Form State
   const [multipleAds, setMultipleAds] = useState<any[]>([
@@ -135,6 +162,7 @@ export default function NexoraAdmin() {
         if (doc.id === 'about_core') setAboutConfig(doc.data() as any);
         if (doc.id === 'landing_stats') setStatsConfig(doc.data() as any);
         if (doc.id === 'landing_terms') setTermsConfig(doc.data() as any);
+        if (doc.id === 'pages_config') setPagesConfig(p => ({ ...p, ...doc.data() }));
       });
 
       // Custom team list
@@ -272,6 +300,9 @@ export default function NexoraAdmin() {
     const backupTerms = JSON.parse(localStorage.getItem('nexora_terms_backup') || '{}');
     if (backupTerms.termsTitle) setTermsConfig(backupTerms);
 
+    const backupPages = JSON.parse(localStorage.getItem('nexora_pages_backup') || '{}');
+    if (backupPages.servicesTitle) setPagesConfig(p => ({ ...p, ...backupPages }));
+
     const backupTeam = JSON.parse(localStorage.getItem('nexora_team_backup') || '[]');
     setCustomTeam(backupTeam.length > 0 ? backupTeam : [
       { id: 'local_t1', name: "Julian Sterling", role: "Founder & Chief Marketing Architect", exp: "Ex-Google Ads Elite team. Scaled 12+ SaaS products to successful IPO exits.", initial: "JS" },
@@ -291,7 +322,7 @@ export default function NexoraAdmin() {
       {
         id: 'local_p1',
         name: "Pilot Launch Retainer",
-        price: "$2,500",
+        price: "৳২,৫০,০০০",
         period: "monthly",
         desc: "Perfect for venture-backed seed startups targeting clear proof-of-concept metric scaling on a single primary ad platform.",
         features: "Single Ad Platform Scale (FB or GG),3 UGC Custom Video Hooks Monthly,Direct pixel tracking verification,Weekly performance reports via Slack Dashboard,NexaSphere basic quotation synchronizer",
@@ -301,7 +332,7 @@ export default function NexoraAdmin() {
       {
         id: 'local_p2',
         name: "Enterprise Scaling Engine",
-        price: "$5,000",
+        price: "৳৫,০০,০০০",
         period: "monthly",
         desc: "Our most coveted scale package. Built for established businesses seeking category dominance across both search and social.",
         features: "Multi-Platform Scale (Meta + TikTok + Google PPC),12 Direct-Response UGC Ad Hooks Monthly,1 Custom React or Shopify Lander designed to split-test,Predictive CRM multi-lead score configurations,Full NexaSphere Admin backoffice connectivity,Dedicated marketing architect hotline",
@@ -311,7 +342,7 @@ export default function NexoraAdmin() {
       {
         id: 'local_p3',
         name: "Ultimate Category Leader",
-        price: "$10,000",
+        price: "৳১০,০০,০০০",
         period: "monthly",
         desc: "Omnichannel brand siege. Absolute focus of our visual engineering team scaling unlimited funnels and operations globally.",
         features: "Unrestricted omnichannel scale channels,Unlimited custom ad creatives & UGC clips on demand,Unlimited split Lander development,Lifetime Premium NexaSphere Workspace Access,Custom billing integrations & legal SLA frameworks,Priority 1-hour response service level agreement",
@@ -566,6 +597,18 @@ export default function NexoraAdmin() {
     } catch (err) {
       localStorage.setItem('nexora_terms_backup', JSON.stringify(termsConfig));
       toast.success("Legal terms updated locally (offline mode).");
+    }
+  };
+
+  const handleSavePagesConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await setDoc(doc(db, 'nexora_config', 'pages_config'), pagesConfig);
+      localStorage.setItem('nexora_pages_backup', JSON.stringify(pagesConfig));
+      toast.success("All inner page titles, custom buttons & anchor links saved to Cloud Database!");
+    } catch (err) {
+      localStorage.setItem('nexora_pages_backup', JSON.stringify(pagesConfig));
+      toast.success("Pages content updated locally (offline mode).");
     }
   };
 
@@ -1223,8 +1266,10 @@ export default function NexoraAdmin() {
               {/* Sub-Tabs selectors */}
               <div className="flex flex-wrap gap-2 pt-2 border-b border-white/[0.03] pb-4">
                 {[
+                  { id: 'identity', label: 'Brand Identity & Logo' },
                   { id: 'hero', label: 'Landing Hero & Stats' },
                   { id: 'about', label: 'About Story & Blocks' },
+                  { id: 'pages', label: 'Inner Sections & Button Action CTAs' },
                   { id: 'team_chrono', label: 'Team & Chronology Timeline' },
                   { id: 'pricing', label: 'SLA Pricing Plan Packages' },
                   { id: 'faqs', label: 'Client FAQs Accordion' },
@@ -1244,6 +1289,127 @@ export default function NexoraAdmin() {
                   </button>
                 ))}
               </div>
+
+              {/* SUBVIEW 0: BRAND IDENTITY & LOGO */}
+              {customizerSubTab === 'identity' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
+                  {/* Identity Form */}
+                  <div className="lg:col-span-6 bg-slate-950/75 p-6 rounded-[2rem] border border-white/[0.04] space-y-5 text-xs font-semibold">
+                    <h4 className="text-[10px] font-mono font-black uppercase tracking-[0.25em] text-indigo-400">BRAND IDENTITY & LOGO CONFIGURATION</h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-mono font-black text-slate-400 uppercase">Company Name</label>
+                        <input
+                          type="text"
+                          value={settings.companyName || ''}
+                          onChange={(e) => updateSettings({ companyName: e.target.value })}
+                          placeholder="e.g. NexaSphere It"
+                          className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white text-xs font-bold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-mono font-black text-slate-400 uppercase">Brand Tagline</label>
+                        <input
+                          type="text"
+                          value={settings.companyTagline || ''}
+                          onChange={(e) => updateSettings({ companyTagline: e.target.value })}
+                          placeholder="e.g. new ideas, new success"
+                          className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white text-xs font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-mono font-black text-slate-400 uppercase">Logo Height Limit (px)</label>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="range"
+                          min="24"
+                          max="80"
+                          value={settings.logoHeight || 40}
+                          onChange={(e) => updateSettings({ logoHeight: parseInt(e.target.value) })}
+                          className="flex-1 accent-indigo-500 cursor-ew-resize bg-[#03030c] h-1.5 rounded-lg"
+                        />
+                        <span className="font-mono text-sm font-bold text-indigo-400 w-12 text-right">{settings.logoHeight || 40}px</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 pt-2">
+                      <div className="flex justify-between items-center text-[8px] font-mono font-black text-slate-400 uppercase">
+                        <span>Custom SVG / PNG Logo Artwork</span>
+                        {settings.companyLogo && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateSettings({ companyLogo: '', companyLogoLight: '' });
+                              toast.success('Custom logo deleted successfully.');
+                            }}
+                            className="text-[9px] font-extrabold text-rose-400 hover:text-rose-500 transition-colors flex items-center gap-1 bg-rose-500/10 px-2 py-0.5 rounded"
+                          >
+                            Remove Logo
+                          </button>
+                        )}
+                      </div>
+                      
+                      <ImageUpload 
+                        label="Upload company logo for front-end header / footer" 
+                        value={settings.companyLogo}
+                        onChange={(logo) => {
+                          updateSettings({ companyLogo: logo, companyLogoLight: logo });
+                          toast.success('Custom company logo generated and set active on the front!');
+                        }}
+                        className="w-full bg-[#03030c] rounded-xl border border-white/[0.05]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Preview Box */}
+                  <div className="lg:col-span-6 p-8 rounded-[2rem] border border-white/[0.04] bg-slate-950/40 flex flex-col justify-between">
+                    <div className="space-y-4">
+                      <h3 className="text-[10px] font-mono font-black uppercase tracking-wider text-indigo-400 flex items-center gap-1.5 pl-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                        FRONT-END NAVBAR LOGO PREVIEW
+                      </h3>
+                      
+                      {/* Visual Header Mockup */}
+                      <div className="p-5 rounded-2xl border border-white/[0.05] bg-[#02020a] flex items-center gap-3 shadow-2xl">
+                        {settings.companyLogo ? (
+                          <div className="bg-white rounded-lg p-0.5" style={{ height: `${settings.logoHeight || 40}px` }}>
+                            <img src={settings.companyLogo} alt="Logo" className="h-full w-auto object-contain" />
+                          </div>
+                        ) : (
+                          <>
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 via-red-600 to-rose-500 p-[2px]">
+                              <div className="w-full h-full bg-[#03030c] rounded-[10px] flex items-center justify-center">
+                                <span className="font-sans font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-pink-500 text-lg">
+                                  {(settings.companyName || 'N').charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-white font-black text-sm uppercase tracking-wider">
+                                {settings.companyName || 'NexaSphere It'}
+                              </span>
+                              <span className="text-[8px] font-mono text-slate-500 uppercase">
+                                {settings.companyTagline || 'new ideas, new success'}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 pt-4 border-t border-white/[0.05]">
+                        <h5 className="text-[9px] font-mono font-black uppercase text-indigo-400">Front-end White-Labeling details</h5>
+                        <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+                          Updating the company logo, name, and tagline instantly re-brands the landing page header, footer, portals, and generated invoices.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* SUBVIEW 1: HERO & STATS */}
               {customizerSubTab === 'hero' && (
@@ -1542,6 +1708,302 @@ export default function NexoraAdmin() {
                       className="w-full py-4.5 bg-pink-600 hover:bg-pink-550 text-white font-sans uppercase text-[10px] font-black tracking-widest rounded-xl transition-all cursor-pointer shadow-lg"
                     >
                       Save About Story Parameters
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {/* SUBVIEW: INNER PAGES & CTAS CUSTOMIZER */}
+              {customizerSubTab === 'pages' && (
+                <div className="pt-4 max-w-4xl">
+                  <form onSubmit={handleSavePagesConfig} className="bg-slate-950/75 p-8 rounded-[2.5rem] border border-white/[0.04] space-y-8 text-xs font-semibold">
+                    <div className="flex items-center gap-3 border-b border-indigo-950/40 pb-4">
+                      <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
+                      <div>
+                        <h4 className="text-[10px] font-mono font-black uppercase tracking-[0.25em] text-indigo-400">
+                          INNER PAGES & CTAS CONTENT CUSTOMIZER
+                        </h4>
+                        <p className="text-[10px] text-slate-500 font-semibold italic mt-0.5">
+                          Configure headers, subtitles, capsule tags, and click links across your inner agency pages.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* SECTION 1: SERVICES PAGE */}
+                    <div className="space-y-4 border-b border-white/[0.03] pb-6">
+                      <h5 className="text-[11px] font-black tracking-wider text-white uppercase italic text-indigo-400 flex items-center gap-2">
+                        <span>//</span> 01. Services Page Settings
+                      </h5>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">SERVICES CAPSULE TAG</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.servicesCapsule}
+                            onChange={e => setPagesConfig({ ...pagesConfig, servicesCapsule: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">SERVICES MAIN TITLE</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.servicesTitle}
+                            onChange={e => setPagesConfig({ ...pagesConfig, servicesTitle: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white italic uppercase"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-mono text-slate-455 uppercase">SERVICES SUB-HEADING DESCRIPTION</label>
+                        <textarea
+                          rows={2}
+                          value={pagesConfig.servicesSubtitle}
+                          onChange={e => setPagesConfig({ ...pagesConfig, servicesSubtitle: e.target.value })}
+                          className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2.5 px-3 focus:border-indigo-500 outline-none text-white resize-none"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">SERVICES BUTTON LABEL</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.servicesCtaText}
+                            onChange={e => setPagesConfig({ ...pagesConfig, servicesCtaText: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-semibold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">SERVICES BUTTON ACTION LINK (URL path)</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.servicesCtaLink}
+                            onChange={e => setPagesConfig({ ...pagesConfig, servicesCtaLink: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* SECTION 2: PORTFOLIO PAGE */}
+                    <div className="space-y-4 border-b border-white/[0.03] pb-6">
+                      <h5 className="text-[11px] font-black tracking-wider text-white uppercase italic text-pink-400 flex items-center gap-2">
+                        <span>//</span> 02. Portfolio Page Settings
+                      </h5>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">PORTFOLIO CAPSULE TAG</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.portfolioCapsule}
+                            onChange={e => setPagesConfig({ ...pagesConfig, portfolioCapsule: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">PORTFOLIO MAIN TITLE</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.portfolioTitle}
+                            onChange={e => setPagesConfig({ ...pagesConfig, portfolioTitle: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white italic uppercase"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-mono text-slate-455 uppercase">PORTFOLIO SUB-HEADING DESCRIPTION</label>
+                        <textarea
+                          rows={2}
+                          value={pagesConfig.portfolioSubtitle}
+                          onChange={e => setPagesConfig({ ...pagesConfig, portfolioSubtitle: e.target.value })}
+                          className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2.5 px-3 focus:border-indigo-500 outline-none text-white resize-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* SECTION 3: PRICING PAGE */}
+                    <div className="space-y-4 border-b border-white/[0.03] pb-6">
+                      <h5 className="text-[11px] font-black tracking-wider text-white uppercase italic text-purple-400 flex items-center gap-2">
+                        <span>//</span> 03. Pricing Page Settings
+                      </h5>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">PRICING CAPSULE TAG</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.pricingCapsule}
+                            onChange={e => setPagesConfig({ ...pagesConfig, pricingCapsule: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">PRICING MAIN TITLE</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.pricingTitle}
+                            onChange={e => setPagesConfig({ ...pagesConfig, pricingTitle: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white italic uppercase"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-mono text-slate-455 uppercase">PRICING SUB-HEADING DESCRIPTION</label>
+                        <textarea
+                          rows={2}
+                          value={pagesConfig.pricingSubtitle}
+                          onChange={e => setPagesConfig({ ...pagesConfig, pricingSubtitle: e.target.value })}
+                          className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2.5 px-3 focus:border-indigo-500 outline-none text-white resize-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* SECTION 4: BLOG PAGE */}
+                    <div className="space-y-4 border-b border-white/[0.03] pb-6">
+                      <h5 className="text-[11px] font-black tracking-wider text-white uppercase italic text-indigo-400 flex items-center gap-2">
+                        <span>//</span> 04. Blog Editorial Page Settings
+                      </h5>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">BLOG CAPSULE TAG</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.blogCapsule}
+                            onChange={e => setPagesConfig({ ...pagesConfig, blogCapsule: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">BLOG MAIN TITLE</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.blogTitle}
+                            onChange={e => setPagesConfig({ ...pagesConfig, blogTitle: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white italic uppercase"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-mono text-slate-455 uppercase">BLOG SUB-HEADING DESCRIPTION</label>
+                        <textarea
+                          rows={2}
+                          value={pagesConfig.blogSubtitle}
+                          onChange={e => setPagesConfig({ ...pagesConfig, blogSubtitle: e.target.value })}
+                          className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2.5 px-3 focus:border-indigo-500 outline-none text-white resize-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* SECTION 5: CONTACT PAGE */}
+                    <div className="space-y-4 border-b border-white/[0.03] pb-6">
+                      <h5 className="text-[11px] font-black tracking-wider text-white uppercase italic text-emerald-400 flex items-center gap-2">
+                        <span>//</span> 05. Contact Strategic Page Settings
+                      </h5>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">CONTACT CAPSULE TAG</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.contactCapsule}
+                            onChange={e => setPagesConfig({ ...pagesConfig, contactCapsule: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-455 uppercase">CONTACT MAIN TITLE</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.contactTitle}
+                            onChange={e => setPagesConfig({ ...pagesConfig, contactTitle: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white italic uppercase"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-mono text-slate-455 uppercase">CONTACT SUB-HEADING DESCRIPTION</label>
+                        <textarea
+                          rows={2}
+                          value={pagesConfig.contactSubtitle}
+                          onChange={e => setPagesConfig({ ...pagesConfig, contactSubtitle: e.target.value })}
+                          className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2.5 px-3 focus:border-indigo-500 outline-none text-white resize-none"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">FORM OUTLINE HEADER</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.contactFormHeading}
+                            onChange={e => setPagesConfig({ ...pagesConfig, contactFormHeading: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">FORM SUBMIT BUTTON TEXT</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.contactButtonText}
+                            onChange={e => setPagesConfig({ ...pagesConfig, contactButtonText: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* SECTION 6: LANDING HERO CTA REDIRECT ROUTING PATHS */}
+                    <div className="space-y-4">
+                      <h5 className="text-[11px] font-black tracking-wider text-rose-500 uppercase italic flex items-center gap-2">
+                        <span>//</span> 06. Navigation Action Routes Link Settings
+                      </h5>
+                      <p className="text-[9px] text-slate-500 italic">Verify spelling to route users to separate pages within your agency landscape (e.g., /contact, /pricing, /portfolios).</p>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">HERO PRIMARY CTA DEPARTURE URL</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.heroCtaPrimaryLink}
+                            onChange={e => setPagesConfig({ ...pagesConfig, heroCtaPrimaryLink: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-450 uppercase">HERO SECONDARY CTA DEPARTURE URL</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.heroCtaSecondaryLink}
+                            onChange={e => setPagesConfig({ ...pagesConfig, heroCtaSecondaryLink: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-mono text-slate-455 uppercase">SERVICES HERO DIRECT ENTRY URL</label>
+                          <input
+                            type="text"
+                            value={pagesConfig.servicesCtaLink}
+                            onChange={e => setPagesConfig({ ...pagesConfig, servicesCtaLink: e.target.value })}
+                            className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-4.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 hover:opacity-90 text-white font-sans uppercase text-[10px] font-black tracking-widest rounded-xl transition-all cursor-pointer shadow-lg"
+                    >
+                      Publish All Inner Pages Content & Link Parameters
                     </button>
                   </form>
                 </div>

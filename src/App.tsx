@@ -16,7 +16,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './lib/firebase';
 import Login from './pages/Login';
 import { GalaxyBackground } from './components/common/GalaxyBackground';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Phone, Mail, MapPin } from 'lucide-react';
 
 // Nexora Digital agency pages
 import NexoraHeader from './components/nexora/NexoraHeader';
@@ -36,11 +36,28 @@ import NexoraPrivacy from './pages/nexora/NexoraPrivacy';
 function AppContent() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { settings } = useTheme();
+  const { settings, redirection, resetRedirection } = useTheme();
   const location = useLocation();
 
   const [navProgress, setNavProgress] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
+
+  // Trigger browser-native redirection after the epic portal animation
+  useEffect(() => {
+    if (redirection.active) {
+      const timer = setTimeout(() => {
+        if (redirection.type === 'call') {
+          window.location.href = `tel:${redirection.target.replace(/\s+/g, '')}`;
+        } else if (redirection.type === 'mail') {
+          window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(redirection.target)}`, '_blank', 'noopener,noreferrer');
+        } else if (redirection.type === 'map') {
+          window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(redirection.target)}`, '_blank', 'noopener,noreferrer');
+        }
+        resetRedirection();
+      }, 1600);
+      return () => clearTimeout(timer);
+    }
+  }, [redirection.active, redirection.type, redirection.target]);
 
   // Cinematic top loading bar triggered on page navigation
   useEffect(() => {
@@ -154,6 +171,159 @@ function AppContent() {
 
   const isDark = settings.sidebarTheme === 'dark';
 
+  const renderGlobalOverlays = () => (
+    <>
+      {/* Global Interactive Redirection Portal Overlay */}
+      <AnimatePresence>
+        {redirection.active && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-[#010107]/95 backdrop-blur-xl z-[100] flex flex-col items-center justify-center p-6 text-center text-white"
+          >
+            {/* Background cyber grid */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-40" />
+
+            <div className="max-w-md w-full relative space-y-8 z-10 flex flex-col items-center">
+              {/* Central high-tech ring animation */}
+              <div className="relative w-28 h-28 flex items-center justify-center">
+                {/* Outermost pulsing halo */}
+                <motion.div
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.1, 0.4, 0.1] }}
+                  transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                  className="absolute inset-[-10px] rounded-full filter blur-md"
+                  style={{ backgroundColor: `${settings.primaryColor || '#f43f5e'}22` }}
+                />
+
+                {/* Main animated scanner ring */}
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                  className="absolute inset-0 border-2 border-dashed rounded-full"
+                  style={{ borderColor: settings.primaryColor || '#f43f5e' }}
+                />
+
+                {/* Inner counter-rotating indicator */}
+                <motion.div
+                  animate={{ rotate: -360 }}
+                  transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+                  className="absolute inset-3 border border-dotted rounded-full opacity-60"
+                  style={{ borderColor: settings.primaryColor || '#f43f5e' }}
+                />
+
+                {/* Icon mapping */}
+                <div 
+                  className="w-16 h-16 rounded-3xl flex items-center justify-center shadow-lg"
+                  style={{ 
+                    backgroundColor: `${settings.primaryColor || '#f43f5e'}1a`,
+                    color: settings.primaryColor || '#f43f5e',
+                    border: `1px solid ${settings.primaryColor || '#f43f5e'}33`
+                  }}
+                >
+                  {redirection.type === 'call' && <Phone size={30} className="animate-bounce" />}
+                  {redirection.type === 'mail' && <Mail size={30} className="animate-pulse" />}
+                  {redirection.type === 'map' && <MapPin size={30} className="animate-bounce" />}
+                </div>
+              </div>
+
+              {/* Status information panel */}
+              <div className="space-y-2">
+                <span 
+                  className="text-[9px] font-mono font-black uppercase tracking-[0.3em] px-3.5 py-1 rounded-full border"
+                  style={{ 
+                    color: settings.primaryColor || '#f43f5e',
+                    backgroundColor: `${settings.primaryColor || '#f43f5e'}0d`,
+                    borderColor: `${settings.primaryColor || '#f43f5e'}33`
+                  }}
+                >
+                  {redirection.type === 'call' && 'CONNECTING TELEPHONY PROTOCOL'}
+                  {redirection.type === 'mail' && 'ESTABLISHING COMPOSER INTERFACE'}
+                  {redirection.type === 'map' && 'RESOLVING SPATIAL COORDINATES'}
+                </span>
+
+                <h3 className="text-xl font-sans font-black uppercase tracking-tight italic pt-2">
+                  {redirection.type === 'call' && `ROUTING TO TELEPHONE CONTROLLER`}
+                  {redirection.type === 'mail' && `OPENING SEAMLESS GMAIL COMPOSER`}
+                  {redirection.type === 'map' && `PINPOINTING MAP LOCATION`}
+                </h3>
+
+                <p className="text-[11px] font-semibold text-slate-400 font-mono italic max-w-sm">
+                  {redirection.type === 'call' && `Forwarding analog dialer handoff sequence to: ${redirection.target}...`}
+                  {redirection.type === 'mail' && `Pre-loading email message container for: ${redirection.target}...`}
+                  {redirection.type === 'map' && `Calibrating global coordinate vectors for: ${redirection.target}...`}
+                </p>
+              </div>
+
+              {/* Glowing animated progress line */}
+              <div className="w-full h-1 bg-slate-900 rounded-full overflow-hidden border border-white/[0.03]">
+                <motion.div 
+                  initial={{ width: '0%' }}
+                  animate={{ width: '100%' }}
+                  transition={{ duration: 1.5, ease: "easeInOut" }}
+                  className="h-full rounded-full"
+                  style={{ 
+                    backgroundColor: settings.primaryColor || '#f43f5e',
+                    boxShadow: `0 0 12px ${settings.primaryColor || '#f43f5e'}`
+                  }}
+                />
+              </div>
+
+              {/* Secure status code */}
+              <span className="text-[8px] font-mono font-black tracking-widest text-slate-500 uppercase flex items-center gap-1.5 justify-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                SECURE HANDOFF RE-ROUTE STATUS: ONLINE
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Global Page Transition Loader */}
+      <AnimatePresence>
+        {isNavigating && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-[#02020a]/90 backdrop-blur-md z-[90] flex flex-col items-center justify-center pointer-events-none text-white text-center"
+          >
+            {/* Spinning halos with current primary brand color */}
+            <div className="relative w-24 h-24 flex items-center justify-center">
+              <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                className="absolute inset-0 border-t-2 border-r-2 border-transparent rounded-full shadow-lg"
+                style={{ borderTopColor: settings.primaryColor }}
+              />
+              <motion.div 
+                animate={{ rotate: -360 }}
+                transition={{ repeat: Infinity, duration: 1.4, ease: "linear" }}
+                className="absolute inset-2 border-b-2 border-l-2 border-transparent rounded-full opacity-40 shadow-inner"
+                style={{ borderBottomColor: settings.primaryColor }}
+              />
+              <Sparkles style={{ color: settings.primaryColor }} size={24} className="animate-pulse" />
+            </div>
+            
+            <motion.div 
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              className="mt-6 space-y-1"
+            >
+              <h2 className="text-sm font-black uppercase tracking-[0.25em]" style={{ color: settings.primaryColor }}>
+                {settings.companyName || 'NexaSphere'}
+              </h2>
+              <div className="text-[9px] font-mono tracking-widest text-slate-500 uppercase">
+                Synchronizing secure core layout...
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+
   // Compute Route Divisions
   const publicPaths = ['/about', '/services', '/portfolio', '/case-studies', '/pricing', '/blog', '/contact', '/terms', '/privacy'];
   const isPublicRoute = publicPaths.includes(location.pathname) || location.pathname === '/';
@@ -175,6 +345,7 @@ function AppContent() {
         </div>
         <NexoraFooter />
         <Toaster position="bottom-right" />
+        {renderGlobalOverlays()}
       </div>
     );
   }
@@ -231,6 +402,7 @@ function AppContent() {
         
         <NexoraFooter />
         <Toaster position="bottom-right" />
+        {renderGlobalOverlays()}
       </div>
     );
   }
@@ -281,6 +453,7 @@ function AppContent() {
         </AnimatePresence>
       </main>
       <Toaster position="bottom-right" />
+      {renderGlobalOverlays()}
     </div>
   );
 }

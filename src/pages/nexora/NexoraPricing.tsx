@@ -3,14 +3,20 @@ import { motion } from 'motion/react';
 import { Check, HelpCircle, Award, Star, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
 export default function NexoraPricing() {
+  const [pagesConfig, setPagesConfig] = useState({
+    pricingCapsule: 'TRANSPARENT RECOV_ALLOCATIONS',
+    pricingTitle: 'ELITE SCALE RETAINERS',
+    pricingSubtitle: 'Zero hidden fees. Full SLA transparency. Choose the growth blueprint aligned to your seven-figure scaling parameters.'
+  });
+
   const [plans, setPlans] = useState<any[]>([
     {
       name: "Pilot Launch Retainer",
-      price: "$2,500",
+      price: "৳২,৫০,০০০",
       period: "monthly",
       desc: "Perfect for venture-backed seed startups targeting clear proof-of-concept metric scaling on a single primary ad platform.",
       features: [
@@ -25,7 +31,7 @@ export default function NexoraPricing() {
     },
     {
       name: "Enterprise Scaling Engine",
-      price: "$5,000",
+      price: "৳৫,০০,০০০",
       period: "monthly",
       desc: "Our most coveted scale package. Built for established businesses seeking category dominance across both search and social.",
       features: [
@@ -41,7 +47,7 @@ export default function NexoraPricing() {
     },
     {
       name: "Ultimate Category Leader",
-      price: "$10,000",
+      price: "৳১০,০০,০০০",
       period: "monthly",
       desc: "Omnichannel brand siege. Absolute focus of our visual engineering team scaling unlimited funnels and operations globally.",
       features: [
@@ -58,7 +64,7 @@ export default function NexoraPricing() {
   ]);
 
   useEffect(() => {
-    const fetchPricing = async () => {
+    const fetchPricingAndConfigs = async () => {
       try {
         const snap = await getDocs(collection(db, 'nexora_pricing_plans'));
         if (!snap.empty) {
@@ -68,12 +74,24 @@ export default function NexoraPricing() {
           const backup = localStorage.getItem('nexora_pricing_backup');
           if (backup) setPlans(JSON.parse(backup));
         }
+
+        // Fetch custom pages values
+        const pDoc = await getDoc(doc(db, 'nexora_config', 'pages_config'));
+        if (pDoc.exists()) {
+          setPagesConfig(p => ({ ...p, ...pDoc.data() }));
+        } else {
+          const backupPages = localStorage.getItem('nexora_pages_backup');
+          if (backupPages) setPagesConfig(JSON.parse(backupPages));
+        }
       } catch (err) {
+        console.warn("Could not load backend configurations in Pricing Page:", err);
         const backup = localStorage.getItem('nexora_pricing_backup');
         if (backup) setPlans(JSON.parse(backup));
+        const backupPages = localStorage.getItem('nexora_pages_backup');
+        if (backupPages) setPagesConfig(JSON.parse(backupPages));
       }
     };
-    fetchPricing();
+    fetchPricingAndConfigs();
   }, []);
 
   return (
@@ -85,12 +103,12 @@ export default function NexoraPricing() {
       <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-16">
         {/* Intro */}
         <section className="text-center max-w-2xl mx-auto space-y-4">
-          <span className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.25em] italic">TRANSPARENT RECOV_ALLOCATIONS</span>
+          <span className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.25em] italic">{pagesConfig.pricingCapsule}</span>
           <h1 className="text-4xl sm:text-5xl font-sans font-black italic uppercase tracking-tighter">
-            ELITE SCALE RETAINERS
+            {pagesConfig.pricingTitle}
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm font-semibold italic">
-            Zero hidden fees. Full SLA transparency. Choose the growth blueprint aligned to your seven-figure scaling parameters.
+            {pagesConfig.pricingSubtitle}
           </p>
         </section>
 

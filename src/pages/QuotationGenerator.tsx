@@ -10,7 +10,7 @@ import html2canvas from 'html2canvas';
 
 import { collection, addDoc, serverTimestamp, getDoc, doc, setDoc } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, getCurrencySymbol } from '../context/ThemeContext';
 
 export default function QuotationGenerator() {
   const { id } = useParams();
@@ -595,9 +595,9 @@ const resolveOklchColor = (colorStr: string): string => {
                   <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">ESTIMATED NET</span>
                   <div className="flex items-baseline gap-1 mt-2">
                     <span className="text-3xl font-black tracking-tighter" style={{ color: settings.primaryColor }}>
-                      Tk {quotation.totalAmount.toLocaleString()}
+                      {getCurrencySymbol(settings.currency)} {quotation.totalAmount.toLocaleString()}
                     </span>
-                    <span className="text-[10px] font-black tracking-wider text-slate-400 font-mono">BDT</span>
+                    <span className="text-[10px] font-black tracking-wider text-slate-400 font-mono">{settings.currency || 'BDT'}</span>
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-slate-200/50">
@@ -624,9 +624,9 @@ const resolveOklchColor = (colorStr: string): string => {
                         <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{item.serviceName || 'Service Entry'}</p>
                         {item.description && <p className="text-[11px] font-medium text-slate-400 mt-1 uppercase leading-tight">{item.description}</p>}
                       </td>
-                      <td className="py-5 px-5 text-center text-xs font-semibold text-slate-400">Tk {Number(item.price || 0).toLocaleString()}</td>
+                      <td className="py-5 px-5 text-center text-xs font-semibold text-slate-400">{getCurrencySymbol(settings.currency)} {Number(item.price || 0).toLocaleString()}</td>
                       <td className="py-5 px-5 text-center text-xs font-semibold text-slate-400">{item.quantity}</td>
-                      <td className="py-5 px-5 text-right text-sm font-black text-slate-900">Tk {Number(item.total || 0).toLocaleString()}</td>
+                      <td className="py-5 px-5 text-right text-sm font-black text-slate-900">{getCurrencySymbol(settings.currency)} {Number(item.total || 0).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -640,18 +640,18 @@ const resolveOklchColor = (colorStr: string): string => {
             <div className="flex flex-col items-end space-y-3 mb-6 pr-5">
               <div className="flex items-center gap-12 text-xs">
                 <span className="font-bold text-slate-400 uppercase tracking-[0.15em] text-[10px]">SUBTOTAL</span>
-                <span className="font-extrabold text-slate-800 tracking-tight">Tk {quotation.totalAmount.toLocaleString()}</span>
+                <span className="font-extrabold text-slate-800 tracking-tight">{getCurrencySymbol(settings.currency)} {quotation.totalAmount.toLocaleString()}</span>
               </div>
               <div className="flex items-center gap-12 text-xs">
                 <span className="font-bold text-slate-400 uppercase tracking-[0.15em] text-[10px]">VAT / TAX (0%)</span>
-                <span className="font-extrabold text-slate-850 tracking-tight">Tk 0</span>
+                <span className="font-extrabold text-slate-850 tracking-tight">{getCurrencySymbol(settings.currency)} 0</span>
               </div>
             </div>
 
             {/* Grand total bar */}
             <div className="p-5 rounded-2xl bg-[#0b1329] text-white flex items-center justify-between mb-10 shadow-sm">
               <span className="font-black uppercase tracking-[0.2em] text-[10px] text-zinc-300">GRAND TOTAL</span>
-              <span className="text-xl font-black tracking-tight font-mono">Tk {quotation.totalAmount.toLocaleString()}</span>
+              <span className="text-xl font-black tracking-tight font-mono">{getCurrencySymbol(settings.currency)} {quotation.totalAmount.toLocaleString()}</span>
             </div>
 
             {/* Footer Terms & Conditions next to Authorized Representative */}

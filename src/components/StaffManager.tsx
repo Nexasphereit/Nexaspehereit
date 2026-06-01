@@ -29,7 +29,7 @@ export default function StaffManager({
   settings,
   usersList,
   rawTransactions = [],
-  currencySymbol = '$',
+  currencySymbol = '৳',
   onAddUser,
   onUpdateUserCommission,
   onUpdateUserProperties,

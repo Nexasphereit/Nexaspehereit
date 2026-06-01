@@ -54,7 +54,7 @@ const PRESEEDED_CUSTOMERS = [
 ];
 
 export default function ITSalesDashboard() {
-  const { settings } = useTheme();
+  const { settings, updateSettings } = useTheme();
   const isDark = settings.sidebarTheme === 'dark';
 
   const loggedInUser = React.useMemo(() => {
@@ -99,7 +99,7 @@ export default function ITSalesDashboard() {
 
   // --- State for Currency Selection ---
   const [currency, setCurrency] = useState<string>(() => {
-    return localStorage.getItem('it_sales_currency') || 'USD';
+    return settings.currency || localStorage.getItem('it_sales_currency') || 'BDT';
   });
 
   const getCurrencySymbol = (code: string) => {
@@ -115,6 +115,12 @@ export default function ITSalesDashboard() {
   };
 
   const currencySymbol = getCurrencySymbol(currency);
+
+  useEffect(() => {
+    if (settings.currency) {
+      setCurrency(settings.currency);
+    }
+  }, [settings.currency]);
 
   // --- Firebase Subscriptions ---
   const [servicesSnap, servicesLoading, servicesError] = useCollection(collection(db, 'services'));
@@ -1280,6 +1286,7 @@ export default function ITSalesDashboard() {
               onChange={(e) => {
                 setCurrency(e.target.value);
                 localStorage.setItem('it_sales_currency', e.target.value);
+                updateSettings({ currency: e.target.value });
                 toast.success(`Currency set to ${e.target.value} (${getCurrencySymbol(e.target.value).trim()})`);
               }}
               className={cn(

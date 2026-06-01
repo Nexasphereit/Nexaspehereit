@@ -337,11 +337,15 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
           )}
           <div>
             <div className="inline-flex items-center gap-2 mb-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-              <span className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em]">SECURE GATEWAY</span>
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: settings.primaryColor }} />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: settings.primaryColor }}>SECURE GATEWAY</span>
             </div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic leading-none">NEXASPHERE <span className="text-rose-600">IT</span></h1>
-            <p className="text-slate-500 mt-2 text-[10px] font-bold uppercase tracking-widest">Enterprise Role Authorization Required</p>
+            <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
+              {settings.companyName || 'NEXASPHERE IT'}
+            </h1>
+            <p className="text-slate-500 mt-2 text-[8px] font-bold uppercase tracking-widest">
+              {settings.companyTagline || 'Enterprise Role Authorization Required'}
+            </p>
           </div>
 
           <form onSubmit={handleCustomLogin} className="space-y-4 text-left">

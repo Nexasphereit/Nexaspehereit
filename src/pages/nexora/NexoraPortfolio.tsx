@@ -4,7 +4,7 @@ import {
   ArrowUpRight, BarChart3, Star, Filter, Sparkles, Eye, 
   MessageSquare, LayoutGrid, X, Trash, Layers, Activity 
 } from 'lucide-react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
 
@@ -13,6 +13,11 @@ export default function NexoraPortfolio() {
   const [dbProjects, setDbProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [pagesConfig, setPagesConfig] = useState({
+    portfolioCapsule: 'OUR HISTORIC ROAS DELIVERY',
+    portfolioTitle: 'VERIFIED BRAND ACHIEVEMENTS',
+    portfolioSubtitle: 'See the direct, data-driven transformation results of our campaigns. Tap any card below to launch its client feedback details and case summary.'
+  });
 
   // Static core campaigns
   const coreProjects = [
@@ -63,18 +68,29 @@ export default function NexoraPortfolio() {
   ];
 
   useEffect(() => {
-    const fetchProjects = async () => {
+    const fetchProjectsAndConfigs = async () => {
       try {
         const snap = await getDocs(collection(db, 'nexora_portfolio'));
         const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setDbProjects(list);
+
+        // Fetch custom pages configuration
+        const pDoc = await getDoc(doc(db, 'nexora_config', 'pages_config'));
+        if (pDoc.exists()) {
+          setPagesConfig(p => ({ ...p, ...pDoc.data() }));
+        } else {
+          const backupPages = localStorage.getItem('nexora_pages_backup');
+          if (backupPages) setPagesConfig(JSON.parse(backupPages));
+        }
       } catch (e) {
-        console.warn("Could not load backend portfolio in Portfolio Page:", e);
+        console.warn("Could not load backend portfolio/configs in Portfolio Page:", e);
+        const backupPages = localStorage.getItem('nexora_pages_backup');
+        if (backupPages) setPagesConfig(JSON.parse(backupPages));
       } finally {
         setLoading(false);
       }
     };
-    fetchProjects();
+    fetchProjectsAndConfigs();
   }, []);
 
   // Merge static with dynamic database assets
@@ -93,12 +109,12 @@ export default function NexoraPortfolio() {
       <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-16">
         {/* Intro */}
         <section className="text-center max-w-2xl mx-auto space-y-4">
-          <span className="text-[10px] text-pink-400 font-black uppercase tracking-[0.25em] italic">OUR HISTORIC ROAS DELIVERY</span>
+          <span className="text-[10px] text-pink-400 font-black uppercase tracking-[0.25em] italic">{pagesConfig.portfolioCapsule}</span>
           <h1 className="text-4xl sm:text-5xl font-sans font-black italic uppercase tracking-tighter">
-            VERIFIED BRAND ACHIEVEMENTS
+            {pagesConfig.portfolioTitle}
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm font-semibold italic">
-            See the direct, data-driven transformation results of our campaigns. Tap any card below to launch its client feedback details and case summary.
+            {pagesConfig.portfolioSubtitle}
           </p>
         </section>
 

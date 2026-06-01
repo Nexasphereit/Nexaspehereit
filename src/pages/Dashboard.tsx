@@ -116,7 +116,7 @@ export default function Dashboard() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className={cn("text-3xl font-black tracking-tighter italic uppercase", isDark ? "text-white" : "text-slate-900")}>
-            NexaSphere <span style={{ color: settings.primaryColor }}>Dashboard</span>
+            {settings.companyName || 'NexaSphere It'} <span style={{ color: settings.primaryColor }}>Dashboard</span>
           </h1>
           <p className="text-slate-500 mt-1 font-medium italic">{new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
         </div>

@@ -16,7 +16,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, Link } from 'react-router-dom';
 import { cn } from '@/src/lib/utils';
 import { useTheme } from '../../context/ThemeContext';
 import { auth } from '../../lib/firebase';
@@ -84,23 +84,23 @@ export default function Sidebar() {
           ? "bg-slate-950/40 text-white border-slate-900/60" 
           : "bg-white/90 text-slate-900 border-slate-100"
       )}>
-        <div className="flex items-center gap-2">
+        <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-all cursor-pointer">
           {settings.companyLogo ? (
-            <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 shadow-md">
-              <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain bg-white" />
+            <div className="rounded-lg overflow-hidden shrink-0 shadow-md bg-white border border-slate-100 flex items-center justify-center p-0.5" style={{ height: `${Math.min(settings.logoHeight || 40, 32)}px`, width: `${Math.min(settings.logoHeight || 40, 32)}px` }}>
+              <img src={settings.companyLogo} alt="Logo" className="max-h-full max-w-full object-contain" />
             </div>
           ) : (
             <div 
               className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-md text-white font-black text-xs"
               style={{ background: `linear-gradient(135deg, ${settings.primaryColor}, ${settings.primaryColor}dd)` }}
             >
-              N
+              {(settings.companyName || 'N').charAt(0).toUpperCase()}
             </div>
           )}
           <span className="font-extrabold text-sm tracking-tight">
-            {settings.companyLogo ? 'Workspace' : 'NexaSphere'}
+            {settings.companyName || 'NexaSphere It'}
           </span>
-        </div>
+        </a>
 
         {/* Action Buttons for Top Bar */}
         <div className="flex items-center gap-3">
@@ -170,6 +170,25 @@ export default function Sidebar() {
 
           const Icon = item.icon!;
           const isActive = location.pathname === item.path;
+          const isHomePath = item.path === '/';
+
+          if (isHomePath) {
+            return (
+              <a
+                key={item.path}
+                href="/"
+                className={cn(
+                  "w-12 h-12 rounded-full flex flex-col items-center justify-center transition-all relative group touch-manipulation",
+                  isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"
+                )}
+              >
+                <Icon size={18} className="shrink-0" />
+                <span className="text-[7px] font-black uppercase tracking-wider mt-0.5 max-w-full truncate">
+                  {item.label}
+                </span>
+              </a>
+            );
+          }
 
           return (
             <NavLink
@@ -284,56 +303,79 @@ export default function Sidebar() {
         style={settings.sidebarColor ? { backgroundColor: isDark ? `${settings.sidebarColor}55` : settings.sidebarColor } : {}}
       >
         <div className={cn("p-6 flex items-center gap-3 border-b", isDark ? "border-slate-900" : "border-slate-50")}>
-          {settings.companyLogo ? (
-            <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 shadow-lg border-2 border-slate-100">
-               <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain bg-white" />
-            </div>
-          ) : (
-            <div 
-               className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg"
-               style={{ 
-                 background: `linear-gradient(135deg, ${settings.primaryColor}, ${settings.primaryColor}dd)`,
-                 boxShadow: `0 8px 16px -4px ${settings.primaryColor}44`
-               }}
-            >
-               <span className="font-black text-white text-lg">N</span>
-            </div>
-          )}
-          {isOpen && (
-            <div className="flex flex-col overflow-hidden">
-              <span className={cn("font-black text-xl tracking-tighter truncate leading-none", isDark ? "text-white" : "text-slate-900")}>
-                {settings.companyLogo ? 'Workspace' : 'NexaSphere'}
-              </span>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] mt-1" style={{ color: settings.primaryColor }}>Managed Brand</span>
-            </div>
-          )}
+          <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-all cursor-pointer overflow-hidden w-full select-none">
+            {settings.companyLogo ? (
+              <div className="rounded-xl overflow-hidden shrink-0 shadow-lg border-2 border-slate-100 bg-white flex items-center justify-center p-1" style={{ height: `${settings.logoHeight || 40}px`, width: `${settings.logoHeight || 40}px` }}>
+                 <img src={settings.companyLogo} alt="Logo" className="max-h-full max-w-full object-contain" />
+              </div>
+            ) : (
+              <div 
+                 className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg"
+                 style={{ 
+                   background: `linear-gradient(135deg, ${settings.primaryColor}, ${settings.primaryColor}dd)`,
+                   boxShadow: `0 8px 16px -4px ${settings.primaryColor}44`
+                 }}
+              >
+                 <span className="font-black text-white text-lg">{(settings.companyName || 'N').charAt(0).toUpperCase()}</span>
+              </div>
+            )}
+            {isOpen && (
+              <div className="flex flex-col overflow-hidden text-left">
+                <span className={cn("font-black text-xl tracking-tighter truncate leading-none", isDark ? "text-white" : "text-slate-900")}>
+                  {settings.companyName || 'NexaSphere It'}
+                </span>
+                <span className="text-[9px] font-black uppercase tracking-[0.15em] mt-1" style={{ color: settings.primaryColor }}>
+                  {settings.companyTagline || 'new ideas, new success'}
+                </span>
+              </div>
+            )}
+          </a>
         </div>
 
         <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
-          {sidebarItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => cn(
-                "flex items-center gap-4 px-4 py-4 rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest relative group",
-                isActive 
-                  ? "text-white shadow-lg" 
-                  : isDark ? "text-slate-500 hover:text-white hover:bg-slate-900" : "text-slate-400 hover:text-slate-900 hover:bg-slate-50",
-                !isOpen && "justify-center px-0"
-              )}
-              style={({ isActive }) => isActive ? {
-                backgroundColor: settings.primaryColor,
-                boxShadow: `0 8px 16px -4px ${settings.primaryColor}55`
-              } : {}}
-            >
-              {({ isActive }) => (
-                <>
-                  <item.icon size={18} className={cn("shrink-0 transition-transform group-hover:scale-110", isActive ? "text-white" : isDark ? "group-hover:text-white" : "group-hover:text-slate-900")} />
+          {sidebarItems.map((item) => {
+            const isHomePath = item.path === '/';
+            if (isHomePath) {
+              return (
+                <a
+                  key={item.path}
+                  href="/"
+                  className={cn(
+                    "flex items-center gap-4 px-4 py-4 rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest relative group",
+                    isDark ? "text-slate-500 hover:text-white hover:bg-slate-900" : "text-slate-400 hover:text-slate-900 hover:bg-slate-50",
+                    !isOpen && "justify-center px-0"
+                  )}
+                >
+                  <item.icon size={18} className={cn("shrink-0 transition-transform group-hover:scale-110", isDark ? "group-hover:text-white" : "group-hover:text-slate-900")} />
                   {isOpen && <span className="truncate">{item.label}</span>}
-                </>
-              )}
-            </NavLink>
-          ))}
+                </a>
+              );
+            }
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) => cn(
+                  "flex items-center gap-4 px-4 py-4 rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest relative group",
+                  isActive 
+                    ? "text-white shadow-lg" 
+                    : isDark ? "text-slate-500 hover:text-white hover:bg-slate-900" : "text-slate-400 hover:text-slate-900 hover:bg-slate-50",
+                  !isOpen && "justify-center px-0"
+                )}
+                style={({ isActive }) => isActive ? {
+                  backgroundColor: settings.primaryColor,
+                  boxShadow: `0 8px 16px -4px ${settings.primaryColor}55`
+                } : {}}
+              >
+                {({ isActive }) => (
+                  <>
+                    <item.icon size={18} className={cn("shrink-0 transition-transform group-hover:scale-110", isActive ? "text-white" : isDark ? "group-hover:text-white" : "group-hover:text-slate-900")} />
+                    {isOpen && <span className="truncate">{item.label}</span>}
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
 
         <div className={cn("p-6 border-t", isDark ? "border-slate-900" : "border-slate-50")}>

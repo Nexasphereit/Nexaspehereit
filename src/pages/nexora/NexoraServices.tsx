@@ -5,13 +5,20 @@ import {
   Monitor, LayoutGrid, Award, Film, Edit, Send, PlusCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
 
 export default function NexoraServices() {
   const [dbServices, setDbServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pagesConfig, setPagesConfig] = useState({
+    servicesCapsule: 'OUR SCALE MATRIX',
+    servicesTitle: 'SCALABLE ACQUISITION BLUEPRINTS',
+    servicesSubtitle: 'Each service card details our standard metrics parameters. Browse our 10 primary digital capabilities, or configure special bundles below.',
+    servicesCtaText: 'Enquire Campaign',
+    servicesCtaLink: '/contact'
+  });
 
   // Core list of 10 designated agency services
   const coreServices = [
@@ -98,18 +105,29 @@ export default function NexoraServices() {
   ];
 
   useEffect(() => {
-    const fetchServices = async () => {
+    const fetchServicesAndConfigs = async () => {
       try {
         const snap = await getDocs(collection(db, 'nexora_services'));
         const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setDbServices(list);
+
+        // Fetch custom pages values
+        const pDoc = await getDoc(doc(db, 'nexora_config', 'pages_config'));
+        if (pDoc.exists()) {
+          setPagesConfig(p => ({ ...p, ...pDoc.data() }));
+        } else {
+          const backupPages = localStorage.getItem('nexora_pages_backup');
+          if (backupPages) setPagesConfig(JSON.parse(backupPages));
+        }
       } catch (e) {
-        console.warn("Could not load backend services in Services Page:", e);
+        console.warn("Could not load backend services/configs in Services Page:", e);
+        const backupPages = localStorage.getItem('nexora_pages_backup');
+        if (backupPages) setPagesConfig(JSON.parse(backupPages));
       } finally {
         setLoading(false);
       }
     };
-    fetchServices();
+    fetchServicesAndConfigs();
   }, []);
 
   return (
@@ -121,12 +139,12 @@ export default function NexoraServices() {
       <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-16">
         {/* Intro */}
         <section className="text-center max-w-2xl mx-auto space-y-4">
-          <span className="text-[10px] text-indigo-405 font-black uppercase tracking-[0.25em] italic">OUR SCALE MATRIX</span>
+          <span className="text-[10px] text-indigo-405 font-black uppercase tracking-[0.25em] italic">{pagesConfig.servicesCapsule}</span>
           <h1 className="text-4xl sm:text-5xl font-sans font-black italic uppercase tracking-tighter">
-            SCALABLE ACQUISITION BLUEPRINTS
+            {pagesConfig.servicesTitle}
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm font-semibold italic">
-            Each service card details our standard metrics parameters. Browse our 10 primary digital capabilities, or configure special bundles below.
+            {pagesConfig.servicesSubtitle}
           </p>
         </section>
 
@@ -175,8 +193,8 @@ export default function NexoraServices() {
 
               {/* Action Button */}
               <div className="pt-8 border-t border-white/[0.03] mt-8 flex items-center justify-between">
-                <Link to={`/contact?service=${encodeURIComponent(srv.title)}`} className="text-[10px] font-black uppercase tracking-widest text-indigo-400 group-hover:text-white flex items-center gap-1">
-                  Enquire Campaign <ArrowRight size={10} className="group-hover:translate-x-1 transition-transform" />
+                <Link to={`${pagesConfig.servicesCtaLink || "/contact"}?service=${encodeURIComponent(srv.title)}`} className="text-[10px] font-black uppercase tracking-widest text-indigo-400 group-hover:text-white flex items-center gap-1 font-mono">
+                  {pagesConfig.servicesCtaText || "Enquire Campaign"} <ArrowRight size={10} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <div 
                   className="w-1.5 h-1.5 rounded-full animate-ping shrink-0"

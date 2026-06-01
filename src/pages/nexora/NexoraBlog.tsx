@@ -5,7 +5,7 @@ import {
   Send, Sparkles, Filter, ChevronRight, Hash 
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
 
@@ -15,6 +15,11 @@ export default function NexoraBlog() {
   const [dbBlogs, setDbBlogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [emailSub, setEmailSub] = useState('');
+  const [pagesConfig, setPagesConfig] = useState({
+    blogCapsule: 'INSIGHTS MATRIX & MANUALS',
+    blogTitle: 'GROWTH EDITORIAL KNOWLEDGE',
+    blogSubtitle: 'Written directly by our executive partners. Subscribe below to receive advanced metrics reports and UGC ad hook concepts.'
+  });
 
   // Core static curated blogs
   const staticBlogs = [
@@ -51,18 +56,29 @@ export default function NexoraBlog() {
   ];
 
   useEffect(() => {
-    const fetchBlogs = async () => {
+    const fetchBlogsAndConfigs = async () => {
       try {
         const snap = await getDocs(collection(db, 'nexora_blog'));
         const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setDbBlogs(list);
+
+        // Fetch custom pages configuration
+        const pDoc = await getDoc(doc(db, 'nexora_config', 'pages_config'));
+        if (pDoc.exists()) {
+          setPagesConfig(p => ({ ...p, ...pDoc.data() }));
+        } else {
+          const backupPages = localStorage.getItem('nexora_pages_backup');
+          if (backupPages) setPagesConfig(JSON.parse(backupPages));
+        }
       } catch (e) {
-        console.warn("Could not load backend blogs in Blog Page:", e);
+        console.warn("Could not load backend blogs/configs in Blog Page:", e);
+        const backupPages = localStorage.getItem('nexora_pages_backup');
+        if (backupPages) setPagesConfig(JSON.parse(backupPages));
       } finally {
         setLoading(false);
       }
     };
-    fetchBlogs();
+    fetchBlogsAndConfigs();
   }, []);
 
   const handleSub = (e: React.FormEvent) => {
@@ -97,12 +113,12 @@ export default function NexoraBlog() {
       <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-16">
         {/* Intro */}
         <section className="text-center max-w-2xl mx-auto space-y-4">
-          <span className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.25em] italic">INSIGHTS MATRIX & MANUALS</span>
+          <span className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.25em] italic">{pagesConfig.blogCapsule}</span>
           <h1 className="text-4xl sm:text-5xl font-sans font-black italic uppercase tracking-tighter">
-            GROWTH EDITORIAL KNOWLEDGE
+            {pagesConfig.blogTitle}
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm font-semibold italic">
-            Written directly by our executive partners. Subscribe below to receive advanced metrics reports and UGC ad hook concepts.
+            {pagesConfig.blogSubtitle}
           </p>
         </section>
 

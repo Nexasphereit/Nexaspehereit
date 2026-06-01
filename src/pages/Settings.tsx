@@ -86,22 +86,195 @@ const Settings = () => {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-        {/* Brand Assets */}
-        <Card className={cn("p-6 md:p-8", isDark && "bg-slate-900 border-slate-800")}>
-          <div className="flex items-center gap-3 mb-6 md:mb-8">
-            <div className={cn("p-2 rounded-lg", isDark ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500")}>
-              <Building2 size={20} />
+        {/* Brand Assets & Logo Customizer */}
+        <Card className={cn("p-6 md:p-8 md:col-span-2", isDark && "bg-slate-900 border-slate-800")}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800/10 dark:border-white/10">
+            <div className="flex items-center gap-3">
+              <div className={cn("p-2 rounded-lg", isDark ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500")}>
+                <Building2 size={20} />
+              </div>
+              <div>
+                <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-900")}>Company Branding & Custom Logo Panel</h2>
+                <p className="text-xs text-slate-500">Configure public business identity and upload custom SVG/PNG brand artwork.</p>
+              </div>
             </div>
-            <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-900")}>Brand Assets</h2>
           </div>
-          
-          <ImageUpload 
-            label="Default Company Logo" 
-            value={settings.companyLogo}
-            onChange={(logo) => updateSettings({ companyLogo: logo })}
-            className="w-full"
-          />
-          <p className="text-[10px] text-slate-400 mt-2 font-medium italic">* This logo will be used as default for all your documents.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mt-6">
+            {/* Left Column: inputs & uploader */}
+            <div className="md:col-span-6 space-y-5">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-black tracking-wider text-slate-400 pl-1">Company Name</label>
+                  <input
+                    type="text"
+                    value={settings.companyName || ''}
+                    onChange={(e) => updateSettings({ companyName: e.target.value })}
+                    placeholder="e.g. NexaSphere It"
+                    className={cn(
+                      "w-full px-4 py-3 rounded-2xl text-xs font-bold focus:outline-none border transition-all",
+                      isDark 
+                        ? "bg-slate-950 border-white/5 text-slate-200 focus:border-indigo-500/50" 
+                        : "bg-white border-slate-200 text-slate-950 focus:border-indigo-505"
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-black tracking-wider text-slate-400 pl-1">Brand Tagline</label>
+                  <input
+                    type="text"
+                    value={settings.companyTagline || ''}
+                    onChange={(e) => updateSettings({ companyTagline: e.target.value })}
+                    placeholder="e.g. new ideas, new success"
+                    className={cn(
+                      "w-full px-4 py-3 rounded-2xl text-xs font-bold focus:outline-none border transition-all",
+                      isDark 
+                        ? "bg-slate-950 border-white/5 text-slate-200 focus:border-indigo-500/50" 
+                        : "bg-white border-slate-200 text-slate-950 focus:border-indigo-505"
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Global Website Currency Selector */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-black tracking-wider text-slate-400 pl-1">Global Website Currency (মুদ্রা নির্বাচন)</label>
+                <select
+                  value={settings.currency || 'BDT'}
+                  onChange={(e) => {
+                    updateSettings({ currency: e.target.value });
+                    toast.success(`Global website currency set to ${e.target.value}`);
+                  }}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-2xl text-xs font-bold focus:outline-none border transition-all cursor-pointer",
+                    isDark 
+                      ? "bg-slate-950 border-white/5 text-slate-200 focus:border-indigo-500/50" 
+                      : "bg-white border-slate-200 text-slate-950 focus:border-indigo-500"
+                  )}
+                >
+                  <option value="BDT">BDT (৳) - Bangladeshi Taka</option>
+                  <option value="USD">USD ($) - US Dollar</option>
+                  <option value="EUR">EUR (€) - Euro</option>
+                  <option value="GBP">GBP (£) - British Pound</option>
+                  <option value="INR">INR (₹) - Indian Rupee</option>
+                  <option value="SAR">SAR (SR) - Saudi Riyal</option>
+                  <option value="AED">AED (Dh) - UAE Dirham</option>
+                </select>
+              </div>
+
+              {/* Logo Uploader */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-wider text-slate-400 pl-1">
+                  <span>Custom Logo Upload</span>
+                  {settings.companyLogo && (
+                    <button
+                      onClick={() => {
+                        updateSettings({ companyLogo: '', companyLogoLight: '' });
+                        toast.success('Custom logo deleted successfully.');
+                      }}
+                      className="text-[10px] font-extrabold text-rose-500 hover:text-rose-600 transition-colors flex items-center gap-1 bg-rose-500/10 px-2 py-1 rounded-md"
+                    >
+                      <Trash2 size={11} />
+                      Remove Logo
+                    </button>
+                  )}
+                </div>
+                
+                <ImageUpload 
+                  label="Drag logo or click to select" 
+                  value={settings.companyLogo}
+                  onChange={(logo) => {
+                    updateSettings({ companyLogo: logo, companyLogoLight: logo });
+                    toast.success('Custom company logo generated and set active!');
+                  }}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Render Height Limits */}
+              <div className="space-y-2 pt-2">
+                <div className="flex justify-between text-[10px] font-black uppercase text-slate-400 pl-1">
+                  <span>Logo Height Limit</span>
+                  <span className="font-mono text-xs font-bold" style={{ color: settings.primaryColor }}>{settings.logoHeight || 40}px</span>
+                </div>
+                <input
+                  type="range"
+                  min="24"
+                  max="80"
+                  value={settings.logoHeight || 40}
+                  onChange={(e) => updateSettings({ logoHeight: parseInt(e.target.value) })}
+                  className="w-full accent-rose-500 cursor-ew-resize"
+                  style={{ accentColor: settings.primaryColor }}
+                />
+              </div>
+
+            </div>
+
+            {/* Right Column: Dynamic Preview ("Visible Here") and Instruction guide */}
+            <div className={cn("p-6 rounded-3xl md:col-span-6 flex flex-col justify-between border", isDark ? "bg-slate-950/40 border-slate-800" : "bg-slate-50 border-slate-200")}>
+              <div className="space-y-4">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 pl-1">
+                  <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: settings.primaryColor }} />
+                  Live Realtime Preview (Visible Here)
+                </h3>
+                
+                {/* Visual Preview Box */}
+                <div className="space-y-2">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 pl-1">Interactive Sidebar Layout</p>
+                  <div className={cn("p-4 rounded-2xl border flex items-center gap-3 shadow-md transition-all duration-300", isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100")}>
+                    {settings.companyLogo ? (
+                      <div className="rounded-xl overflow-hidden shadow-sm shrink-0" style={{ height: `${(settings.logoHeight || 40) * 0.85}px` }}>
+                        <img src={settings.companyLogo} alt="Logo" className="h-full w-auto object-contain bg-white" />
+                      </div>
+                    ) : (
+                      <div 
+                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow text-white font-black text-sm"
+                        style={{ background: `linear-gradient(135deg, ${settings.primaryColor}, ${settings.primaryColor}dd)` }}
+                      >
+                        {(settings.companyName || 'N').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex flex-col overflow-hidden">
+                      <span className={cn("font-extrabold text-sm tracking-tight truncate leading-none mb-0.5", isDark ? "text-white" : "text-slate-900")}>
+                        {settings.companyName || 'NexaSphere It'}
+                      </span>
+                      <span className="text-[8px] font-extrabold tracking-widest uppercase truncate" style={{ color: settings.primaryColor }}>
+                        {settings.companyTagline || 'new ideas, new success'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Guide for adding it in the backend / config */}
+                <div className="space-y-2 pt-3 border-t border-slate-500/10 dark:border-white/5">
+                  <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 pl-1">Settings Guidelines & Specifications:</h4>
+                  <ul className="text-[11px] text-slate-500 dark:text-slate-400 space-y-1.5 pl-4 list-disc font-medium leading-relaxed">
+                    <li>
+                      <strong>Artwork:</strong> Best results come from transparent <strong>SVG</strong> or <strong>PNG</strong> formats.
+                    </li>
+                    <li>
+                      <strong>Auto-scaling Optimization:</strong> High-res images are automatically converted to clean data-URI strings inside your local sandbox.
+                    </li>
+                    <li>
+                      <strong>Propagation:</strong> Updated assets instantly white-label the Quotation suite, standard receipts, and login interfaces.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Action notice */}
+              <div className="mt-4 pt-3 border-t border-slate-500/10 dark:border-white/5 flex items-center gap-2">
+                <span className="text-[8px] font-bold py-0.5 px-1.5 rounded bg-amber-500/10 text-amber-500 uppercase tracking-widest shrink-0">
+                  Dual Presence
+                </span>
+                <span className="text-[9px] text-slate-400 font-semibold italic">
+                  Preview updates in real-time on the left sidebar as well.
+                </span>
+              </div>
+            </div>
+          </div>
         </Card>
 
         {/* Interface Mode */}

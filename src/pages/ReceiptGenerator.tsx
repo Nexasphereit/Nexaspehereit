@@ -10,7 +10,7 @@ import html2canvas from 'html2canvas';
 
 import { collection, addDoc, serverTimestamp, getDoc, doc, setDoc } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, getCurrencySymbol } from '../context/ThemeContext';
 
 export default function ReceiptGenerator() {
   const { id } = useParams();
@@ -363,7 +363,7 @@ const resolveOklchColor = (colorStr: string): string => {
                   <div className="bg-slate-50 border-2 p-6 md:p-8 rounded-sm text-left md:text-right w-full" style={{ borderColor: `${settings.primaryColor}22` }}>
                      <p className="text-[9px] font-black tracking-[0.3em] uppercase text-slate-400 mb-2">AMOUNT COLLECTED</p>
                      <h4 className="text-3xl md:text-4xl font-black tracking-tighter italic" style={{ color: settings.primaryColor }}>
-                       {receipt.amount.toLocaleString()}
+                       {getCurrencySymbol(settings.currency)} {receipt.amount.toLocaleString()}
                      </h4>
                   </div>
                </div>

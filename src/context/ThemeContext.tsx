@@ -6,21 +6,87 @@ type ThemeSettings = {
   fontFamily: string;
   sidebarTheme: 'light' | 'dark';
   companyLogo?: string;
+  companyLogoLight?: string;
+  companyName?: string;
+  companyTagline?: string;
+  logoHeight?: number;
   customFonts?: { name: string; id: string; urlName?: string }[];
+  currency?: string;
 };
 
 interface ThemeContextType {
   settings: ThemeSettings;
   updateSettings: (newSettings: Partial<ThemeSettings>) => void;
   toggleDarkMode: () => void;
+  redirection: {
+    active: boolean;
+    type: 'call' | 'mail' | 'map' | null;
+    target: string;
+    label?: string;
+  };
+  triggerRedirection: (type: 'call' | 'mail' | 'map', target: string, label?: string) => void;
+  resetRedirection: () => void;
 }
 
+const logoSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 650 160'>
+  <defs>
+    <linearGradient id='logo-red-grad' x1='0%' y1='0%' x2='100%' y2='100%'>
+      <stop offset='0%' stop-color='#f43f5e' />
+      <stop offset='50%' stop-color='#e11d48' />
+      <stop offset='100%' stop-color='#9f1239' />
+    </linearGradient>
+  </defs>
+  <g transform='translate(10, 5)'>
+    <path d='M 115,30 L 140,55 L 140,105 L 115,130' fill='none' stroke='url(#logo-red-grad)' stroke-width='11' stroke-linecap='round' stroke-linejoin='round' />
+    <path d='M 55,130 L 30,105 L 30,55 L 55,30' fill='none' stroke='url(#logo-red-grad)' stroke-width='11' stroke-linecap='round' stroke-linejoin='round' />
+    <path d='M 115,30 L 65,80 L 65,115' fill='none' stroke='url(#logo-red-grad)' stroke-width='11' stroke-linecap='round' stroke-linejoin='round' />
+    <path d='M 55,130 L 105,80 L 105,45' fill='none' stroke='url(#logo-red-grad)' stroke-width='11' stroke-linecap='round' stroke-linejoin='round' />
+    <circle cx='115' cy='30' r='12' fill='#ffffff' stroke='url(#logo-red-grad)' stroke-width='6' />
+    <circle cx='55' cy='130' r='12' fill='#ffffff' stroke='url(#logo-red-grad)' stroke-width='6' />
+    <text x='170' y='82' font-family='&quot;Space Grotesk&quot;, &quot;Outfit&quot;, &quot;Inter&quot;, sans-serif' font-size='56' font-weight='800' fill='#000000' letter-spacing='-1'>NexaSphere It</text>
+    <text x='172' y='122' font-family='&quot;Alex Brush&quot;, &quot;Playfair Display&quot;, cursive, serif' font-size='32' font-weight='500' fill='#000000' letter-spacing='1'>new ideas, new success</text>
+  </g>
+</svg>`;
+
+const logoSvgDark = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 650 160'>
+  <defs>
+    <linearGradient id='logo-red-grad-dark' x1='0%' y1='0%' x2='100%' y2='100%'>
+      <stop offset='0%' stop-color='#f43f5e' />
+      <stop offset='50%' stop-color='#e11d48' />
+      <stop offset='100%' stop-color='#9f1239' />
+    </linearGradient>
+  </defs>
+  <g transform='translate(10, 5)'>
+    <path d='M 115,30 L 140,55 L 140,105 L 115,130' fill='none' stroke='url(#logo-red-grad-dark)' stroke-width='11' stroke-linecap='round' stroke-linejoin='round' />
+    <path d='M 55,130 L 30,105 L 30,55 L 55,30' fill='none' stroke='url(#logo-red-grad-dark)' stroke-width='11' stroke-linecap='round' stroke-linejoin='round' />
+    <path d='M 115,30 L 65,80 L 65,115' fill='none' stroke='url(#logo-red-grad-dark)' stroke-width='11' stroke-linecap='round' stroke-linejoin='round' />
+    <path d='M 55,130 L 105,80 L 105,45' fill='none' stroke='url(#logo-red-grad-dark)' stroke-width='11' stroke-linecap='round' stroke-linejoin='round' />
+    <circle cx='115' cy='30' r='12' fill='#03030c' stroke='url(#logo-red-grad-dark)' stroke-width='6' />
+    <circle cx='55' cy='130' r='12' fill='#03030c' stroke='url(#logo-red-grad-dark)' stroke-width='6' />
+    <text x='170' y='82' font-family='&quot;Space Grotesk&quot;, &quot;Outfit&quot;, &quot;Inter&quot;, sans-serif' font-size='56' font-weight='800' fill='#ffffff' letter-spacing='-1'>NexaSphere It</text>
+    <text x='172' y='122' font-family='&quot;Alex Brush&quot;, &quot;Playfair Display&quot;, cursive, serif' font-size='32' font-weight='500' fill='#ffffff' letter-spacing='1'>new ideas, new success</text>
+  </g>
+</svg>`;
+
+const encodeSvgToBase64 = (svg: string) => {
+  if (typeof window === 'undefined') return '';
+  return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+};
+
+const defaultLogoDataUri = encodeSvgToBase64(logoSvg);
+const defaultLogoLightDataUri = encodeSvgToBase64(logoSvgDark);
+
 const defaultSettings: ThemeSettings = {
-  primaryColor: '#000000', // Black
+  primaryColor: '#e11d48', // Match the red branding color of Nexasphere It
   sidebarColor: '', // Default (use theme defaults)
   fontFamily: 'font-sans',
   sidebarTheme: 'light',
   companyLogo: '',
+  companyLogoLight: '',
+  companyName: 'NexaSphere It',
+  companyTagline: 'new ideas, new success',
+  logoHeight: 40,
+  currency: 'BDT',
   customFonts: [
     { name: 'Default Sans (Outfit)', id: 'font-sans' },
     { name: 'Lora (Classic Elegant)', id: 'Lora' },
@@ -29,6 +95,19 @@ const defaultSettings: ThemeSettings = {
     { name: 'Playfair Display (Serif)', id: 'Playfair Display' },
     { name: 'Fira Code (Technical)', id: 'font-mono' },
   ],
+};
+
+export const getCurrencySymbol = (code: string | undefined): string => {
+  switch (code || 'BDT') {
+    case 'BDT': return '৳';
+    case 'USD': return '$';
+    case 'EUR': return '€';
+    case 'GBP': return '£';
+    case 'INR': return '₹';
+    case 'SAR': return 'SR ';
+    case 'AED': return 'Dh ';
+    default: return '$';
+  }
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -64,8 +143,70 @@ function hexToRgb(hex: string) {
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<ThemeSettings>(() => {
     const saved = localStorage.getItem('nexasphere-theme');
-    return saved ? JSON.parse(saved) : defaultSettings;
+    if (saved) {
+      try {
+        const parsedObject = JSON.parse(saved);
+        const parsed = { ...defaultSettings, ...parsedObject };
+        
+        // Helper to identify and replace outdated branding / Nexora logos
+        const isOldBranding = (logoUri: string | undefined): boolean => {
+          if (!logoUri) return false;
+          // Check for old brand identifiers, default hardcoded red logo or empty-intent resets
+          const matches = logoUri.includes('Nexora') || 
+                          logoUri.includes('nexora') || 
+                          logoUri.includes('logo-blue-grad') ||
+                          logoUri.includes('logo-red-grad') ||
+                          logoUri === defaultLogoDataUri ||
+                          logoUri === defaultLogoLightDataUri;
+          return matches;
+        };
+
+        if (isOldBranding(parsed.companyLogo)) {
+          parsed.companyLogo = '';
+        }
+        if (isOldBranding(parsed.companyLogoLight)) {
+          parsed.companyLogoLight = '';
+        }
+
+        // Return updated object to save and sync automatically
+        localStorage.setItem('nexasphere-theme', JSON.stringify(parsed));
+        return parsed;
+      } catch (e) {
+        console.error('Failed to parse nexasphere-theme from localStorage', e);
+      }
+    }
+    return defaultSettings;
   });
+
+  const [redirection, setRedirection] = useState<{
+    active: boolean;
+    type: 'call' | 'mail' | 'map' | null;
+    target: string;
+    label?: string;
+  }>({
+    active: false,
+    type: null,
+    target: '',
+    label: ''
+  });
+
+  const triggerRedirection = (type: 'call' | 'mail' | 'map', target: string, label?: string) => {
+    setRedirection({
+      active: true,
+      type,
+      target,
+      label
+    });
+  };
+
+  const resetRedirection = () => {
+    setRedirection({
+      active: false,
+      type: null,
+      target: '',
+      label: ''
+    });
+  };
 
   const updateSettings = (newSettings: Partial<ThemeSettings>) => {
     setSettings(prev => {
@@ -80,6 +221,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   useEffect(() => {
+    // Preload elegant cursive-style signature font for corporate logo
+    loadGoogleFont('Alex Brush');
+
     // Apply primary color to CSS variable
     document.documentElement.style.setProperty('--primary-brand', settings.primaryColor);
     
@@ -131,7 +275,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [settings]);
 
   return (
-    <ThemeContext.Provider value={{ settings, updateSettings, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ settings, updateSettings, toggleDarkMode, redirection, triggerRedirection, resetRedirection }}>
       {children}
     </ThemeContext.Provider>
   );
