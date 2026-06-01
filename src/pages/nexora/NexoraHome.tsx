@@ -29,7 +29,7 @@ export default function NexoraHome() {
     subtitle: "We are a friendly, highly skilled team of programmers, creative designers, and digital marketers. We create high-speed web systems and run social media campaigns to increase your sales.",
     ctaPrimary: "Get Free Consultation",
     ctaSecondary: "View Our Services",
-    featureImage: "/src/assets/images/ceo_portrait_1780313994319.png"
+    featureImage: "/src/assets/images/shakhawat_portrait_1780314607048.png"
   });
 
   const [pagesConfig, setPagesConfig] = useState({
@@ -59,17 +59,17 @@ export default function NexoraHome() {
   // Default expert team list
   const defaultTeam = [
     {
-      name: "Asaduzzaman Tohin",
+      name: "Md. Shakhawat Hossain",
       role: "Founder & Chief Executive Officer",
       dep: "Executive Leadership",
-      avatar: "/src/assets/images/ceo_portrait_1780313994319.png",
+      avatar: "/src/assets/images/shakhawat_portrait_1780314607048.png",
       bio: "Leads the creative vision, high quality standards, and growth strategy for Nexora."
     },
     {
-      name: "Taslema Akter Mou",
-      role: "Co-Founder & Chief Operating Officer",
-      dep: "Executive Leadership",
-      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&h=450&q=80",
+      name: "Asaduzzaman Tohin",
+      role: "Head of Sales & Strategy",
+      dep: "Sales & Client Relations",
+      avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&h=450&q=80",
       bio: "Designs growth blueprints for large corporate accounts and guides our project planning."
     },
     {
@@ -252,7 +252,7 @@ export default function NexoraHome() {
             name: m.name,
             role: m.role,
             dep: m.dep || (m.role.includes("Design") || m.role.includes("Artist") ? "Creative Dept" : m.role.includes("Lead") || m.role.includes("Chief") || m.role.includes("Founder") ? "Executive Leadership" : "Operations"),
-            avatar: m.image || m.avatar || "/src/assets/images/ceo_portrait_1780313994319.png",
+            avatar: m.image || m.avatar || "/src/assets/images/shakhawat_portrait_1780314607048.png",
             bio: m.exp || m.bio || ""
           }));
           setTeamMembers(formatted);
@@ -268,7 +268,7 @@ export default function NexoraHome() {
             name: m.name,
             role: m.role,
             dep: m.dep || (m.role.includes("Design") || m.role.includes("Artist") ? "Creative Dept" : m.role.includes("Lead") || m.role.includes("Chief") || m.role.includes("Founder") ? "Executive Leadership" : "Operations"),
-            avatar: m.image || m.avatar || "/src/assets/images/ceo_portrait_1780313994319.png",
+            avatar: m.image || m.avatar || "/src/assets/images/shakhawat_portrait_1780314607048.png",
             bio: m.exp || m.bio || ""
           }));
           setTeamMembers(formatted);
@@ -593,7 +593,7 @@ export default function NexoraHome() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center space-y-3 mb-16">
             <span className="text-[10px] text-purple-400 font-black uppercase tracking-[0.25em] italic">Meet Our Expert Team</span>
-            <h2 className="text-3xl sm:text-5xl font-sans font-black uppercase tracking-tighter italic">NEXORA BRAIN TRUST</h2>
+            <h2 className="text-3xl sm:text-5xl font-sans font-black uppercase tracking-tighter italic">NEXASPHERE IT BRAIN TRUST</h2>
             <p className="text-slate-450 text-xs sm:text-sm font-semibold italic max-w-lg mx-auto">
               Our incredible team of designers, engineers, and marketers who deliver premium success to your business.
             </p>

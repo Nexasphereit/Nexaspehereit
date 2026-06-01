@@ -32,6 +32,7 @@ import NexoraContact from './pages/nexora/NexoraContact';
 import NexoraAdmin from './pages/nexora/NexoraAdmin';
 import NexoraTerms from './pages/nexora/NexoraTerms';
 import NexoraPrivacy from './pages/nexora/NexoraPrivacy';
+import NexoraSitemap from './pages/nexora/NexoraSitemap';
 
 function AppContent() {
   const [user, setUser] = useState<any>(null);
@@ -325,7 +326,7 @@ function AppContent() {
   );
 
   // Compute Route Divisions
-  const publicPaths = ['/about', '/services', '/portfolio', '/case-studies', '/pricing', '/blog', '/contact', '/terms', '/privacy'];
+  const publicPaths = ['/about', '/services', '/portfolio', '/case-studies', '/pricing', '/blog', '/contact', '/terms', '/privacy', '/sitemap'];
   const isPublicRoute = publicPaths.includes(location.pathname) || location.pathname === '/';
   
   const privatePaths = ['/dashboard', '/it-sales', '/quotations', '/cvs', '/receipts', '/history', '/settings', '/admin'];
@@ -394,6 +395,7 @@ function AppContent() {
                 <Route path="/admin" element={<NexoraAdmin />} />
                 <Route path="/terms" element={<NexoraTerms />} />
                 <Route path="/privacy" element={<NexoraPrivacy />} />
+                <Route path="/sitemap" element={<NexoraSitemap />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </motion.div>

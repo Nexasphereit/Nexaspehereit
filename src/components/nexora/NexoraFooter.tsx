@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Globe, Mail, Phone, MapPin, Send, MessageSquare } from 'lucide-react';
+import { Sparkles, Globe, Mail, Phone, MapPin, Send, MessageSquare, Twitter, Instagram, Youtube, MessageCircle, Facebook } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { toast as hotToast } from 'react-hot-toast';
 import { useTheme } from '../../context/ThemeContext';
@@ -84,45 +84,63 @@ export default function NexoraFooter() {
           <p className="text-xs text-slate-400 leading-relaxed font-semibold italic">
             {settings.companyName || 'NexaSphere It'} is an elite global partner in high-end software engineering, state-of-the-art web systems, and intelligent digital workspace automation solutions.
           </p>
-          <div className="flex items-center gap-3">
-            {['Facebook', 'Twitter', 'LinkedIn', 'Instagram'].map((p) => (
-              <a
-                key={p}
-                href="#"
-                onClick={(e) => { e.preventDefault(); hotToast.success(`Visiting ${p} corporate channels!`); }}
-                className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] hover:border-indigo-500 transition-colors border border-white/[0.05] flex items-center justify-center text-xs text-slate-400 hover:text-white"
-              >
-                {p[0]}
-              </a>
-            ))}
-          </div>
-        </div>
-
-        {/* Services Sitemap - Detailed Overview */}
-        <div className="lg:col-span-2 space-y-6">
-          <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-white italic mb-6">Our Services Sitemap</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex items-center gap-3 pt-1">
             {[
-              { label: 'Web Design & Development', desc: 'Beautiful, easy-to-use, and fast websites', path: '/services' },
-              { label: 'Digital Marketing & Ads', desc: 'Paid ads to reach your ideal online audience', path: '/services' },
-              { label: 'Graphics & Visual Design', desc: 'Unique logos, brand assets, and creative art', path: '/services' },
-              { label: 'Motion Graphics & Editing', desc: 'Exciting, top-quality promotional videos', path: '/services' },
-              { label: 'Search Engine Optimization', desc: 'Help your brand rank #1 on Google search', path: '/services' },
-              { label: 'Custom Business Software', desc: 'Smarter tools built to manage your operations', path: '/services' },
-            ].map((srv) => (
-              <Link 
-                key={srv.label} 
-                to={srv.path} 
-                className="group block p-3 rounded-xl bg-white/[0.015] hover:bg-white/[0.04] border border-white/[0.04] hover:border-indigo-500/20 transition-all"
-              >
-                <div className="text-xs text-slate-200 group-hover:text-indigo-400 font-extrabold transition-colors">
-                  {srv.label}
-                </div>
-                <div className="text-[10px] text-slate-500 mt-1 font-semibold leading-relaxed">
-                  {srv.desc}
-                </div>
-              </Link>
-            ))}
+              { 
+                name: 'Facebook', 
+                icon: Facebook, 
+                url: 'https://facebook.com/nexasphereit', 
+                color: 'hover:text-blue-500 hover:border-blue-500/30 hover:bg-blue-500/[0.04]',
+                glow: 'shadow-[0_0_15px_rgba(59,130,246,0.25)] bg-blue-500/5'
+              },
+              { 
+                name: 'X', 
+                icon: Twitter, 
+                url: 'https://x.com/nexasphereit', 
+                color: 'hover:text-white hover:border-white/30 hover:bg-white/[0.05]',
+                glow: 'shadow-[0_0_15px_rgba(255,255,255,0.15)] bg-white/5'
+              },
+              { 
+                name: 'Instagram', 
+                icon: Instagram, 
+                url: 'https://instagram.com/nexasphereit', 
+                color: 'hover:text-pink-400 hover:border-pink-500/30 hover:bg-pink-500/[0.04]',
+                glow: 'shadow-[0_0_15px_rgba(236,72,153,0.2)] bg-pink-500/5'
+              },
+              { 
+                name: 'YouTube', 
+                icon: Youtube, 
+                url: 'https://youtube.com/@nexasphereit', 
+                color: 'hover:text-red-500 hover:border-red-500/30 hover:bg-red-500/[0.04]',
+                glow: 'shadow-[0_0_15px_rgba(239,68,68,0.25)] bg-red-500/5'
+              },
+              { 
+                name: 'WhatsApp', 
+                icon: MessageCircle, 
+                url: 'https://wa.me/8801976981940', 
+                color: 'hover:text-emerald-400 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]',
+                glow: 'shadow-[0_0_15px_rgba(16,185,129,0.25)] bg-emerald-500/5'
+              }
+            ].map((soc) => {
+              const Icon = soc.icon;
+              return (
+                <motion.a
+                  key={soc.name}
+                  href={soc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  whileHover={{ scale: 1.12, y: -3 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`w-9 h-9 rounded-xl bg-white/[0.015] border border-white/[0.05] text-slate-400 flex items-center justify-center transition-all cursor-pointer ${soc.color} group relative duration-200`}
+                  title={`Connect with Nexasphere IT on ${soc.name}`}
+                >
+                  <Icon size={16} className="transition-transform group-hover:rotate-[2deg] relative z-20" />
+                  
+                  {/* Glowing background ring */}
+                  <span className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none duration-300 blur-sm z-10 ${soc.glow}`} />
+                </motion.a>
+              );
+            })}
           </div>
         </div>
 
@@ -224,7 +242,7 @@ export default function NexoraFooter() {
         <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
           &copy; {currentYear} NEXASPHERE IT. ALL RIGHTS RESERVED.
         </p>
-        <div className="flex gap-6">
+        <div className="flex items-center gap-5">
           <Link 
             to="/privacy" 
             className="text-[10px] text-slate-500 hover:text-red-500 transition-colors uppercase tracking-wider font-extrabold cursor-pointer"
@@ -236,6 +254,13 @@ export default function NexoraFooter() {
             className="text-[10px] text-slate-500 hover:text-indigo-400 transition-colors uppercase tracking-wider font-extrabold cursor-pointer"
           >
             Terms & Conditions
+          </Link>
+          <Link 
+            to="/sitemap" 
+            className="text-[10px] text-rose-400 hover:text-rose-300 bg-rose-950/45 hover:bg-rose-950/70 px-3.5 py-1.5 rounded-full border border-rose-500/25 hover:border-rose-400/50 transition-all uppercase tracking-wider font-black cursor-pointer flex items-center gap-1.5 shadow-[0_0_12px_rgba(244,63,94,0.15)] hover:shadow-[0_0_18px_rgba(244,63,94,0.3)]"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping inline-block shrink-0" />
+            Sitemap
           </Link>
         </div>
       </div>
