@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { db } from '../lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 type ThemeSettings = {
   primaryColor: string;
@@ -208,13 +210,37 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
-  const updateSettings = (newSettings: Partial<ThemeSettings>) => {
+  const updateSettings = async (newSettings: Partial<ThemeSettings>) => {
     setSettings(prev => {
       const updated = { ...prev, ...newSettings };
       localStorage.setItem('nexasphere-theme', JSON.stringify(updated));
       return updated;
     });
+    try {
+      await setDoc(doc(db, 'nexora_config', 'theme_settings'), newSettings, { merge: true });
+    } catch (e) {
+      console.warn("Could not sync settings to Firestore:", e);
+    }
   };
+
+  useEffect(() => {
+    const fetchGlobalThemeSettings = async () => {
+      try {
+        const tDoc = await getDoc(doc(db, 'nexora_config', 'theme_settings'));
+        if (tDoc.exists()) {
+          const cloudData = tDoc.data();
+          setSettings(prev => {
+            const merged = { ...prev, ...cloudData };
+            localStorage.setItem('nexasphere-theme', JSON.stringify(merged));
+            return merged;
+          });
+        }
+      } catch (err) {
+        console.warn("Global theme settings read deferred:", err);
+      }
+    };
+    fetchGlobalThemeSettings();
+  }, []);
 
   const toggleDarkMode = () => {
     updateSettings({ sidebarTheme: settings.sidebarTheme === 'light' ? 'dark' : 'light' });

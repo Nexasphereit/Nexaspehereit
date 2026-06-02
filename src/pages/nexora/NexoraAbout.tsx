@@ -5,26 +5,58 @@ import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
 export default function NexoraAbout() {
-  const [aboutConfig, setAboutConfig] = useState({
-    storyTitle: "SCALING THE DIGITAL FUTURE",
-    storySubtitle: "Founded with the belief that digital campaigns should be mathematically rigorous, Nexora has scaled from a boutique local optimization team into a fully connected international advertising powerhub.",
-    missionTitle: "OUR MISSION BLUEPRINT",
-    missionDesc: "Our absolute objective is to secure unmatched client profitability through bulletproof analytics, preternatural ad copy hook optimization, and high-speed checkout experience builds. We eliminate useless spending to optimize metrics that translate into actual revenue growth.",
-    visionTitle: "OUR ULTIMATE VISION",
-    visionDesc: "We envision a unified ecosystem where performance marketing is fully integrated with administrative utility—bridging CRM data capture directly with elite back-office document automation."
+  const [aboutConfig, setAboutConfig] = useState(() => {
+    const backup = localStorage.getItem('nexora_about_backup');
+    if (backup) {
+      try {
+        return JSON.parse(backup);
+      } catch (e) {
+        // Fallback to default
+      }
+    }
+    return {
+      storyTitle: "SCALING THE DIGITAL FUTURE",
+      storySubtitle: "Founded with the belief that digital campaigns should be mathematically rigorous, Nexora has scaled from a boutique local optimization team into a fully connected international advertising powerhub.",
+      missionTitle: "OUR MISSION BLUEPRINT",
+      missionDesc: "Our absolute objective is to secure unmatched client profitability through bulletproof analytics, preternatural ad copy hook optimization, and high-speed checkout experience builds. We eliminate useless spending to optimize metrics that translate into actual revenue growth.",
+      visionTitle: "OUR ULTIMATE VISION",
+      visionDesc: "We envision a unified ecosystem where performance marketing is fully integrated with administrative utility—bridging CRM data capture directly with elite back-office document automation."
+    };
   });
 
-  const [team, setTeam] = useState<any[]>([
-    { name: "Julian Sterling", role: "Founder & Chief Marketing Architect", exp: "Ex-Google Ads Elite team. Scaled 12+ SaaS products to successful IPO exits.", initial: "JS" },
-    { name: "Sienna Martinez", role: "Creative Director & Hook Engineer", exp: "Award-winning visual storyteller. Designs high-impact social frameworks.", initial: "SM" },
-    { name: "Dax Thornton", role: "Head of Funnels & Conversion Analytics", exp: "Full-stack Shopify engineer. Passionate about custom React pixel tracking.", initial: "DT" }
-  ]);
+  const [team, setTeam] = useState<any[]>(() => {
+    const backup = localStorage.getItem('nexora_team_backup');
+    if (backup) {
+      try {
+        return JSON.parse(backup);
+      } catch (e) {
+        // Fallback to default
+      }
+    }
+    return [
+      { name: "Julian Sterling", role: "Founder & Chief Marketing Architect", exp: "Ex-Google Ads Elite team. Scaled 12+ SaaS products to successful IPO exits.", initial: "JS" },
+      { name: "Sienna Martinez", role: "Creative Director & Hook Engineer", exp: "Award-winning visual storyteller. Designs high-impact social frameworks.", initial: "SM" },
+      { name: "Dax Thornton", role: "Head of Funnels & Conversion Analytics", exp: "Full-stack Shopify engineer. Passionate about custom React pixel tracking.", initial: "DT" }
+    ];
+  });
 
-  const [milestones, setMilestones] = useState<any[]>([
-    { year: "2021", title: "Nexora Foundation", desc: "Launched in NY with a small team of 3 analysts optimizing local retail campaigns." },
-    { year: "2023", title: "NexaSphere Suite Release", desc: "Introduced integrated back-office PDF creation modules to support enterprise clients." },
-    { year: "2025", title: "Global Expand", desc: "Maintained a portfolio of over 45 high-end SaaS accounts tracking $185M+ in revenue." }
-  ]);
+  const [milestones, setMilestones] = useState<any[]>(() => {
+    const backup = localStorage.getItem('nexora_milestones_backup');
+    if (backup) {
+      try {
+        const list = JSON.parse(backup);
+        list.sort((a: any, b: any) => parseInt(a.year || "0") - parseInt(b.year || "0"));
+        return list;
+      } catch (e) {
+        // Fallback to default
+      }
+    }
+    return [
+      { year: "2021", title: "Nexora Foundation", desc: "Launched in NY with a small team of 3 analysts optimizing local retail campaigns." },
+      { year: "2023", title: "NexaSphere Suite Release", desc: "Introduced integrated back-office PDF creation modules to support enterprise clients." },
+      { year: "2025", title: "Global Expand", desc: "Maintained a portfolio of over 45 high-end SaaS accounts tracking $185M+ in revenue." }
+    ];
+  });
 
   useEffect(() => {
     const fetchAboutData = async () => {
@@ -32,7 +64,9 @@ export default function NexoraAbout() {
         // About Core
         const aDoc = await getDoc(doc(db, 'nexora_config', 'about_core'));
         if (aDoc.exists()) {
-          setAboutConfig(aDoc.data() as any);
+          const data = aDoc.data();
+          setAboutConfig(data as any);
+          localStorage.setItem('nexora_about_backup', JSON.stringify(data));
         } else {
           const localAbout = localStorage.getItem('nexora_about_backup');
           if (localAbout) setAboutConfig(JSON.parse(localAbout));
@@ -41,7 +75,9 @@ export default function NexoraAbout() {
         // Team
         const teamSnap = await getDocs(collection(db, 'nexora_team'));
         if (!teamSnap.empty) {
-          setTeam(teamSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+          const list = teamSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          setTeam(list);
+          localStorage.setItem('nexora_team_backup', JSON.stringify(list));
         } else {
           const localTeam = localStorage.getItem('nexora_team_backup');
           if (localTeam) setTeam(JSON.parse(localTeam));
@@ -53,6 +89,7 @@ export default function NexoraAbout() {
           const list = milestonesSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
           list.sort((a: any, b: any) => parseInt(a.year || "0") - parseInt(b.year || "0"));
           setMilestones(list);
+          localStorage.setItem('nexora_milestones_backup', JSON.stringify(list));
         } else {
           const localMilestones = localStorage.getItem('nexora_milestones_backup');
           if (localMilestones) {

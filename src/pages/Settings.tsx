@@ -67,10 +67,12 @@ const Settings = () => {
 
   const handleReset = () => {
     updateSettings({
-      primaryColor: '#000000',
+      primaryColor: '#e11d48',
       fontFamily: 'font-sans',
-      sidebarTheme: 'light',
+      sidebarTheme: 'dark',
       companyLogo: '',
+      companyName: 'NexaSphere IT',
+      companyTagline: 'new ideas, new success',
       customFonts: defaultFonts,
     });
     toast.success('Settings reset to default');

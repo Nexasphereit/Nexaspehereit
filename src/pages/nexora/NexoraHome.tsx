@@ -22,31 +22,61 @@ export default function NexoraHome() {
     setFaqs(p => p.map((f, i) => i === index ? { ...f, open: !f.open } : f));
   };
 
-  const [heroConfig, setHeroConfig] = useState({
-    floatingCapsule: "NEXORA WORLD-CLASS CREATIVE AGENCY",
-    headline: "WE BUILD BEAUTIFUL WEBSITES",
-    subGradient: "AND GROW YOUR ONLINE BRAND",
-    subtitle: "We are a friendly, highly skilled team of programmers, creative designers, and digital marketers. We create high-speed web systems and run social media campaigns to increase your sales.",
-    ctaPrimary: "Get Free Consultation",
-    ctaSecondary: "View Our Services",
-    featureImage: "/src/assets/images/shakhawat_portrait_1780314607048.png"
+  const [heroConfig, setHeroConfig] = useState(() => {
+    const backup = localStorage.getItem('nexora_hero_backup');
+    if (backup) {
+      try {
+        return JSON.parse(backup);
+      } catch (e) {
+        // Fallback to defaults
+      }
+    }
+    return {
+      floatingCapsule: "NEXORA WORLD-CLASS CREATIVE AGENCY",
+      headline: "WE BUILD BEAUTIFUL WEBSITES",
+      subGradient: "AND GROW YOUR ONLINE BRAND",
+      subtitle: "We are a friendly, highly skilled team of programmers, creative designers, and digital marketers. We create high-speed web systems and run social media campaigns to increase your sales.",
+      ctaPrimary: "Get Free Consultation",
+      ctaSecondary: "View Our Services",
+      featureImage: "/src/assets/images/shakhawat_portrait_1780314607048.png"
+    };
   });
 
-  const [pagesConfig, setPagesConfig] = useState({
-    heroCtaPrimaryLink: '/contact',
-    heroCtaSecondaryLink: '/services'
+  const [pagesConfig, setPagesConfig] = useState(() => {
+    const backup = localStorage.getItem('nexora_pages_backup');
+    if (backup) {
+      try {
+        return JSON.parse(backup);
+      } catch (e) {
+        // Fallback to defaults
+      }
+    }
+    return {
+      heroCtaPrimaryLink: '/contact',
+      heroCtaSecondaryLink: '/services'
+    };
   });
 
-  const [statsConfig, setStatsConfig] = useState({
-    stat1_val: 150,
-    stat1_suffix: "+ Brands",
-    stat1_label: "Happy Clients Trusted Us",
-    stat2_val: 450,
-    stat2_suffix: "k+",
-    stat2_label: "Leads & Customers Captured",
-    stat3_val: 100,
-    stat3_suffix: "% Success-Rate",
-    stat3_label: "Dedicated Care and Delivery"
+  const [statsConfig, setStatsConfig] = useState(() => {
+    const backup = localStorage.getItem('nexora_stats_backup');
+    if (backup) {
+      try {
+        return JSON.parse(backup);
+      } catch (e) {
+        // Fallback to defaults
+      }
+    }
+    return {
+      stat1_val: 150,
+      stat1_suffix: "+ Brands",
+      stat1_label: "Happy Clients Trusted Us",
+      stat2_val: 450,
+      stat2_suffix: "k+",
+      stat2_label: "Leads & Customers Captured",
+      stat3_val: 100,
+      stat3_suffix: "% Success-Rate",
+      stat3_label: "Dedicated Care and Delivery"
+    };
   });
 
   const [counter1, setCounter1] = useState(0);
@@ -55,6 +85,9 @@ export default function NexoraHome() {
 
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [configsLoaded, setConfigsLoaded] = useState(() => {
+    return !!localStorage.getItem('nexora_hero_backup');
+  });
 
   // Default expert team list
   const defaultTeam = [
@@ -116,7 +149,26 @@ export default function NexoraHome() {
     }
   ];
 
-  const [teamMembers, setTeamMembers] = useState<any[]>(defaultTeam);
+  const [teamMembers, setTeamMembers] = useState<any[]>(() => {
+    const backup = localStorage.getItem('nexora_team_backup');
+    if (backup) {
+      try {
+        const list = JSON.parse(backup);
+        if (Array.isArray(list) && list.length > 0) {
+          return list.map((m: any) => ({
+            name: m.name,
+            role: m.role,
+            dep: m.dep || (m.role.includes("Design") || m.role.includes("Artist") ? "Creative Dept" : m.role.includes("Lead") || m.role.includes("Chief") || m.role.includes("Founder") ? "Executive Leadership" : "Operations"),
+            avatar: m.image || m.avatar || "/src/assets/images/shakhawat_portrait_1780314607048.png",
+            bio: m.exp || m.bio || ""
+          }));
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    return defaultTeam;
+  });
 
   // BD Brands we worked with (Original logos rendered in clean custom SVGs)
   const bdBrands = [
@@ -256,6 +308,7 @@ export default function NexoraHome() {
             bio: m.exp || m.bio || ""
           }));
           setTeamMembers(formatted);
+          localStorage.setItem('nexora_team_backup', JSON.stringify(list));
         } else {
           setTeamMembers(defaultTeam);
         }
@@ -298,20 +351,36 @@ export default function NexoraHome() {
       try {
         const hDoc = await getDoc(doc(db, 'nexora_config', 'landing_hero'));
         if (hDoc.exists()) {
-          setHeroConfig(p => ({ ...p, ...hDoc.data() }));
+          const data = hDoc.data();
+          setHeroConfig(p => {
+            const updated = { ...p, ...data };
+            localStorage.setItem('nexora_hero_backup', JSON.stringify(updated));
+            return updated;
+          });
         }
         const pDoc = await getDoc(doc(db, 'nexora_config', 'pages_config'));
         if (pDoc.exists()) {
-          setPagesConfig(p => ({ ...p, ...pDoc.data() }));
+          const data = pDoc.data();
+          setPagesConfig(p => {
+            const updated = { ...p, ...data };
+            localStorage.setItem('nexora_pages_backup', JSON.stringify(updated));
+            return updated;
+          });
         }
         const sDoc = await getDoc(doc(db, 'nexora_config', 'landing_stats'));
         if (sDoc.exists()) {
-          setStatsConfig(s => ({ ...s, ...sDoc.data() }));
+          const data = sDoc.data();
+          setStatsConfig(s => {
+            const updated = { ...s, ...data };
+            localStorage.setItem('nexora_stats_backup', JSON.stringify(updated));
+            return updated;
+          });
         }
         const faqSnap = await getDocs(collection(db, 'nexora_faqs'));
         if (!faqSnap.empty) {
           const list = faqSnap.docs.map((d, index) => ({ id: d.id, ...d.data(), open: index === 0 }));
           setFaqs(list as any);
+          localStorage.setItem('nexora_faqs_backup', JSON.stringify(list));
         }
       } catch (err) {
         console.warn("Fallback to offline state assets.");
@@ -321,6 +390,8 @@ export default function NexoraHome() {
         if (backupStats) setStatsConfig(JSON.parse(backupStats));
         const backupPages = localStorage.getItem('nexora_pages_backup');
         if (backupPages) setPagesConfig(JSON.parse(backupPages));
+      } finally {
+        setConfigsLoaded(true);
       }
     };
     fetchConfigsAndFaqs();
@@ -344,6 +415,44 @@ export default function NexoraHome() {
       clearInterval(i3);
     };
   }, [statsConfig]);
+
+  if (!configsLoaded) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#010103] relative overflow-hidden">
+        {/* Soft elegant pulsing gradient */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#e11d48]/5 rounded-full filter blur-3xl animate-pulse" />
+        
+        <div className="relative flex flex-col items-center gap-6 z-10 text-center">
+          {/* Futuristic modern micro spinner */}
+          <div className="relative w-16 h-16">
+            <motion.div 
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+              className="absolute inset-0 border-t-2 border-r border-[#e11d48]/40 rounded-full"
+              style={{ borderTopColor: '#e11d48' }}
+            />
+            {/* Pulsing core */}
+            <motion.div 
+              animate={{ scale: [0.85, 1.05, 0.85] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+              className="absolute inset-3.5 bg-[#e11d48]/10 rounded-full border border-[#e11d48]/20 flex items-center justify-center text-[#e11d48]"
+            >
+              <Sparkles size={14} className="animate-pulse" />
+            </motion.div>
+          </div>
+          
+          <div className="space-y-1">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-white">
+              NEXASPHERE <span className="text-[#e11d48]">IT</span>
+            </h3>
+            <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest animate-pulse">
+              Optimizing active visual parameters...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#02020a] text-white overflow-hidden relative font-sans pt-14 selection:bg-indigo-500/30">
