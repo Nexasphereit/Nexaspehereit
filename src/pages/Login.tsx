@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   signInAnonymously,
   signInWithEmailAndPassword,
@@ -16,6 +17,7 @@ import { GalaxyBackground } from '../components/common/GalaxyBackground';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
+  const navigate = useNavigate();
   const { settings } = useTheme();
   const [userIdInput, setUserIdInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
@@ -84,7 +86,7 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
       onLogin(matchedUser);
 
       setTimeout(() => {
-        window.location.href = '/it-sales';
+        navigate('/it-sales');
       }, 300);
     } catch (err: any) {
       toast.error(err.message || "Failed to log in.");
@@ -304,7 +306,7 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
         
         // Refresh routing context safely and redirect directly to admin panel
         setTimeout(() => {
-          window.location.href = '/it-sales';
+          navigate('/it-sales');
         }, 300);
       } else {
         // Did not match any pre-configured User ID or password
@@ -431,7 +433,7 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
                   toast.success(`Welcome back, ${displayName} (Admin)!`);
                   onLogin(matchedUser);
                   setTimeout(() => {
-                    window.location.href = '/it-sales';
+                    navigate('/it-sales');
                   }, 300);
                   return;
                 }
@@ -504,7 +506,7 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
                   toast.success(`Sandbox Authorized! Welcome ${displayName} (Admin).`);
                   onLogin(matchedUser);
                   setTimeout(() => {
-                    window.location.href = '/it-sales';
+                    navigate('/it-sales');
                   }, 300);
                 }}
                 className="w-full bg-rose-600 hover:bg-rose-700 text-white text-[10px] py-2.5 font-black tracking-widest uppercase rounded-xl"

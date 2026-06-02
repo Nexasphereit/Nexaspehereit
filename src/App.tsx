@@ -40,6 +40,15 @@ function AppContent() {
   const { settings, redirection, resetRedirection } = useTheme();
   const location = useLocation();
 
+  // Compute Route Divisions early to prevent loading screens on public pages
+  const publicPaths = ['/about', '/services', '/portfolio', '/case-studies', '/pricing', '/blog', '/contact', '/terms', '/privacy', '/sitemap'];
+  const isPublicRoute = publicPaths.includes(location.pathname) || location.pathname === '/';
+  
+  const privatePaths = ['/dashboard', '/it-sales', '/quotations', '/cvs', '/receipts', '/history', '/settings', '/admin'];
+  const isPrivateRoute = privatePaths.some(p => location.pathname === p || location.pathname.startsWith(p));
+
+  const isLoginPath = location.pathname === '/login';
+
   const [navProgress, setNavProgress] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
 
@@ -116,7 +125,7 @@ function AppContent() {
     });
   }, []);
 
-  if (loading) {
+  if (loading && (isPrivateRoute || isLoginPath)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#050510] relative overflow-hidden">
         {/* Abstract design nodes */}
@@ -324,15 +333,6 @@ function AppContent() {
       </AnimatePresence>
     </>
   );
-
-  // Compute Route Divisions
-  const publicPaths = ['/about', '/services', '/portfolio', '/case-studies', '/pricing', '/blog', '/contact', '/terms', '/privacy', '/sitemap'];
-  const isPublicRoute = publicPaths.includes(location.pathname) || location.pathname === '/';
-  
-  const privatePaths = ['/dashboard', '/it-sales', '/quotations', '/cvs', '/receipts', '/history', '/settings', '/admin'];
-  const isPrivateRoute = privatePaths.some(p => location.pathname === p || location.pathname.startsWith(p));
-
-  const isLoginPath = location.pathname === '/login';
 
   // Check login routes
   if (isLoginPath || (isPrivateRoute && !user)) {
