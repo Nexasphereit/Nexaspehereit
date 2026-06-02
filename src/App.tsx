@@ -30,6 +30,7 @@ import NexoraPricing from './pages/nexora/NexoraPricing';
 import NexoraBlog from './pages/nexora/NexoraBlog';
 import NexoraContact from './pages/nexora/NexoraContact';
 import NexoraAdmin from './pages/nexora/NexoraAdmin';
+import NexoraPortal from './pages/nexora/NexoraPortal';
 import NexoraTerms from './pages/nexora/NexoraTerms';
 import NexoraPrivacy from './pages/nexora/NexoraPrivacy';
 import NexoraSitemap from './pages/nexora/NexoraSitemap';
@@ -41,7 +42,7 @@ function AppContent() {
   const location = useLocation();
 
   // Compute Route Divisions early to prevent loading screens on public pages
-  const publicPaths = ['/about', '/services', '/portfolio', '/case-studies', '/pricing', '/blog', '/contact', '/terms', '/privacy', '/sitemap'];
+  const publicPaths = ['/about', '/services', '/portfolio', '/case-studies', '/pricing', '/blog', '/contact', '/terms', '/privacy', '/sitemap', '/portal'];
   const isPublicRoute = publicPaths.includes(location.pathname) || location.pathname === '/';
   
   const privatePaths = ['/dashboard', '/it-sales', '/quotations', '/cvs', '/receipts', '/history', '/settings', '/admin'];
@@ -391,6 +392,7 @@ function AppContent() {
                 <Route path="/case-studies" element={<NexoraCaseStudies />} />
                 <Route path="/pricing" element={<NexoraPricing />} />
                 <Route path="/blog" element={<NexoraBlog />} />
+                <Route path="/portal" element={<NexoraPortal />} />
                 <Route path="/contact" element={<NexoraContact />} />
                 <Route path="/admin" element={<NexoraAdmin />} />
                 <Route path="/terms" element={<NexoraTerms />} />

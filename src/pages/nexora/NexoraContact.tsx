@@ -86,27 +86,24 @@ export default function NexoraContact() {
 
     setLoading(true);
     try {
-      // Add record to nexora_leads in Firestore dynamically
-      const leadRef = await addDoc(collection(db, 'nexora_leads'), {
-        ...form,
-        createdAt: serverTimestamp(),
-        status: 'New'
+      // POST to our unified frontend auto-reply and inbox router
+      const response = await fetch("/api/it-sales/front-lead", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(form)
       });
 
-      // Also record message count triggers
-      await addDoc(collection(db, 'nexora_messages'), {
-        sender: form.name,
-        email: form.email,
-        company: form.company,
-        message: form.message,
-        createdAt: serverTimestamp(),
-        leadId: leadRef.id
-      });
+      if (!response.ok) {
+        throw new Error("Proxy response failed");
+      }
 
+      const result = await response.json();
       setSubmitted(true);
-      toast.success("Elite Strategy Request Captured Successfully!");
+      toast.success(result.message || "Elite Strategy Request Captured successfully!");
     } catch (err) {
-      console.error("Could not write contact submit to Firestore:", err);
+      console.error("Could not route lead through backend proxy:", err);
       toast.error("Database connection lag. Saving locally...");
       // Save to local storage mock fallback so it's always persistent and reliable
       const savedLeads = JSON.parse(localStorage.getItem('nexora_leads_backup') || '[]');

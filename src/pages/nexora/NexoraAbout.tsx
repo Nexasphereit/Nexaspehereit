@@ -16,7 +16,7 @@ export default function NexoraAbout() {
     }
     return {
       storyTitle: "SCALING THE DIGITAL FUTURE",
-      storySubtitle: "Founded with the belief that digital campaigns should be mathematically rigorous, Nexora has scaled from a boutique local optimization team into a fully connected international advertising powerhub.",
+      storySubtitle: "Founded with the belief that digital campaigns should be mathematically rigorous, NexaSphere It has scaled from a boutique local optimization team into a fully connected international advertising powerhub.",
       missionTitle: "OUR MISSION BLUEPRINT",
       missionDesc: "Our absolute objective is to secure unmatched client profitability through bulletproof analytics, preternatural ad copy hook optimization, and high-speed checkout experience builds. We eliminate useless spending to optimize metrics that translate into actual revenue growth.",
       visionTitle: "OUR ULTIMATE VISION",
@@ -52,7 +52,7 @@ export default function NexoraAbout() {
       }
     }
     return [
-      { year: "2021", title: "Nexora Foundation", desc: "Launched in NY with a small team of 3 analysts optimizing local retail campaigns." },
+      { year: "2021", title: "NexaSphere Foundation", desc: "Launched in NY with a small team of 3 analysts optimizing local retail campaigns." },
       { year: "2023", title: "NexaSphere Suite Release", desc: "Introduced integrated back-office PDF creation modules to support enterprise clients." },
       { year: "2025", title: "Global Expand", desc: "Maintained a portfolio of over 45 high-end SaaS accounts tracking $185M+ in revenue." }
     ];

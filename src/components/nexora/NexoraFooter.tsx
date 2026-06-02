@@ -42,7 +42,7 @@ export default function NexoraFooter() {
       hotToast.error("Please provide a valid corporate email address!");
       return;
     }
-    hotToast.success("Welcome aboard! You have joined Nexora's Elite Growth list.");
+    hotToast.success("Welcome aboard! You have joined Nexasphere IT's Elite Growth list.");
     setEmail('');
   };
 
@@ -144,17 +144,17 @@ export default function NexoraFooter() {
           </div>
         </div>
 
-        {/* Quick Links */}
+        {/* About Link */}
         <div>
-          <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-white italic mb-6">Quick Links</h4>
+          <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-white italic mb-6">About Link</h4>
           <ul className="space-y-3">
             {[
               { label: 'About Us', path: '/about' },
-              { label: 'Services Catalogue', path: '/services' },
-              { label: 'Case Studies', path: '/case-studies' },
-              { label: 'Blog Posts', path: '/blog' },
-              { label: 'Pricing Plans', path: '/pricing' },
-              { label: 'Get In Touch', path: '/contact' },
+              { label: 'Services', path: '/services' },
+              { label: 'Contact Us', path: '/contact' },
+              { label: 'Privacy Policy', path: '/privacy' },
+              { label: 'Our Blog', path: '/blog' },
+              { label: 'Terms & Conditions', path: '/terms' },
             ].map((link) => (
               <li key={link.label}>
                 <Link to={link.path} className="text-xs text-slate-400 hover:text-rose-400 hover:translate-x-1 transition-all inline-block font-semibold">
@@ -301,7 +301,7 @@ export default function NexoraFooter() {
                   {activeTermsTab === 'terms' ? termsData.termsBody : termsData.privacyBody}
                 </p>
                 <div className="text-[9px] text-red-600/60 font-mono tracking-widest uppercase text-center pt-2 font-black select-none">
-                  SECURED BY NEXORA EXECUTIVE COMPLIANCE FRAMEWORK
+                  SECURED BY NEXASPHERE IT EXECUTIVE COMPLIANCE FRAMEWORK
                 </div>
               </div>
 

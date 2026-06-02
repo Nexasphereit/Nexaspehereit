@@ -25,7 +25,12 @@ import {
   Calendar,
   Sparkles,
   RefreshCw,
-  FolderTree
+  FolderTree,
+  Mail,
+  MailOpen,
+  Send,
+  MessageSquare,
+  CheckCircle
 } from 'lucide-react';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, doc, setDoc, query, where, getDoc, getDocs, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -131,7 +136,7 @@ export default function ITSalesDashboard() {
   const activeDbError = servicesError || customersError || transactionsError || usersError;
 
   // --- Local Setup & Active Modals State ---
-  const [activeSubTab, setActiveSubTab] = useState<'sales' | 'services' | 'customers' | 'commissions' | 'users' | null>(null);
+  const [activeSubTab, setActiveSubTab] = useState<'sales' | 'services' | 'customers' | 'commissions' | 'users' | 'inbox' | null>(null);
   
   // Customer Search
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
@@ -204,6 +209,14 @@ export default function ITSalesDashboard() {
   // CRM Navigation Sub-Tab inside Customer CRM
   const [crmFilterMode, setCrmFilterMode] = useState<'all' | 'dues'>('all');
 
+  // Draft Outbound Broadcast & Custom Offer states
+  const [draftPhone, setDraftPhone] = useState('');
+  const [draftName, setDraftName] = useState('');
+  const [draftMessage, setDraftMessage] = useState('');
+  const [draftType, setDraftType] = useState('Custom SMS Campaign Outreach');
+  const [selectedInboxLeadId, setSelectedInboxLeadId] = useState<string | null>(null);
+  const [inboxConfigSubTab, setInboxConfigSubTab] = useState<'templates' | 'outbox_logs'>('templates');
+
   // Calendar toggle and service search states
   const [showCalendar, setShowCalendar] = useState(false);
   const [serviceSearchQuery, setServiceSearchQuery] = useState('');
@@ -230,6 +243,172 @@ export default function ITSalesDashboard() {
   const [editTxPrice, setEditTxPrice] = useState('0');
   const [editTxStartDate, setEditTxStartDate] = useState('');
   const [editTxEndDate, setEditTxEndDate] = useState('');
+
+  // Outgoing Customized Communication & Pauses Systems (Firebase + Backend proxy)
+  const [smsPauseText, setSmsPauseText] = useState("Dear {name}, your NexaSphere premium IT service order has been temporarily placed on hold/paused. Since we have accepted your deposit payment of {deposit}, we are registering your transaction. Ref Order ID: {customerId}. Thank you for choosing us!");
+  const [smsResumeText, setSmsResumeText] = useState("NexaSphere Update: Great news, {name}! Your final payment clearance has been validated and accepted. The pause on your IT service channel is lifted, order is fully confirmed, and we have resumed operations immediately!");
+  const [smsFrontSubmitText, setSmsFrontSubmitText] = useState("Hi {name}, NexaSphere has successfully captured your request for the {service} service under budget {budget}. An expert campaign analyst will evaluate your parameters shortly!");
+  const [smsCustomOfferText, setSmsCustomOfferText] = useState("Executive Alert: Hello {name}, NexaSphere has constructed a state-of-the-art enterprise campaign offer specifically for your account! Enjoy responsive cloud optimization models. Quote: {service} has been prioritized for your immediate briefing.");
+  
+  const [smsLogs, setSmsLogs] = useState<any[]>([]);
+  const [isSmsLogsLoading, setIsSmsLogsLoading] = useState(false);
+  
+  // Inbound Web Inquiries (Contact entries & unavailability notifications) state
+  const [inboundLeads, setInboundLeads] = useState<any[]>([]);
+  const [isInboundLoading, setIsInboundLoading] = useState(false);
+
+  // Fetch customizable templates, dispatch logs, and inbound customer inbox records
+  const fetchSmsTemplatesAndLogs = async () => {
+    try {
+      const res = await fetch("/api/it-sales/templates");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.templates) {
+          if (data.templates.pauseTemplate) setSmsPauseText(data.templates.pauseTemplate);
+          if (data.templates.resumeTemplate) setSmsResumeText(data.templates.resumeTemplate);
+          if (data.templates.frontEndSubmitTemplate) setSmsFrontSubmitText(data.templates.frontEndSubmitTemplate);
+          if (data.templates.customOfferTemplate) setSmsCustomOfferText(data.templates.customOfferTemplate);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load SMS templates from backend:", e);
+    }
+
+    try {
+      setIsSmsLogsLoading(true);
+      const res = await fetch("/api/it-sales/sms-logs");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.logs) {
+          setSmsLogs(data.logs);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch SMS dispatch logs from backend:", e);
+    } finally {
+      setIsSmsLogsLoading(false);
+    }
+
+    try {
+      setIsInboundLoading(true);
+      const res = await fetch("/api/it-sales/inbound-leads");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.leads) {
+          setInboundLeads(data.leads);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch inbound customer leads inbox feed:", e);
+    } finally {
+      setIsInboundLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSmsTemplatesAndLogs();
+  }, [customersSnap]); // Refresh log on changes to customersSnap
+
+  const handleUpdateSmsTemplates = async () => {
+    const loading = toast.loading("Saving customized templates to backend database...");
+    try {
+      const res = await fetch("/api/it-sales/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pauseTemplate: smsPauseText,
+          resumeTemplate: smsResumeText,
+          frontEndSubmitTemplate: smsFrontSubmitText,
+          customOfferTemplate: smsCustomOfferText
+        })
+      });
+      if (res.ok) {
+        toast.success("Notification message templates updated successfully!", { id: loading });
+        fetchSmsTemplatesAndLogs();
+      } else {
+        throw new Error("Endpoint rejected template updates");
+      }
+    } catch (e: any) {
+      toast.error(`Could not save templates: ${e.message}`, { id: loading });
+    }
+  };
+
+  const handleTriggerPauseBackend = async (customerId: string) => {
+    const loading = toast.loading("Taking pause for IT Sales in the back-end...");
+    try {
+      const res = await fetch("/api/it-sales/pause", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId,
+          customMessage: smsPauseText
+        })
+      });
+      if (res.ok) {
+        toast.success("Order paused in backend & dispatch message logged!", { id: loading });
+        fetchSmsTemplatesAndLogs();
+      } else {
+        throw new Error("Backend pause request failed");
+      }
+    } catch (e: any) {
+      toast.error(`Could not complete backend pause: ${e.message}`, { id: loading });
+    }
+  };
+
+  const handleTriggerResumeBackend = async (customerId: string) => {
+    const loading = toast.loading("Lifting pause & accepting payment on back-end...");
+    try {
+      const res = await fetch("/api/it-sales/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId,
+          customMessage: smsResumeText
+        })
+      });
+      if (res.ok) {
+        toast.success("Pause lifted and active SMS dispatched to user's phone!", { id: loading });
+        fetchSmsTemplatesAndLogs();
+      } else {
+        throw new Error("Backend resume request failed");
+      }
+    } catch (e: any) {
+      toast.error(`Could not process backend resume: ${e.message}`, { id: loading });
+    }
+  };
+
+  const handleTriggerCustomBroadcast = async () => {
+    if (!draftPhone.trim() || !draftMessage.trim()) {
+      toast.error("Please provide both a target phone number and your custom message.");
+      return;
+    }
+    const loading = toast.loading("Broadcasting customized outreach or offer...");
+    try {
+      const res = await fetch("/api/it-sales/custom-broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId: "custom_broadcast_" + Date.now().toString(36),
+          customerName: draftName || "Direct Channel Recipient",
+          phone: draftPhone,
+          message: draftMessage,
+          type: draftType
+        })
+      });
+      if (res.ok) {
+        toast.success("Broadcast dispatched successfully!", { id: loading });
+        setDraftMessage("");
+        setDraftPhone("");
+        setDraftName("");
+        fetchSmsTemplatesAndLogs();
+      } else {
+        throw new Error("Outbound gateway rejected broadcast request");
+      }
+    } catch (e: any) {
+      toast.error(`Outbox routing failed: ${e.message}`, { id: loading });
+    }
+  };
+
 
   // Syncing / creating our active user account in Firestore user metadata
   useEffect(() => {
@@ -2277,6 +2456,62 @@ export default function ITSalesDashboard() {
             </div>
           )}
 
+          {/* PACKAGE 6: CENTRAL INBOUND INBOX & CUSTOM SMS OUTBOX */}
+          <motion.div
+            whileHover={{ y: -4, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              if (activeSubTab === 'inbox') {
+                setActiveSubTab(null);
+                toast.success('Inbound Inbox collapsed.');
+              } else {
+                setActiveSubTab('inbox');
+                toast.success('Opened Unified CRM Inbound Inbox!');
+              }
+            }}
+            className={cn(
+              "p-4 rounded-[2rem] border transition-all text-center cursor-pointer flex flex-col items-center justify-between min-h-[130px] md:min-h-[140px] relative overflow-hidden group select-none hover:shadow-xl backdrop-blur-md",
+              activeSubTab === 'inbox'
+                ? "bg-indigo-500/10 border-indigo-500 shadow-xl ring-2 ring-indigo-500/20 font-bold"
+                : isDark 
+                  ? "bg-slate-900/40 border-white/5 hover:bg-slate-800/60" 
+                  : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+            )}
+          >
+            <div 
+              className="p-3.5 rounded-2xl mb-2.5 shrink-0 transition-all group-hover:scale-110 shadow-md"
+              style={{ 
+                backgroundColor: activeSubTab === 'inbox' ? `${settings.primaryColor}25` : isDark ? '#1e293b' : '#fff',
+                color: activeSubTab === 'inbox' ? settings.primaryColor : '#8e9bb0',
+                border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+              }}
+            >
+              <MailOpen size={22} />
+            </div>
+            <div className="text-center w-full">
+              <p className={cn("text-[11px] font-black uppercase tracking-wider leading-none", (activeSubTab === 'inbox' ? "text-white font-extrabold" : isDark ? "text-slate-300" : "text-slate-850"))} style={activeSubTab === 'inbox' ? { color: settings.primaryColor } : {}}>
+                Nexa CRM Inbox
+              </p>
+              <p className="text-[9.5px] text-slate-500 font-bold mt-1.5 font-sans leading-none">
+                ইনবক্স ও এসএমএস
+              </p>
+            </div>
+            
+            <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+              {inboundLeads.length > 0 && (
+                <span className="bg-rose-500 text-white font-black text-[8px] flex items-center justify-center p-0.5 px-1 rounded-full shadow animate-bounce">
+                  {inboundLeads.length}
+                </span>
+              )}
+              <span className={cn(
+                "w-2.5 h-2.5 rounded-full block border shadow-sm",
+                activeSubTab === 'inbox' 
+                  ? "bg-emerald-400 border-emerald-300/40 animate-pulse" 
+                  : "bg-indigo-500 border-indigo-500/30"
+              )} />
+            </div>
+          </motion.div>
+
         </div>
       </div>
       
@@ -3799,6 +4034,8 @@ export default function ITSalesDashboard() {
 
           const getStatusBadgeClass = (status: string) => {
             switch (status) {
+              case 'Paused':
+                return 'bg-amber-500/10 text-amber-500 border border-amber-500/20';
               case 'Due':
                 return 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
               case 'Refund':
@@ -4272,11 +4509,19 @@ export default function ITSalesDashboard() {
                         <div className="bg-slate-900/10 dark:bg-slate-950/30 p-3.5 rounded-2xl border border-slate-850/5 space-y-2.5">
                           <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Account Pipeline State</p>
                           <div className="flex flex-wrap gap-1">
-                            {['Ongoing', 'Processing', 'Due', 'Refund', 'Order Cancel'].map((opt) => (
+                            {['Ongoing', 'Processing', 'Due', 'Refund', 'Order Cancel', 'Paused'].map((opt) => (
                               <button
                                 key={opt}
                                 type="button"
                                 onClick={async () => {
+                                  if (opt === 'Paused') {
+                                    await handleTriggerPauseBackend(selectedCustomerRecord.id);
+                                    return;
+                                  }
+                                  if (selectedCustomerRecord.status === 'Paused' && (opt === 'Processing' || opt === 'Ongoing')) {
+                                    await handleTriggerResumeBackend(selectedCustomerRecord.id);
+                                    return;
+                                  }
                                   const loadUp = toast.loading(`Adjusting pipeline to ${opt}...`);
                                   try {
                                     await updateDoc(doc(db, 'customers', selectedCustomerRecord.id), {
@@ -4299,6 +4544,88 @@ export default function ITSalesDashboard() {
                                 {opt}
                               </button>
                             ))}
+                          </div>
+                        </div>
+
+                        {/* ADVANCED CUSTOMIZABLE BACK-END COMMUNICATIONS & PAUSE CONTROLLER */}
+                        <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-xs space-y-3">
+                          <div className="flex justify-between items-center pb-2 border-b border-slate-800/10">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                              <span className="font-black text-[9px] uppercase tracking-wider text-amber-500">CUSTOM SMS COMMUNICATION SYSTEM</span>
+                            </div>
+                            <span className="text-[8px] font-mono p-0.5 px-1 bg-amber-500/10 text-amber-500 rounded border border-amber-500/10">
+                              Active Backend
+                            </span>
+                          </div>
+
+                          <p className="text-[10px] text-slate-400 leading-relaxed italic">
+                            Configure active template variables: <code className="text-pink-400">{`{name}`}</code>, <code className="text-pink-400">{`{deposit}`}</code>, <code className="text-pink-400">{`{customerId}`}</code>
+                          </p>
+
+                          <div className="space-y-3">
+                            {/* Pause template */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between items-center">
+                                <label className="block text-[8.5px] font-black uppercase tracking-wide text-slate-400">
+                                  🟡 CUSTOMIZABLE PAUSED MESSAGE TEMPLATE
+                                </label>
+                              </div>
+                              <textarea
+                                value={smsPauseText}
+                                onChange={(e) => setSmsPauseText(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] font-mono leading-normal text-slate-300 focus:outline-none focus:border-amber-500 transition-colors"
+                                rows={2}
+                                placeholder="Paste customized order hold context..."
+                              />
+                              <div className="text-[8.5px] text-slate-500">
+                                Will resolve as: <span className="font-black text-rose-400 italic">{smsPauseText.replace(/{name}/g, selectedCustomerRecord.name).replace(/{deposit}/g, `${selectedCustomerRecord.totalSpent ? '$' + selectedCustomerRecord.totalSpent.toLocaleString() : '$0'}`).replace(/{customerId}/g, selectedCustomerRecord.id)}</span>
+                              </div>
+                            </div>
+
+                            {/* Resume template */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between items-center">
+                                <label className="block text-[8.5px] font-black uppercase tracking-wide text-slate-400">
+                                  🟢 CUSTOMIZABLE RESUMED MESSAGE TEMPLATE (PAUSE LIFTED & PAYMENT CONFIRMED)
+                                </label>
+                              </div>
+                              <textarea
+                                value={smsResumeText}
+                                onChange={(e) => setSmsResumeText(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] font-mono leading-normal text-slate-300 focus:outline-none focus:border-emerald-500 transition-colors"
+                                rows={2}
+                                placeholder="Paste payment accepted context..."
+                              />
+                              <div className="text-[8.5px] text-slate-500">
+                                Will resolve as: <span className="font-black text-emerald-400 italic">{smsResumeText.replace(/{name}/g, selectedCustomerRecord.name).replace(/{deposit}/g, `${selectedCustomerRecord.totalSpent ? '$' + selectedCustomerRecord.totalSpent.toLocaleString() : '$0'}`).replace(/{customerId}/g, selectedCustomerRecord.id)}</span>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={handleUpdateSmsTemplates}
+                              className="w-full py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/10 hover:bg-amber-500/20 text-white font-extrabold uppercase text-[8px] tracking-widest cursor-pointer transition-all"
+                            >
+                              💾 Save Notification Templates
+                            </button>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-800/10 grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleTriggerPauseBackend(selectedCustomerRecord.id)}
+                              className="py-2 px-1 rounded-xl bg-amber-500 text-slate-950 font-black uppercase text-[8.5px] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shadow text-center"
+                            >
+                              ⏸️ Take Pause Hold & Send SMS
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleTriggerResumeBackend(selectedCustomerRecord.id)}
+                              className="py-2 px-1 rounded-xl bg-emerald-500 text-slate-950 font-black uppercase text-[8.5px] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shadow text-center"
+                            >
+                              ▶️ Lift Pause (Accept Payment)
+                            </button>
                           </div>
                         </div>
 
@@ -4500,6 +4827,54 @@ export default function ITSalesDashboard() {
                             )}
                           </div>
                         </div>
+
+                        {/* REAL-TIME OUTGOING SMS LOGS FOR THIS CLIENT */}
+                        <div className="pt-4 border-t border-slate-800/20 space-y-3">
+                          <div className="flex justify-between items-center">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-amber-500">
+                              📡 SMS Outbound Dispatch Log Stream
+                            </h4>
+                            <span className="text-[8px] font-mono p-0.5 px-1 bg-amber-500/10 text-amber-500 border border-amber-500/10 rounded animate-pulse">
+                              Live Sync
+                            </span>
+                          </div>
+
+                          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                            {isSmsLogsLoading ? (
+                              <p className="text-[10px] text-slate-500 italic animate-pulse">Streaming logs from Nexasphere IT backend...</p>
+                            ) : smsLogs.filter(log => log.customerId === selectedCustomerRecord.id).length === 0 ? (
+                              <p className="text-[9px] text-slate-500 italic">No customizable messages logged for this customer profile yet.</p>
+                            ) : (
+                              smsLogs
+                                .filter(log => log.customerId === selectedCustomerRecord.id)
+                                .map((log) => (
+                                  <div
+                                    key={log.id}
+                                    className="p-2.5 rounded-xl bg-slate-950 border border-slate-900/50 space-y-1.5 text-[10px]"
+                                  >
+                                    <div className="flex justify-between items-center text-[8px] font-mono">
+                                      <span className="font-extrabold text-[#e11d48] uppercase text-[7.5px]">
+                                        Type: {log.type}
+                                      </span>
+                                      <span className="text-slate-500 mr-1 font-bold text-[7.5px]">
+                                        {new Date(log.timestamp).toLocaleString()}
+                                      </span>
+                                    </div>
+                                    <p className="text-[9.5px] leading-relaxed select-all selection:bg-amber-500/10 font-medium font-serif italic text-slate-300">
+                                      "{log.message}"
+                                    </p>
+                                    <div className="flex justify-between items-center pt-1 text-[8px]">
+                                      <span className="text-slate-400">To: {log.phone || "No Phone"}</span>
+                                      <span className="px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-extrabold uppercase scale-90">
+                                        ● {log.status || "Delivered"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))
+                            )}
+                          </div>
+                        </div>
+
                       </div>
                     )
                   ) : (
@@ -4551,6 +4926,590 @@ export default function ITSalesDashboard() {
               onUpdateUserProperties={handleUpdateUserProperties}
               onDeleteUser={handleDeleteUser}
             />
+          </div>
+        )}
+
+        {/* TAB 6: CENTRAL UNIFIED INBOX & OUTBOUND CUSTOM SMS CENTRE */}
+        {activeSubTab === 'inbox' && (
+          <div className="col-span-12 space-y-6">
+            
+            {/* Header section with live indicator */}
+            <div className={cn(
+              "p-6 rounded-[2rem] border relative overflow-hidden text-left shadow-lg backdrop-blur-md",
+              isDark ? "bg-slate-900/60 border-slate-850" : "bg-white border-slate-100"
+            )}>
+              <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/5 rounded-full filter blur-3xl pointer-events-none" />
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] bg-indigo-500/10 text-indigo-400 font-extrabold px-2.5 py-1 rounded-full border border-indigo-500/15 uppercase tracking-wider font-mono">
+                      NexaSphere Communications Hub
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[8.5px] font-bold text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Back-end Live Gateway
+                    </span>
+                  </div>
+                  <h2 className={cn("text-2xl font-black uppercase tracking-tight", isDark ? "text-slate-100" : "text-slate-900")}>
+                    Unified CRM Inbox & Broadcast Centre
+                  </h2>
+                  <p className="text-slate-500 text-xs font-semibold italic">
+                    Manage real-time front-end request queues, configure customizable transactional auto-replies, and dispatch targeting campaign offers.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={fetchSmsTemplatesAndLogs}
+                  className="px-4 py-2 border border-slate-700/20 rounded-xl bg-slate-500/10 hover:bg-slate-500/20 font-bold uppercase text-[9.5px] tracking-wider transition-all flex items-center gap-1.5 cursor-pointer text-slate-300"
+                >
+                  <RefreshCw size={12} className={isInboundLoading || isSmsLogsLoading ? "animate-spin" : ""} /> Sync Feed Stream
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+              
+              {/* LEFT COLUMN: LIVE WEB INBOUND FEED (6 cols) */}
+              <div className="xl:col-span-5 space-y-4">
+                <div className={cn(
+                  "p-5 rounded-[2rem] border text-left flex flex-col h-[650px] relative overflow-hidden",
+                  isDark ? "bg-slate-900/40 border-slate-850" : "bg-white border-slate-100"
+                )}>
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-800/10 mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/10">
+                        <MailOpen size={16} />
+                      </div>
+                      <div>
+                        <h3 className={cn("text-xs font-black uppercase tracking-wider", isDark ? "text-slate-250" : "text-slate-800")}>
+                          Live Inbound Opportunities
+                        </h3>
+                        <p className="text-[10px] text-slate-500 font-medium">Unlisted requests & message alerts</p>
+                      </div>
+                    </div>
+                    <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono text-[9px] font-black px-2 py-0.5 rounded-lg text-indigo-400">
+                      {inboundLeads.length} Total
+                    </span>
+                  </div>
+
+                  {/* Search leads */}
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-450 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Filter inbound inbox profiles..."
+                      value={customerSearchQuery}
+                      onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                      className="w-full bg-slate-950/20 border border-slate-850/5 rounded-xl py-2 pl-9 pr-4 text-[10.5px] font-semibold outline-none focus:border-indigo-500 text-slate-200"
+                    />
+                  </div>
+
+                  {/* Leads stream list */}
+                  <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+                    {isInboundLoading ? (
+                      <div className="h-full flex flex-col items-center justify-center space-y-2">
+                        <RefreshCw className="animate-spin text-slate-500" size={24} />
+                        <p className="text-[11px] text-slate-500 italic animate-pulse">Streaming raw website metrics...</p>
+                      </div>
+                    ) : inboundLeads.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-3">
+                        <div className="w-12 h-12 rounded-full border border-dashed border-slate-700/50 flex items-center justify-center text-slate-505">
+                          <MessageSquare size={20} />
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-400 uppercase">Inbox Empty</p>
+                          <p className="text-[10px] text-slate-500 italic mt-1 max-w-[200px] mx-auto">
+                            Submit a Custom / Strategy request on the front-end to watch it populate in real-time.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      inboundLeads
+                        .filter(lead => {
+                          if (!customerSearchQuery) return true;
+                          const q = customerSearchQuery.toLowerCase();
+                          return (lead.name && lead.name.toLowerCase().includes(q)) ||
+                                 (lead.email && lead.email.toLowerCase().includes(q)) ||
+                                 (lead.service && lead.service.toLowerCase().includes(q)) ||
+                                 (lead.phone && lead.phone.toLowerCase().includes(q));
+                        })
+                        .map((lead) => {
+                          const isSelected = selectedInboxLeadId === lead.id;
+                          return (
+                            <div
+                              key={lead.id}
+                              onClick={() => setSelectedInboxLeadId(lead.id)}
+                              className={cn(
+                                "p-3 rounded-2xl border transition-all cursor-pointer text-left relative overflow-hidden group",
+                                isSelected 
+                                  ? "bg-indigo-500/10 border-indigo-500 shadow" 
+                                  : isDark 
+                                    ? "bg-slate-950/40 border-slate-900 hover:bg-slate-950/80" 
+                                    : "bg-slate-100 border-slate-150 hover:bg-slate-150/70"
+                              )}
+                            >
+                              <div className="flex justify-between items-start gap-2 mb-1.5">
+                                <div className="space-y-0.5">
+                                  <h4 className={cn("text-[11px] font-extrabold tracking-tight", isDark ? "text-slate-200" : "text-slate-800")}>
+                                    {lead.name}
+                                  </h4>
+                                  <p className="text-[9.5px] text-slate-500 font-semibold font-sans">
+                                    {lead.company || "Indie Builder / Startup"}
+                                  </p>
+                                </div>
+                                <span className={cn(
+                                  "text-[7.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded border leading-none self-start",
+                                  lead.service === 'Unlisted Special Project Request'
+                                    ? "bg-rose-500/10 text-rose-455 border-rose-500/20 animate-pulse"
+                                    : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                )}>
+                                  {lead.service === 'Unlisted Special Project Request' ? "⚠️ UNLISTED SERVICE" : "💼 WEBSHEET OFFER"}
+                                </span>
+                              </div>
+
+                              <div className="text-[9.5px] text-slate-400 italic line-clamp-2 leading-relaxed bg-slate-950/25 p-2 rounded-lg mb-2 border border-white/[0.02]">
+                                "{lead.message}"
+                              </div>
+
+                              <div className="flex justify-between items-center text-[8.5px] font-mono text-slate-500 pt-1 border-t border-slate-800/10">
+                                <span>📞 {lead.phone || "No phone input"}</span>
+                                <span>{lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : "Just now"}</span>
+                              </div>
+                            </div>
+                          );
+                        })
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT / MAIN COMBINED MODULES: SENDER & CONTROLS (7 cols) */}
+              <div className="xl:col-span-7 space-y-6">
+                
+                {/* 1. SELECTION DETAILS DISPLAY (Visible if Lead is clicked) */}
+                {(() => {
+                  const activeLead = inboundLeads.find(l => l.id === selectedInboxLeadId);
+                  if (!activeLead) return (
+                    <div className={cn(
+                      "p-8 rounded-[2rem] border text-center relative overflow-hidden flex flex-col items-center justify-center min-h-[140px]",
+                      isDark ? "bg-slate-900/20 border-slate-850" : "bg-slate-50/50 border-slate-100"
+                    )}>
+                      <Mail className="text-slate-600 mb-2 animate-bounce" size={24} />
+                      <p className="text-[10.5px] font-black text-slate-450 uppercase tracking-widest">Selected Lead Details Panel</p>
+                      <p className="text-[9px] text-slate-500 italic max-w-xs mt-1">
+                        Select any inbound service submission from the left queue to unpack full param tables & initiate quick-reply outreach.
+                      </p>
+                    </div>
+                  );
+
+                  return (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={cn(
+                        "p-5 rounded-[2rem] border text-left space-y-4 shadow",
+                        isDark ? "bg-slate-900/50 border-indigo-500/20" : "bg-white border-indigo-100"
+                      )}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-[8.5px] text-indigo-400 font-extrabold uppercase tracking-widest font-mono">
+                            ACTIVE CHANNEL PARAMETERS
+                          </p>
+                          <h3 className={cn("text-lg font-black uppercase mt-0.5", isDark ? "text-slate-100" : "text-slate-900")}>
+                            {activeLead.name}
+                          </h3>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setDraftPhone(activeLead.phone || "+1 (555) 0123");
+                            setDraftName(activeLead.name);
+                            // Auto populate reply using system front-end submission template variable replacing
+                            const resolvedPreset = smsFrontSubmitText
+                              .replace(/{name}/g, activeLead.name)
+                              .replace(/{service}/g, activeLead.service || "Unlisted Premium SLA")
+                              .replace(/{budget}/g, activeLead.budget || "$5,000 Key Ratio");
+                            setDraftMessage(resolvedPreset);
+                            toast.success("Lead variables resolved to active Draft editor!");
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-extrabold uppercase text-[9px] tracking-wide transition-all shadow flex items-center gap-1 cursor-pointer"
+                        >
+                          <Send size={11} /> Apply Inbound Reply
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950/20 p-3 rounded-2xl border border-white/[0.02] text-[10px]">
+                        <div>
+                          <span className="block text-[8px] text-slate-500 font-extrabold uppercase font-mono">Service Goal</span>
+                          <span className="font-bold text-indigo-400 text-[9.5px] truncate block">{activeLead.service || "N/A"}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[8px] text-slate-500 font-extrabold uppercase font-mono">Ad Budget Cap</span>
+                          <span className="font-bold text-amber-555 text-[10px] block">{activeLead.budget || "N/A"}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[8px] text-slate-500 font-extrabold uppercase font-mono">Target Phone</span>
+                          <span className="font-bold text-slate-300 text-[9.5px] block select-all">{activeLead.phone || "Indicated none"}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[8px] text-slate-500 font-extrabold uppercase font-mono">Company Link</span>
+                          <span className="font-bold text-emerald-400 text-[9.5px] block truncate select-all">{activeLead.company || "Direct Portal Inbound"}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="block text-[8px] text-slate-500 font-black uppercase tracking-wider font-mono">Raw Client Message Detail</span>
+                        <p className={cn("p-3 rounded-2xl text-[11px] leading-relaxed select-all font-serif italic font-medium", isDark ? "bg-slate-950/40 text-slate-350 border border-slate-900" : "bg-slate-50 text-slate-750 border border-slate-100")}>
+                          "{activeLead.message}"
+                        </p>
+                      </div>
+
+                      <div className="flex justify-between items-center text-[9px] text-slate-500">
+                        <span>Email Address: <strong className="text-indigo-400 font-bold select-all">{activeLead.email}</strong></span>
+                        <span>Date submitted: <strong>{activeLead.createdAt ? new Date(activeLead.createdAt).toLocaleString() : "Syncing..."}</strong></span>
+                      </div>
+                    </motion.div>
+                  );
+                })()}
+
+                {/* 2. DRAFT CUSTOM SMS OUTBOX DISPATCHER */}
+                <div className={cn(
+                  "p-5 rounded-[2rem] border text-left space-y-4 shadow-lg",
+                  isDark ? "bg-slate-900/40 border-slate-850" : "bg-white border-slate-150"
+                )}>
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-800/10">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+                      <h3 className={cn("text-xs font-black uppercase tracking-widest text-[#ec4899]")}>
+                        ACTIVE OUTBOUND CHANNELS DISPATCHER
+                      </h3>
+                    </div>
+                    <span className="text-[8px] uppercase tracking-wider font-mono p-0.5 px-1.5 bg-rose-500/10 text-rose-500 border border-rose-500/10 rounded border-rose-500/10">
+                      Gateway Activated
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="block text-[8.5px] font-black uppercase tracking-wide text-slate-400">
+                        Recipient Customer Name
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="E.g. Julian Sterling"
+                        value={draftName}
+                        onChange={(e) => setDraftName(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-[10.5px] font-mono leading-normal text-slate-300 focus:outline-none focus:border-indigo-500 transition-colors"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[8.5px] font-black uppercase tracking-wide text-slate-400">
+                        Recipient Target Phone Number *
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          required
+                          placeholder="E.g. +1 (555) 0123"
+                          value={draftPhone}
+                          onChange={(e) => setDraftPhone(e.target.value)}
+                          className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-[10.5px] font-mono leading-normal text-slate-300 focus:outline-none focus:border-indigo-500 transition-colors"
+                        />
+                        <select
+                          onChange={(e) => {
+                            if (!e.target.value) return;
+                            const selectedCust = (customersSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() as any })) || []).find(c => c.id === e.target.value);
+                            if (selectedCust) {
+                              setDraftPhone(selectedCust.phone || "+1 (555) 0123");
+                              setDraftName(selectedCust.name || "Nexa Customer");
+                              toast.success(`Copied details of ${selectedCust.name}`);
+                            }
+                          }}
+                          className="bg-slate-950 border border-slate-800 rounded-xl px-2 text-[9px] font-mono focus:outline-none text-slate-300 max-w-[120px]"
+                        >
+                          <option value="">Select CRM Contact</option>
+                          {(customersSnap?.docs.map(doc => ({ id: doc.id, ...doc.data() as any })) || []).map(cust => (
+                            <option key={cust.id} value={cust.id}>
+                              {cust.name} ({cust.phone || "No phone"})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preset Offer templates quick loaders */}
+                  <div className="space-y-1">
+                    <span className="block text-[8px] font-extrabold uppercase tracking-wider text-slate-500">
+                      RESOLVE AND APPLY PRESET SMS CAMPAIGN TEMPLATES
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const resolved = smsCustomOfferText
+                            .replace(/{name}/g, draftName || "Valued Account")
+                            .replace(/{service}/g, "Premium Cloud SLA")
+                            .replace(/{budget}/g, "$10,000 Plan")
+                            .replace(/{customerId}/g, "OfferPreset_" + Math.random().toString(36).substring(3, 8));
+                          setDraftMessage(resolved);
+                          setDraftType("VIP Campaign Offer Dispatch");
+                          toast.success("Injected Premium Resolved Custom Offer Template!");
+                        }}
+                        className="p-1.5 px-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/10 text-white font-bold text-[8px] uppercase rounded-lg transition-all"
+                      >
+                        🎁 Resolvable Custom Offer Template
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const resolved = smsPauseText
+                            .replace(/{name}/g, draftName || "Valued Account")
+                            .replace(/{customerId}/g, "INQUIRY_PAUSE")
+                            .replace(/{deposit}/g, "$1,500 accepted");
+                          setDraftMessage(resolved);
+                          setDraftType("Manual Service Paused Alert");
+                          toast.success("Applied Resolvable Paused Template!");
+                        }}
+                        className="p-1.5 px-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/10 text-white font-bold text-[8px] uppercase rounded-lg transition-all"
+                      >
+                        ⏸️ Resolvable Pause Template
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const resolved = smsResumeText
+                            .replace(/{name}/g, draftName || "Valued Account")
+                            .replace(/{customerId}/g, "INQUIRY_ACTIVE")
+                            .replace(/{deposit}/g, "Fully accepts payment");
+                          setDraftMessage(resolved);
+                          setDraftType("Manual Pause Lifted Broadcast");
+                          toast.success("Applied Resolvable Resume Template!");
+                        }}
+                        className="p-1.5 px-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/10 text-white font-bold text-[8px] uppercase rounded-lg transition-all"
+                      >
+                        ▶️ Resolvable Resume Lifted Template
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Broadcast Category Select */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    <div className="space-y-1">
+                      <label className="block text-[8.5px] font-black uppercase tracking-wide text-slate-400">
+                        Outbox Message Classification Category
+                      </label>
+                      <select
+                        value={draftType}
+                        onChange={(e) => setDraftType(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-[10px] font-mono focus:outline-none text-slate-300"
+                      >
+                        <option value="Custom SMS Campaign Outreach">Custom SMS Campaign Outreach</option>
+                        <option value="VIP Campaign Offer Dispatch">VIP Campaign Offer Dispatch</option>
+                        <option value="Manual Service Paused Alert">Manual Service Paused Alert</option>
+                        <option value="Manual Pause Lifted Broadcast">Manual Pause Lifted Broadcast</option>
+                        <option value="Direct Project Reply Stream">Direct Project Reply Stream</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1 text-right self-end">
+                      <span className="text-[10px] text-slate-500 block font-semibold italic">
+                        Characters length: <strong className={draftMessage.length > 160 ? "text-rose-500" : "text-emerald-400"}>{draftMessage.length}</strong> / 160 SMS Unit 
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Message body */}
+                  <div className="space-y-1">
+                    <label className="block text-[8.5px] font-black uppercase tracking-wide text-rose-500">
+                      Custom Message Outreach Body (Will be dispatched to number) *
+                    </label>
+                    <textarea
+                      required
+                      value={draftMessage}
+                      onChange={(e) => setDraftMessage(e.target.value)}
+                      placeholder="Compose manual premium outreach context or offers..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-[10.5px] font-mono leading-normal text-slate-300 focus:outline-none focus:border-rose-450 transition-colors"
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    type="button"
+                    onClick={handleTriggerCustomBroadcast}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500/90 to-indigo-605 font-extrabold uppercase text-[10px] tracking-widest text-white shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer text-center"
+                  >
+                    🚀 PROJECT MANUAL BROADCAST SMS OFFER (SEND OUTBOX)
+                  </button>
+                </div>
+
+                {/* 3. DYNAMIC CONFIG TABS (SYSTEM SMS VARIABLES VS SENT OUTBOX LOGS) */}
+                <div className={cn(
+                  "p-5 rounded-[2rem] border text-left space-y-4 shadow",
+                  isDark ? "bg-slate-900/20 border-slate-850" : "bg-white border-slate-150"
+                )}>
+                  {/* Tabs header */}
+                  <div className="flex border-b border-slate-800/10">
+                    <button
+                      type="button"
+                      onClick={() => setInboxConfigSubTab('templates')}
+                      className={cn(
+                        "pb-2.5 px-4 font-black uppercase text-[8.5px] tracking-widest transition-all cursor-pointer",
+                        inboxConfigSubTab === 'templates' 
+                          ? "text-indigo-400 border-b-2 border-indigo-500" 
+                          : "text-slate-500 hover:text-slate-300"
+                      )}
+                    >
+                      ⚙️ Customizable System Auto-Templates
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInboxConfigSubTab('outbox_logs')}
+                      className={cn(
+                        "pb-2.5 px-4 font-black uppercase text-[8.5px] tracking-widest transition-all cursor-pointer",
+                        inboxConfigSubTab === 'outbox_logs' 
+                          ? "text-rose-455 border-b-2 border-rose-500" 
+                          : "text-slate-500 hover:text-slate-300"
+                      )}
+                    >
+                      📡 Live SMS Dispatch Stream logs
+                    </button>
+                  </div>
+
+                  {/* Tab content 1: Templates configuration */}
+                  {inboxConfigSubTab === 'templates' && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="space-y-4 pt-1"
+                    >
+                      <p className="text-[10px] text-slate-500 leading-normal italic">
+                        Adjust back-end system templates. Placeholders: <code className="text-[#ec4899]">{`{name}`}</code>, <code className="text-[#ec4899]">{`{deposit}`}</code>, <code className="text-[#ec4899]">{`{customerId}`}</code>, <code className="text-[#ec4899]">{`{service}`}</code>, <code className="text-[#ec4899]">{`{budget}`}</code>
+                      </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* 1. Pause */}
+                        <div className="space-y-1">
+                          <label className="block text-[8px] font-black uppercase tracking-wide text-slate-400">
+                            ⏸️ Customer Order Paused Template
+                          </label>
+                          <textarea
+                            value={smsPauseText}
+                            onChange={(e) => setSmsPauseText(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-[9.5px] font-mono text-slate-300 focus:outline-none focus:border-indigo-500"
+                            rows={3}
+                          />
+                        </div>
+
+                        {/* 2. Resume */}
+                        <div className="space-y-1">
+                          <label className="block text-[8px] font-black uppercase tracking-wide text-slate-400">
+                            ▶️ Customer Order Lift/Resume Template
+                          </label>
+                          <textarea
+                            value={smsResumeText}
+                            onChange={(e) => setSmsResumeText(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-[9.5px] font-mono text-slate-300 focus:outline-none focus:border-indigo-500"
+                            rows={3}
+                          />
+                        </div>
+
+                        {/* 3. FrontEnd auto-reply submission */}
+                        <div className="space-y-1">
+                          <label className="block text-[8px] font-black uppercase tracking-wide text-slate-400">
+                            📩 Front-End Inquiry SMS Auto-Response
+                          </label>
+                          <textarea
+                            value={smsFrontSubmitText}
+                            onChange={(e) => setSmsFrontSubmitText(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-[9.5px] font-mono text-slate-300 focus:outline-none focus:border-indigo-500"
+                            rows={3}
+                          />
+                        </div>
+
+                        {/* 4. VIP Offer template */}
+                        <div className="space-y-1">
+                          <label className="block text-[8px] font-black uppercase tracking-wide text-slate-400">
+                            🎁 Custom Sales Campaign Offer Template
+                          </label>
+                          <textarea
+                            value={smsCustomOfferText}
+                            onChange={(e) => setSmsCustomOfferText(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-[9.5px] font-mono text-slate-300 focus:outline-none focus:border-indigo-500"
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleUpdateSmsTemplates}
+                        className="w-full py-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 font-black uppercase text-[8.5px] tracking-widest cursor-pointer rounded-xl transition-all"
+                      >
+                        💾 UPDATE & OVERWRITE LIVE CRM MESSAGE TEMPLATES
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {/* Tab content 2: Outbox Logs Stream */}
+                  {inboxConfigSubTab === 'outbox_logs' && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="space-y-3 pt-1"
+                    >
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-800/10">
+                        <span className="text-[8.5px] font-black uppercase text-slate-500">Live Outbox Dispatch Chronicle</span>
+                        <span className="text-[7.5px] font-mono text-slate-500">Auto refresh on actions</span>
+                      </div>
+
+                      <div className="space-y-2 max-h-64 overflow-y-auto pr-1 text-left">
+                        {isSmsLogsLoading ? (
+                          <p className="text-[10px] text-slate-500 italic animate-pulse">Streaming outbox chronicles...</p>
+                        ) : smsLogs.length === 0 ? (
+                          <p className="text-[10px] text-slate-500 italic py-4 text-center">No outbound message dispatches logged yet.</p>
+                        ) : (
+                          smsLogs.map((log) => (
+                            <div
+                              key={log.id}
+                              className="p-3 bg-slate-950 border border-slate-900 rounded-2xl space-y-1.5 text-[10px]"
+                            >
+                              <div className="flex justify-between items-center text-[8px] font-mono">
+                                <span className={cn(
+                                  "font-black uppercase text-[7.5px] px-1.5 py-0.5 rounded",
+                                  log.type?.includes("Offer") ? "bg-indigo-500/10 text-indigo-400" :
+                                  log.type?.includes("Auto-Reply") ? "bg-[#ec4899]/10 text-[#ec4899]" :
+                                  log.type?.includes("Paused") ? "bg-amber-500/10 text-amber-500" : "bg-slate-850 text-slate-400"
+                                )}>
+                                  Type: {log.type || "Outbound Alert"}
+                                </span>
+                                <span className="text-slate-500 font-bold">
+                                  {new Date(log.timestamp).toLocaleString()}
+                                </span>
+                              </div>
+                              <p className="text-[10.5px] leading-relaxed font-serif italic text-slate-300 selection:bg-rose-500/20 select-all font-medium">
+                                "{log.message}"
+                              </p>
+                              <div className="flex justify-between items-center pt-1 border-t border-slate-900 text-[8.5px]">
+                                <span className="text-slate-400">To: <strong className="font-mono text-indigo-400">{log.phone || "No Destination"}</strong> ({log.customerName})</span>
+                                <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-extrabold uppercase text-[7px]">
+                                  ● {log.status || "Delivered"}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+
           </div>
         )}
 

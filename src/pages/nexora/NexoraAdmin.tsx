@@ -21,7 +21,7 @@ export default function NexoraAdmin() {
   const userRole = (auth.currentUser as any)?.role || 'guest';
   const isAdmin = userRole === 'admin' || userRole === 'guest';
 
-  const [activeTab, setActiveTab] = useState<'leads' | 'ads' | 'services' | 'blogs' | 'customizer'>('leads');
+  const [activeTab, setActiveTab] = useState<'leads' | 'ads' | 'services' | 'blogs' | 'customizer' | 'updates'>('leads');
   
   // Real Firestore States
   const [leads, setLeads] = useState<any[]>([]);
@@ -137,6 +137,18 @@ export default function NexoraAdmin() {
     author: 'Julian Sterling'
   });
 
+  // Portal Updates State
+  const [portalUpdatesList, setPortalUpdatesList] = useState<any[]>([]);
+  const [newPortalUpdate, setNewPortalUpdate] = useState({
+    title: '',
+    content: '',
+    type: 'news',
+    mediaUrl: '',
+    videoDuration: '3:00',
+    badgeText: 'LIVE BROADCAST',
+    dateString: new Date().toISOString().split('T')[0]
+  });
+
   // Fetch metrics data from database
   const loadDatabaseAssets = async () => {
     setLoading(true);
@@ -160,6 +172,14 @@ export default function NexoraAdmin() {
       // Blogs
       const blogSnap = await getDocs(collection(db, 'nexora_blog'));
       setBlogsList(blogSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+
+      // Portal Updates Live Ledger
+      try {
+        const portalSnap = await getDocs(collection(db, 'nexora_portal_updates'));
+        setPortalUpdatesList(portalSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (err) {
+        console.warn("Could not query Firestore live portal bulletins, showing initial UI lists.", err);
+      }
 
       // Configs
       const configSnap = await getDocs(collection(db, 'nexora_config'));
@@ -743,6 +763,44 @@ export default function NexoraAdmin() {
     }
   };
 
+  // DYNAMIC PORTAL UPDATES HANDLERS
+  const handleAddPortalUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPortalUpdate.title.trim() || !newPortalUpdate.content.trim()) {
+      toast.error("Please supply Title and content body!");
+      return;
+    }
+    try {
+      const docRef = await addDoc(collection(db, 'nexora_portal_updates'), {
+        ...newPortalUpdate,
+        createdAt: serverTimestamp()
+      });
+      toast.success("New corporate bulletin published successfully!");
+      setNewPortalUpdate({
+        title: '',
+        content: '',
+        type: 'news',
+        mediaUrl: '',
+        videoDuration: '3:00',
+        badgeText: 'LIVE BROADCAST',
+        dateString: new Date().toISOString().split('T')[0]
+      });
+      loadDatabaseAssets();
+    } catch (err: any) {
+      toast.error("Error publishing bulletin: " + err.message);
+    }
+  };
+
+  const handleDeletePortalUpdate = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'nexora_portal_updates', id));
+      toast.success("Broadcast bulletin deleted!");
+      loadDatabaseAssets();
+    } catch (err: any) {
+      toast.error("Failed to delete entry: " + err.message);
+    }
+  };
+
   // WEBSITE CONTENT EXECUTIVE CUSTOMIZER HANDLERS
   const handleSaveHeroConfig = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1066,7 +1124,7 @@ export default function NexoraAdmin() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Sparkles className="text-indigo-400 animate-spin" size={16} />
-              <span className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.25em] italic">NEXORA BACKOFFICE DESK</span>
+              <span className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.25em] italic">NEXASPHERE BACKOFFICE DESK</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-sans font-black italic uppercase tracking-tighter">PORTAL CONTROL DECK</h1>
           </div>
@@ -1130,6 +1188,7 @@ export default function NexoraAdmin() {
             { id: 'ads', label: 'SeedTest Ads (Multiple Rows)', icon: Sliders },
             { id: 'services', label: 'Services Catalogue', icon: LibrarySquare },
             { id: 'blogs', label: 'Blogs Seeder Portal', icon: FileText },
+            { id: 'updates', label: 'News & Portal updates', icon: Sparkles },
             { id: 'customizer', label: 'Website Content Customizer', icon: Settings }
           ].filter(tab => tab.id !== 'customizer' || isAdmin).map((tab) => {
             const Icon = tab.icon;
@@ -1535,11 +1594,160 @@ export default function NexoraAdmin() {
             </div>
           )}
 
+          {/* TAB 4.5: CORPORATE PORTAL LIVE BULLETIN UPDATES SEEDER */}
+          {activeTab === 'updates' && (
+            <div className="space-y-8 animate-fade-in text-xs font-semibold">
+              <div className="space-y-1">
+                <h3 className="text-lg font-black uppercase italic tracking-tight text-white">NEXASPHERE BULLETIN BOARD SEEDER</h3>
+                <p className="text-slate-455 text-[11px] font-semibold italic">Broadcast daily news, video posts, articles, custom offers, or milestones directly to the Customer live portal page.</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
+                {/* Form */}
+                <form onSubmit={handleAddPortalUpdate} className="lg:col-span-6 bg-[#04040d] p-6 rounded-[2rem] border border-white/[0.04] space-y-4 font-semibold">
+                  <span className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-indigo-400">CREATE BULLETIN DISPATCH ROW</span>
+                  
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-mono font-black text-slate-450 uppercase">BULLETIN HEADER / TITLE *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="E.g. Scaled logistics platform metrics alongside Chaldal"
+                      value={newPortalUpdate.title}
+                      onChange={(e) => setNewPortalUpdate({...newPortalUpdate, title: e.target.value})}
+                      className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-semibold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-mono font-black text-slate-455 uppercase">BULLETIN TYPE</label>
+                      <select
+                        value={newPortalUpdate.type}
+                        onChange={(e) => setNewPortalUpdate({...newPortalUpdate, type: e.target.value as any})}
+                        className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2 px-3 focus:border-indigo-500 outline-none text-white appearance-none"
+                      >
+                        <option value="news">Daily News Bulletin</option>
+                        <option value="offer">Marketing Offer</option>
+                        <option value="video_post">Video Post</option>
+                        <option value="video">Regular Video</option>
+                        <option value="content">Content Post</option>
+                        <option value="achievement">Future Achievement</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-mono font-black text-slate-455 uppercase">BADGE ACCENT</label>
+                      <input
+                        type="text"
+                        placeholder="E.g. HOT, NEW, EXCLUSIVE"
+                        value={newPortalUpdate.badgeText}
+                        onChange={(e) => setNewPortalUpdate({...newPortalUpdate, badgeText: e.target.value})}
+                        className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2 px-3 focus:border-indigo-500 outline-none text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-mono font-black text-slate-455 uppercase font-black">MEDIA THUMBNAIL URL</label>
+                      <input
+                        type="text"
+                        placeholder="E.g. https://images.unsplash.com/..."
+                        value={newPortalUpdate.mediaUrl}
+                        onChange={(e) => setNewPortalUpdate({...newPortalUpdate, mediaUrl: e.target.value})}
+                        className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2.5 px-3 focus:border-indigo-500 outline-none text-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-mono font-black text-slate-455 uppercase font-black">VIDEO PLAY DURATION</label>
+                      <input
+                        type="text"
+                        placeholder="E.g. 3:45"
+                        value={newPortalUpdate.videoDuration}
+                        onChange={(e) => setNewPortalUpdate({...newPortalUpdate, videoDuration: e.target.value})}
+                        className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-2.5 px-3 focus:border-indigo-500 outline-none text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-mono font-black text-slate-455 uppercase font-black font-semibold">CUSTOM DATE STRING</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="E.g. 2026-06-02"
+                      value={newPortalUpdate.dateString}
+                      onChange={(e) => setNewPortalUpdate({...newPortalUpdate, dateString: e.target.value})}
+                      className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[8px] font-mono font-black text-slate-455 uppercase font-black font-semibold">BULLETIN CONTENT / BODY *</label>
+                    <textarea
+                      required
+                      rows={5}
+                      placeholder="Enter the broadcast message detailed brief..."
+                      value={newPortalUpdate.content}
+                      onChange={(e) => setNewPortalUpdate({...newPortalUpdate, content: e.target.value})}
+                      className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl p-4 focus:border-indigo-500 outline-none text-white font-medium text-xs leading-relaxed"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-4.5 bg-indigo-600 hover:bg-indigo-550 font-black uppercase tracking-widest text-white rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer border border-indigo-400/20"
+                  >
+                    <Plus size={14} />
+                    Publish Live Broadcast Card
+                  </button>
+                </form>
+
+                {/* Ledger Listing */}
+                <div className="lg:col-span-6 space-y-4">
+                  <span className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-slate-500 block mb-2">
+                    ACTIVE LIVE BULLETIN LOG ({portalUpdatesList.length} items)
+                  </span>
+
+                  <div className="max-h-[600px] overflow-y-auto space-y-3 pr-2 scrollbar-thin">
+                    {portalUpdatesList.length === 0 ? (
+                      <div className="p-8 text-center bg-[#03030c]/80 border border-dashed border-white/[0.05] rounded-2xl text-slate-500 font-semibold italic">
+                        No custom bulletins seeded on Firestore yet. Falling back on beautiful default mockups on the portal front-end.
+                      </div>
+                    ) : (
+                      portalUpdatesList.map((item, index) => (
+                        <div key={item.id || index} className="p-4.5 bg-[#03030c] rounded-2xl border border-white/[0.03] flex justify-between items-start gap-4 hover:border-indigo-500/10 transition-all">
+                          <div className="space-y-1">
+                            <span className="inline-block text-[7px] font-mono font-black uppercase tracking-widest px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/15">
+                              {item.type}
+                            </span>
+                            <h5 className="font-extrabold text-white text-xs uppercase">{item.title}</h5>
+                            <p className="text-[10px] text-slate-400 italic font-medium leading-relaxed font-semibold">"{item.content.substring(0, 140)}..."</p>
+                            <p className="text-[9.5px] text-slate-500 font-mono mt-1 font-semibold">{item.dateString} • Badge: {item.badgeText || 'None'}</p>
+                          </div>
+                          <button 
+                            onClick={(e) => { e.preventDefault(); handleDeletePortalUpdate(item.id); }}
+                            className="text-slate-550 hover:text-rose-500 hover:bg-white/[0.02] p-1.5 rounded transition-all cursor-pointer"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
           {/* TAB 5: WEBSITE CONTENT EXECUTIVE CUSTOMIZER */}
           {activeTab === 'customizer' && isAdmin && (
             <div className="space-y-8">
               <div className="space-y-2 border-b border-white/[0.05] pb-4">
-                <span className="text-[10px] font-mono tracking-[0.25em] text-indigo-400 font-black italic block">NEXORA SYSTEM CONFIGURATION</span>
+                <span className="text-[10px] font-mono tracking-[0.25em] text-indigo-400 font-black italic block">NEXASPHERE SYSTEM CONFIGURATION</span>
                 <h3 className="text-xl font-black uppercase italic tracking-tight text-white mb-1">FRONTEND WEBSITE EDITOR PANEL</h3>
                 <p className="text-slate-450 text-[11px] font-semibold italic">Edit any hero title, metric statistic, FAQs list, pricing retainers or team members displayed across the organization's public landing screens.</p>
               </div>

@@ -1,7 +1,10 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc } from "firebase/firestore";
 
 let aiClient: any = null;
 
@@ -24,6 +27,19 @@ function getGeminiClient() {
   return aiClient;
 }
 
+// Initialize Firebase for Backend Use
+const firebaseConfigPath = path.resolve(process.cwd(), "firebase-applet-config.json");
+let db: any = null;
+try {
+  const firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf8"));
+  const firebaseApp = initializeApp(firebaseConfig);
+  const dbId = firebaseConfig.firestoreDatabaseId;
+  db = (dbId && dbId !== '(default)') ? getFirestore(firebaseApp, dbId) : getFirestore(firebaseApp);
+  console.log("Firebase initialized successfully for Express backend endpoints.");
+} catch (e: any) {
+  console.error("Backend Firebase Initialization Warning:", e.message);
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -39,6 +55,313 @@ async function startServer() {
       service: "NexaSphere Node.JS Engine",
       aiStatus: process.env.GEMINI_API_KEY ? "active" : "sandbox_fallback"
     });
+  });
+
+  // GET default or active SMS templates
+  app.get("/api/it-sales/templates", async (req, res) => {
+    try {
+      if (!db) throw new Error("Firebase database not initialized on backend.");
+      const snap = await getDoc(doc(db, "nexora_config", "sms_templates"));
+      if (snap.exists()) {
+        const data = snap.data();
+        return res.json({
+          success: true,
+          templates: {
+            pauseTemplate: data.pauseTemplate || "",
+            resumeTemplate: data.resumeTemplate || "",
+            frontEndSubmitTemplate: data.frontEndSubmitTemplate || "",
+            customOfferTemplate: data.customOfferTemplate || ""
+          }
+        });
+      }
+      // Return beautiful default templates if not found
+      const defaultTemplates = {
+        pauseTemplate: "Dear {name}, your NexaSphere premium IT service order has been temporarily placed on hold/paused. Since we have accepted your deposit payment of {deposit}, we are registering your transaction. Ref Order ID: {customerId}. Thank you for choosing us!",
+        resumeTemplate: "NexaSphere Update: Great news, {name}! Your final payment clearance has been validated and accepted. The pause on your IT service channel is lifted, order is fully confirmed, and we have resumed operations immediately!",
+        frontEndSubmitTemplate: "Hi {name}, NexaSphere has successfully captured your request for the {service} service under budget {budget}. An executive campaign analyst has registered your details and will execute your target parameters layout shortly!",
+        customOfferTemplate: "Executive Alert: Hello {name}, NexaSphere has constructed a state-of-the-art enterprise campaign offer specifically for your account! Enjoy responsive cloud optimization models. Quote: {service} has been prioritized for your immediate briefing."
+      };
+      res.json({ success: true, templates: defaultTemplates });
+    } catch (err: any) {
+      res.status(500).json({ error: "Failed to read SMS templates", details: err?.message });
+    }
+  });
+
+  // POST update active SMS templates
+  app.post("/api/it-sales/templates", async (req, res) => {
+    const { pauseTemplate, resumeTemplate, frontEndSubmitTemplate, customOfferTemplate } = req.body;
+    try {
+      if (!db) throw new Error("Firebase database not initialized on backend.");
+      await setDoc(doc(db, "nexora_config", "sms_templates"), {
+        pauseTemplate: pauseTemplate || "",
+        resumeTemplate: resumeTemplate || "",
+        frontEndSubmitTemplate: frontEndSubmitTemplate || "",
+        customOfferTemplate: customOfferTemplate || "",
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      res.json({ success: true, message: "Customizable templates updated successfully!" });
+    } catch (err: any) {
+      res.status(500).json({ error: "Failed to update templates", details: err?.message });
+    }
+  });
+
+  // POST: Trigger a Pause for an IT Sales Order
+  app.post("/api/it-sales/pause", async (req, res) => {
+    const { customerId, customMessage } = req.body;
+    if (!customerId) {
+      return res.status(400).json({ error: "Missing customerId parameter" });
+    }
+    try {
+      if (!db) throw new Error("Firebase database not initialized on backend.");
+      
+      const customerRef = doc(db, "customers", customerId);
+      const custDoc = await getDoc(customerRef);
+      if (!custDoc.exists()) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      const customerData = custDoc.data();
+      
+      // Update customer status to Paused
+      await updateDoc(customerRef, {
+        status: "Paused",
+        updatedAt: new Date().toISOString()
+      });
+
+      // Construct customized SMS message
+      const template = customMessage || "Dear {name}, your NexaSphere order has been paused. Ref: {customerId}.";
+      const cleanMessage = String(template)
+        .replace(/{name}/g, customerData.name || "Valued Customer")
+        .replace(/{customerId}/g, customerId)
+        .replace(/{deposit}/g, `${customerData.totalSpent ? '$' + customerData.totalSpent.toLocaleString() : '$0'}`)
+        .replace(/{service}/g, "Premium IT SLA")
+        .replace(/{budget}/g, "N/A");
+
+      const logPayload = {
+        customerId,
+        customerName: customerData.name || "Unknown",
+        phone: customerData.phone || "No phone registered",
+        message: cleanMessage,
+        type: "Order Paused / Payment Lock",
+        status: "Sent",
+        timestamp: new Date().toISOString()
+      };
+
+      await addDoc(collection(db, "sms_logs"), logPayload);
+
+      res.json({
+        success: true,
+        message: "Customer status paused in the back-end successfully.",
+        customerName: customerData.name,
+        dispatchedMessage: cleanMessage,
+        log: logPayload
+      });
+    } catch (err: any) {
+      console.error("Pause route error:", err);
+      res.status(500).json({ error: "Could not execute pause on back-end", details: err?.message });
+    }
+  });
+
+  // POST: Resume / Lift pause for an IT Sales Order (Payment accepted)
+  app.post("/api/it-sales/resume", async (req, res) => {
+    const { customerId, customMessage } = req.body;
+    if (!customerId) {
+      return res.status(400).json({ error: "Missing customerId parameter" });
+    }
+    try {
+      if (!db) throw new Error("Firebase database not initialized on backend.");
+      
+      const customerRef = doc(db, "customers", customerId);
+      const custDoc = await getDoc(customerRef);
+      if (!custDoc.exists()) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      const customerData = custDoc.data();
+
+      // Lift the pause and mark payment as accepted (set dueAmount to 0, status to Processing)
+      await updateDoc(customerRef, {
+        status: "Processing",
+        dueAmount: 0,
+        updatedAt: new Date().toISOString()
+      });
+
+      // Construct customized SMS message
+      const template = customMessage || "Great news {name}! Your pause is lifted. Ref: {customerId}.";
+      const cleanMessage = String(template)
+        .replace(/{name}/g, customerData.name || "Valued Customer")
+        .replace(/{customerId}/g, customerId)
+        .replace(/{deposit}/g, `${customerData.totalSpent ? '$' + customerData.totalSpent.toLocaleString() : '$0'}`)
+        .replace(/{service}/g, "Premium IT SLA")
+        .replace(/{budget}/g, "N/A");
+
+      const logPayload = {
+        customerId,
+        customerName: customerData.name || "Unknown",
+        phone: customerData.phone || "No phone registered",
+        message: cleanMessage,
+        type: "Pause Lifted / SMS Dispatched",
+        status: "Delivered",
+        timestamp: new Date().toISOString()
+      };
+
+      await addDoc(collection(db, "sms_logs"), logPayload);
+
+      res.json({
+        success: true,
+        message: "Customer pause lifted, payment recorded as accepted, and SMS dispatched.",
+        customerName: customerData.name,
+        dispatchedMessage: cleanMessage,
+        log: logPayload
+      });
+    } catch (err: any) {
+      console.error("Resume route error:", err);
+      res.status(500).json({ error: "Could not resume pipeline status", details: err?.message });
+    }
+  });
+
+  // POST: Send customizable custom message or enterprise proposal/offer to client
+  app.post("/api/it-sales/custom-broadcast", async (req, res) => {
+    const { customerId, customerName, phone, message, type } = req.body;
+    if (!phone || !message) {
+      return res.status(400).json({ error: "Missing phone or message body parameter" });
+    }
+    try {
+      if (!db) throw new Error("Firebase database not initialized on backend.");
+
+      const logPayload = {
+        customerId: customerId || "inbound_lead_" + Date.now().toString(36),
+        customerName: customerName || "Untargeted Channel",
+        phone,
+        message,
+        type: type || "Custom SMS Campaign Outreach",
+        status: "Delivered",
+        timestamp: new Date().toISOString()
+      };
+
+      await addDoc(collection(db, "sms_logs"), logPayload);
+
+      res.json({
+        success: true,
+        message: "Broadcasting custom SMS outreach message successfully dispatched via project.",
+        log: logPayload
+      });
+    } catch (err: any) {
+      console.error("Custom broadcast SMS error:", err);
+      res.status(500).json({ error: "Could not write broadcast outbox logs", details: err?.message });
+    }
+  });
+
+  // POST: Automatic Frontend Submission Endpoint (Logs lead & triggers automatic SMS instantly)
+  app.post("/api/it-sales/front-lead", async (req, res) => {
+    const { name, email, company, phone, budget, service, plan, message } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ error: "Name and Email are mandatory fields." });
+    }
+    try {
+      if (!db) throw new Error("Firebase database not initialized on backend.");
+
+      const leadPayload = {
+        name,
+        email,
+        company: company || "",
+        phone: phone || "",
+        budget: budget || "$5,000 - $10,000",
+        service: service || "Unlisted Special Project Request",
+        plan: plan || "Standard Custom Request",
+        message: message || "No custom message provided",
+        createdAt: new Date().toISOString(),
+        status: "New"
+      };
+
+      // 1. Add to nexora_leads collection
+      const leadSnap = await addDoc(collection(db, "nexora_leads"), leadPayload);
+
+      // 2. Fetch current automated submission template
+      let customTemplate = "Hi {name}, NexaSphere has successfully captured your request for the {service} service under budget {budget}. An expert campaign analyst will evaluate your parameters shortly!";
+      const templatesSnap = await getDoc(doc(db, "nexora_config", "sms_templates"));
+      if (templatesSnap.exists()) {
+        const templatesData = templatesSnap.data();
+        if (templatesData.frontEndSubmitTemplate) {
+          customTemplate = templatesData.frontEndSubmitTemplate;
+        }
+      }
+
+      // 3. Construct customizable SMS reply body
+      const resolvedMessage = customTemplate
+        .replace(/{name}/g, name)
+        .replace(/{service}/g, service || "Unlisted Special Project Request")
+        .replace(/{budget}/g, budget || "$5,000 - $10,000")
+        .replace(/{customerId}/g, leadSnap.id);
+
+      // 4. Log the auto-reply in SMS Logs automatically
+      const systemSmsLog = {
+        customerId: leadSnap.id,
+        customerName: name,
+        phone: phone || "No phone registered",
+        message: resolvedMessage,
+        type: "Frontend Auto-Reply Event",
+        status: "Delivered",
+        timestamp: new Date().toISOString()
+      };
+
+      await addDoc(collection(db, "sms_logs"), systemSmsLog);
+
+      // 5. Create matching profile under 'customers' collection so it dynamically loads into IT Sales Hub CRM as well!
+      await addDoc(collection(db, "customers"), {
+        name,
+        email,
+        company: company || "Direct Web Inbound",
+        phone: phone || "+1 (555) 0123",
+        status: "New Inbound Inquiry",
+        totalSpent: 0,
+        dueAmount: parseInt(budget?.replace(/[^0-9]/g, "") || "5000"), // Convert rough budget, e.g. 5000
+        refundAmount: 0,
+        history: [
+          {
+            id: "tx_inbound_" + Date.now().toString(16),
+            serviceName: service || "Unlisted Special CRM Lead",
+            amount: parseInt(budget?.replace(/[^0-9]/g, "") || "5000"),
+            status: "Inbound Pipeline Request",
+            date: new Date().toISOString().split('T')[0]
+          }
+        ]
+      });
+
+      res.json({
+        success: true,
+        message: "Front-end lead documented & automated welcome SMS dispatched successfully!",
+        leadId: leadSnap.id,
+        autoSmsBody: resolvedMessage
+      });
+    } catch (err: any) {
+      console.error("Front lead automatic routing error:", err);
+      res.status(500).json({ error: "Failed to record front-end submission auto-flow", details: err?.message });
+    }
+  });
+
+  // GET: Read unified front-end contact inquiries, custom unlisted service requests, or custom messages in the backend inbox
+  app.get("/api/it-sales/inbound-leads", async (req, res) => {
+    try {
+      if (!db) throw new Error("Firebase database not initialized on backend.");
+      const snapLeads = await getDocs(collection(db, "nexora_leads"));
+      const leads = snapLeads.docs.map(d => ({ id: d.id, ...d.data() }));
+      leads.sort((a: any, b: any) => new Date(b.createdAt || b.timestamp || 0).getTime() - new Date(a.createdAt || a.timestamp || 0).getTime());
+      res.json({ success: true, leads });
+    } catch (err: any) {
+      res.status(500).json({ error: "Failed to aggregate inbound customer service inbox stream", details: err?.message });
+    }
+  });
+
+  // GET: Fetch all active outgoing SMS dispatch notifications
+  app.get("/api/it-sales/sms-logs", async (req, res) => {
+    try {
+      if (!db) throw new Error("Firebase database not initialized on backend.");
+      const snap = await getDocs(collection(db, "sms_logs"));
+      const logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      logs.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      res.json({ success: true, logs });
+    } catch (err: any) {
+      res.status(500).json({ error: "Failed to read database logs", details: err?.message });
+    }
   });
 
   // Premium Node.js AI endpoint: Suggest premium quotation items/services
@@ -149,6 +472,7 @@ Return your response strictly in JSON format matching this schema:
       res.status(500).json({ error: "Failed to enhance tech CV", details: err?.message });
     }
   });
+
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

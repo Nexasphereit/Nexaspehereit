@@ -51,6 +51,7 @@ export default function StaffManager({
   const [editPassword, setEditPassword] = useState('');
   const [editRole, setEditRole] = useState<'admin' | 'executive'>('executive');
   const [editCommission, setEditCommission] = useState('10');
+  const [selectedUserForDetails, setSelectedUserForDetails] = useState<any | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -396,9 +397,23 @@ export default function StaffManager({
                     <tr key={user.id} className="hover:bg-slate-800/5 transition-all text-slate-300">
                       {/* Name & ID */}
                       <td className="py-4 px-2">
-                        <div className="flex flex-col gap-1 justify-center">
+                        <div className="flex flex-col gap-1 justify-center text-left">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-bold text-xs" style={{ color: isDark ? 'white' : 'black' }}>{user.name}</span>
+                            <button
+                              onClick={() => {
+                                const stats = getUserStats(user.id);
+                                setSelectedUserForDetails({
+                                  ...user,
+                                  totalSold: stats.totalSold,
+                                  totalCommission: stats.totalCommission
+                                });
+                              }}
+                              className="font-black text-xs hover:text-rose-500 cursor-pointer text-left transition-colors font-sans hover:underline"
+                              style={{ color: isDark ? 'white' : 'black' }}
+                              title="Click to view detailed employee portfolio"
+                            >
+                              {user.name}
+                            </button>
                             
                             {/* Inline display of Sales & Commissions */}
                             <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5">
@@ -408,7 +423,22 @@ export default function StaffManager({
                               Comm: <strong className="font-mono font-black">{currencySymbol}{stats.totalCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong>
                             </span>
                           </div>
-                          <span className="text-[9px] text-slate-500 font-black font-mono">ID: {user.id} • {user.email}</span>
+                          <span className="text-[9px] text-slate-500 font-extrabold font-mono">
+                            ID: <button
+                              onClick={() => {
+                                const stats = getUserStats(user.id);
+                                setSelectedUserForDetails({
+                                  ...user,
+                                  totalSold: stats.totalSold,
+                                  totalCommission: stats.totalCommission
+                                });
+                              }}
+                              className="hover:text-rose-500 text-slate-400 font-mono font-extrabold underline cursor-pointer hover:bg-slate-800/10 px-1 rounded transition-colors"
+                              title="Click reference terminal to view full metrics profile"
+                            >
+                              {user.id}
+                            </button> • {user.email}
+                          </span>
                         </div>
                       </td>
 
@@ -478,6 +508,92 @@ export default function StaffManager({
           </div>
         </Card>
       </div>
+
+      {/* STAFF PERFORMANCE DETAILED BRIEFING OVERLAY MODAL */}
+      {selectedUserForDetails && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div
+            className={`w-full max-w-md rounded-[2.5rem] border p-6 sm:p-8 max-h-[90vh] overflow-y-auto shadow-2xl relative text-left ${
+              isDark ? 'bg-slate-950 border-white/10 text-white shadow-black/80' : 'bg-white border-slate-205 text-slate-800'
+            }`}
+          >
+            {/* Close trigger overlay */}
+            <button
+              onClick={() => setSelectedUserForDetails(null)}
+              className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 active:scale-95 transition-all text-slate-500 cursor-pointer text-sm font-black font-mono"
+            >
+              ×
+            </button>
+
+            <div className="space-y-6">
+              
+              {/* Profile Header */}
+              <div className="flex items-center gap-4 pb-4 border-b border-white/[0.06]">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                  <span className="text-lg font-black font-mono">@</span>
+                </div>
+                <div>
+                  <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest font-mono block">
+                    System ID: {selectedUserForDetails.id}
+                  </span>
+                  <h3 className="text-lg font-black uppercase tracking-tight text-white leading-tight" style={{ color: isDark ? 'white' : 'black' }}>
+                    {selectedUserForDetails.name}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-semibold font-mono mt-1">
+                    {selectedUserForDetails.email} • Cleared as {selectedUserForDetails.role}
+                  </p>
+                </div>
+              </div>
+
+              {/* Mapped stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-white/[0.04] text-left">
+                  <span className="block text-[8.5px] uppercase font-black tracking-widest text-[#3c5e8c]">Sales volume</span>
+                  <span className="text-base font-black text-rose-500 font-mono mt-1 block">
+                    {currencySymbol}{selectedUserForDetails.totalSold.toLocaleString()}
+                  </span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-white/[0.04] text-left">
+                  <span className="block text-[8.5px] uppercase font-black tracking-widest text-emerald-400">Est. Commissions</span>
+                  <span className="text-base font-black text-emerald-400 font-mono mt-1 block">
+                    {currencySymbol}{selectedUserForDetails.totalCommission.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Settings Specifications description */}
+              <div className="space-y-3 pb-2 border-b border-white/[0.06]">
+                <h4 className="text-[10.5px] font-black uppercase tracking-wider text-slate-400">Personnel Specifications</h4>
+                <div className="space-y-2 bg-slate-900/60 p-4 rounded-xl border border-white/[0.03] text-xs">
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-slate-500">Commission Rate:</span>
+                    <span className="font-extrabold text-white font-mono" style={{ color: isDark ? 'white' : 'black' }}>
+                      {selectedUserForDetails.commissionPercentage !== undefined ? selectedUserForDetails.commissionPercentage : 10}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-slate-500">Access Passphrase:</span>
+                    <span className="font-extrabold text-white font-mono bg-slate-950 px-2 py-0.5 rounded border border-white/[0.04]" style={{ color: isDark ? 'white' : 'black' }}>
+                      {selectedUserForDetails.password || 'admin-root'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button Action */}
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setSelectedUserForDetails(null)}
+                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-black/20"
+                >
+                  Dismiss Briefing
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

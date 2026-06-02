@@ -52,6 +52,11 @@ export default function Sidebar() {
     { icon: Sliders, label: 'Website Customizer', path: '/admin' }
   ];
 
+  const sidebarItemsFiltered = isAdmin ? sidebarItems : [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: Sparkles, label: 'Agency View', path: '/' }
+  ];
+
   useEffect(() => {
     // Set open by default on desktop
     if (window.innerWidth >= 768) {
@@ -67,12 +72,15 @@ export default function Sidebar() {
 
   const isDocCreationActive = ['/quotations', '/cvs', '/receipts'].some(p => location.pathname.startsWith(p));
 
-  const mobileNavItems = [
+  const mobileNavItems = isAdmin ? [
     { icon: LayoutDashboard, label: 'Home', path: '/dashboard' },
     { icon: Sparkles, label: 'Agency', path: '/' },
     { isCreateCenter: true },
     { icon: History, label: 'History', path: '/history' },
     { icon: SettingsIcon, label: 'Settings', path: '/settings' },
+  ] : [
+    { icon: LayoutDashboard, label: 'Home', path: '/dashboard' },
+    { icon: Sparkles, label: 'Agency', path: '/' },
   ];
 
   return (
@@ -333,7 +341,7 @@ export default function Sidebar() {
         </div>
 
         <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
-          {sidebarItems.map((item) => {
+          {sidebarItemsFiltered.map((item) => {
             const isHomePath = item.path === '/';
             if (isHomePath) {
               return (

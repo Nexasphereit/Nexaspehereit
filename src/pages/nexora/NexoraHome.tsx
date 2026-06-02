@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowRight, Sparkles, Rocket, Globe, BarChart3, Target, 
   TrendingUp, Award, CheckCircle, HelpCircle, Star, 
-  Lock, ArrowUpRight, ChevronDown, Check, Video, Edit3, Heart, Layout, Code2, ShieldAlert
+  Lock, ArrowUpRight, ChevronDown, Check, Video, Edit3, Heart, Layout, Code2, ShieldAlert,
+  Play, FileText, Calendar, Trophy
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { collection, getDocs, query, limit, doc, getDoc } from 'firebase/firestore';
@@ -32,7 +33,7 @@ export default function NexoraHome() {
       }
     }
     return {
-      floatingCapsule: "NEXORA WORLD-CLASS CREATIVE AGENCY",
+      floatingCapsule: "NEXASPHERE WORLD-CLASS CREATIVE AGENCY",
       headline: "WE BUILD BEAUTIFUL WEBSITES",
       subGradient: "AND GROW YOUR ONLINE BRAND",
       subtitle: "We are a friendly, highly skilled team of programmers, creative designers, and digital marketers. We create high-speed web systems and run social media campaigns to increase your sales.",
@@ -89,6 +90,39 @@ export default function NexoraHome() {
     return !!localStorage.getItem('nexora_hero_backup');
   });
 
+  const [homeUpdates, setHomeUpdates] = useState<any[]>([]);
+  const [updatesLoading, setUpdatesLoading] = useState(true);
+
+  const defaultHomeHighlights = [
+    {
+      id: 'mock_news_1',
+      title: 'Collaborative Expansion Sealed with Shajgoj Brands',
+      type: 'news',
+      content: 'We have officially finalized our technical multi-channel cloud engine with Shajgoj. This optimization streamlines their localized cosmetics checkout pipelines, improving total ROAS ratio by 18%. The full campaign pipeline is scheduled for a live daily broadcast shortly.',
+      dateString: '2026-06-02',
+      badgeText: 'HOT UPDATE',
+      mediaUrl: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=600&q=80'
+    },
+    {
+      id: 'mock_ach_1',
+      title: 'Recognized as Top Enterprise Cloud IT Agency in South Asia',
+      type: 'achievement',
+      content: 'NexaSphere IT has been awarded the prestigious "High-Growth IT System Integrator Award" at the Regional Tech Gala 2026. This monumental achievement goes out to our incredible localized partners—Sikho, Seba, Chaldal, and PriyoShop.',
+      dateString: '2026-06-01',
+      badgeText: 'FUTURE ACHIEVED',
+      mediaUrl: 'https://images.unsplash.com/photo-1531545514256-b1400bc00f31?auto=format&fit=crop&w=600&q=80'
+    },
+    {
+      id: 'mock_vid_1',
+      title: 'Inside PriyoShop: Replatforming Bangladesh Retail Commerce',
+      type: 'video_post',
+      content: 'Watch how our unified document automation engine, NexaSphere, drives invoice dispatch efficiency for PriyoShop. In this interview, their lead operations supervisor explains how migrating metadata servers achieved a 35% performance booster.',
+      dateString: '2026-05-30',
+      badgeText: 'CAMPAIGN REVELATION',
+      mediaUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80'
+    }
+  ];
+
   // Default expert team list
   const defaultTeam = [
     {
@@ -96,7 +130,7 @@ export default function NexoraHome() {
       role: "Founder & Chief Executive Officer",
       dep: "Executive Leadership",
       avatar: "/src/assets/images/shakhawat_portrait_1780314607048.png",
-      bio: "Leads the creative vision, high quality standards, and growth strategy for Nexora."
+      bio: "Leads the creative vision, high quality standards, and growth strategy for NexaSphere It."
     },
     {
       name: "Asaduzzaman Tohin",
@@ -175,40 +209,38 @@ export default function NexoraHome() {
     {
       name: "Rokomari",
       tag: "Online Books & Tech",
-      color: "from-emerald-500 to-teal-650",
+      color: "from-red-500 to-rose-600",
       logo: (
-        <svg className="w-5 h-5 text-emerald-400 fill-current" viewBox="0 0 24 24" referrerPolicy="no-referrer">
-          <circle cx="12" cy="12" r="10" className="opacity-15 fill-current" />
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm1-4.07c-.42.41-.75.76-.75 1.57h-1.5c0-1.1.5-1.7 1.05-2.25.33-.3.7-.6.7-1.1 0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5H8.25c0-2.07 1.68-3.75 3.75-3.75s3.75 1.68 3.75 3.75c0 .9-.55 1.48-1 1.93z" />
+        <svg className="w-5 h-5 text-red-500 fill-current" viewBox="0 0 24 24" referrerPolicy="no-referrer">
+          <path d="M4 3a1 1 0 0 1 1-1h13.5a1.5 1.5 0 0 1 1.5 1.5v16a1.5 1.5 0 0 1-1.5 1.5H5a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1zm2 18h12.5a.5.5 0 0 0 .5-.5V3.5a.5.5 0 0 0-.5-.5H6v18zm2-14h8V5H8v2zm0 4h8V9H8v2zm0 4h5v-2H8v2z" />
         </svg>
       )
     },
     {
-      name: "Shikho",
-      tag: "Hyper Learning",
-      color: "from-rose-500 to-red-650",
-      logo: (
-        <svg className="w-5 h-5 text-red-450 fill-current" viewBox="0 0 24 24" referrerPolicy="no-referrer">
-          <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
-          <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
-        </svg>
-      )
-    },
-    {
-      name: "Sheba.xyz",
-      tag: "Corporate Services",
+      name: "Sikho",
+      tag: "Hyper Learning EdTech",
       color: "from-orange-500 to-amber-600",
       logo: (
         <svg className="w-5 h-5 text-orange-450 fill-none stroke-current stroke-2" viewBox="0 0 24 24" referrerPolicy="no-referrer">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
         </svg>
       )
     },
     {
-      name: "Shajgoj",
-      tag: "Beauty & Lifestyle",
-      color: "from-pink-500 to-fuchsia-600",
+      name: "Seba",
+      tag: "Sheba.xyz Services",
+      color: "from-blue-500 to-cyan-500",
+      logo: (
+        <svg className="w-5 h-5 text-cyan-450 fill-none stroke-current stroke-2" viewBox="0 0 24 24" referrerPolicy="no-referrer">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )
+    },
+    {
+      name: "Shazgo",
+      tag: "Shajgoj Beauty Care",
+      color: "from-pink-500 to-rose-600",
       logo: (
         <svg className="w-5 h-5 text-pink-400 fill-current" viewBox="0 0 24 24" referrerPolicy="no-referrer">
           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
@@ -216,28 +248,29 @@ export default function NexoraHome() {
       )
     },
     {
-      name: "Chaldal",
-      tag: "Online Grocery",
-      color: "from-lime-500 to-emerald-600",
+      name: "Chal Dhal",
+      tag: "Chaldal Grocery Delivery",
+      color: "from-green-500 to-emerald-600",
       logo: (
-        <svg className="w-5 h-5 text-emerald-400 fill-current" viewBox="0 0 24 24" referrerPolicy="no-referrer">
-          <path d="M17 18c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm0-3l1.1-2h7.45c.75 0 1.41-.41 1.75-1.03L21.7 4H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.3-.25.64-.25 1.01 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25z" />
+        <svg className="w-5 h-5 text-green-450 fill-none stroke-current stroke-2" viewBox="0 0 24 24" referrerPolicy="no-referrer">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 13v4m-2-2h4" />
         </svg>
       )
     },
     {
-      name: "PriyoShop",
-      tag: "Smart Retail Tech",
-      color: "from-blue-500 to-indigo-600",
+      name: "Priyo Shop",
+      tag: "PriyoShop Smart Retail",
+      color: "from-indigo-500 to-blue-600",
       logo: (
-        <svg className="w-5 h-5 text-indigo-400 fill-current" viewBox="0 0 24 24" referrerPolicy="no-referrer">
-          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H9v-2h6v2zm0-4H9V10h6v2z" />
+        <svg className="w-5 h-5 text-indigo-400 fill-none stroke-current stroke-2" viewBox="0 0 24 24" referrerPolicy="no-referrer">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.29 3.05c-.3.4-.02.95.49.95H19m-11 3a1 1 0 100-2 1 1 0 000 2zm9 0a1 1 0 100-2 1 1 0 000 2z" />
         </svg>
       )
     },
     {
-      name: "Khaas Food",
-      tag: "Organic Pure Food",
+      name: "Khaz Food",
+      tag: "Khaas Wholesome Organic",
       color: "from-teal-500 to-emerald-600",
       logo: (
         <svg className="w-5 h-5 text-teal-400 fill-none stroke-current stroke-2" viewBox="0 0 24 24" referrerPolicy="no-referrer">
@@ -247,11 +280,12 @@ export default function NexoraHome() {
     },
     {
       name: "Bongo BD",
-      tag: "Watch Entertainment",
+      tag: "Video Entertainment",
       color: "from-sky-500 to-blue-600",
       logo: (
-        <svg className="w-5 h-5 text-blue-400 fill-current" viewBox="0 0 24 24" referrerPolicy="no-referrer">
-          <path d="M8 5v14l11-7z" />
+        <svg className="w-5 h-5 text-sky-400 fill-none stroke-current stroke-2" viewBox="0 0 24 24" referrerPolicy="no-referrer">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       )
     }
@@ -260,7 +294,7 @@ export default function NexoraHome() {
   // Customer Reviews
   const reviews = [
     {
-      text: "Nexora designed our brand refresh and launched our newest marketing dashboard. The process was extremely simple, the team communicated well, and we got real customers within two weeks!",
+      text: "NexaSphere It designed our brand refresh and launched our newest marketing dashboard. The process was extremely simple, the team communicated well, and we got real customers within two weeks!",
       author: "Nusrat Jahan",
       origin: "Founder, Dhaka Fashion Hub",
       rating: 5,
@@ -344,6 +378,27 @@ export default function NexoraHome() {
       }
     };
     fetchServices();
+  }, []);
+
+  useEffect(() => {
+    const fetchLiveBulletins = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'nexora_portal_updates'));
+        if (!snap.empty) {
+          const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          list.sort((a: any, b: any) => b.dateString.localeCompare(a.dateString));
+          setHomeUpdates(list.slice(0, 3));
+        } else {
+          setHomeUpdates(defaultHomeHighlights);
+        }
+      } catch (err) {
+        console.warn("Could not query live Firestore portal updates.", err);
+        setHomeUpdates(defaultHomeHighlights);
+      } finally {
+        setUpdatesLoading(false);
+      }
+    };
+    fetchLiveBulletins();
   }, []);
 
   useEffect(() => {
@@ -637,9 +692,9 @@ export default function NexoraHome() {
                 className="inline-flex items-center gap-3 bg-[#050512] border border-white/[0.04] hover:border-indigo-500/20 px-6 py-3.5 rounded-2xl select-none transition-colors cursor-default"
               >
                 {/* Brand Initial Graphic Token */}
-                <div className={`w-7 h-7 rounded-lg bg-gradient-to-tr ${brand.color} p-[1.5px] shadow-sm shrink-0`}>
-                  <div className="w-full h-full bg-[#03030c] rounded-[7px] flex items-center justify-center font-sans font-black text-[11px] text-white">
-                    {brand.name[0]}
+                <div className={`w-9 h-9 rounded-xl bg-gradient-to-tr ${brand.color} p-[1px] shadow-lg shrink-0 transition-all duration-300 group-hover:scale-110 flex items-center justify-center`}>
+                  <div className="w-full h-full bg-[#04040d] rounded-[10px] flex items-center justify-center">
+                    {brand.logo}
                   </div>
                 </div>
                 <div className="text-left">
@@ -666,6 +721,130 @@ export default function NexoraHome() {
           <div className="space-y-1">
             <div className="text-4xl font-extrabold italic text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">{counter3}{statsConfig.stat3_suffix}</div>
             <p className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">{statsConfig.stat3_label}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#03030f]/60 py-24 relative border-b border-white/[0.04] z-10 overflow-hidden">
+        {/* Decorative ambient glowing backdrops inside */}
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-red-500/5 rounded-full filter blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-indigo-500/5 rounded-full filter blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
+            <div className="text-left space-y-3">
+              <span className="flex items-center gap-1.5 text-[10px] text-rose-500 font-black uppercase tracking-[0.25em] italic">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block" /> Live Agency Updates
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-sans font-black uppercase tracking-tighter italic text-white">
+                CURRENT <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-indigo-400 to-pink-500">BULLETIN DISPATCH</span>
+              </h2>
+              <p className="text-slate-400 text-xs sm:text-sm font-semibold italic max-w-xl">
+                Stay up to date with the latest client campaigns, technology replatforming, and metrics boosters seeded directly on our active database nodes.
+              </p>
+            </div>
+            <Link to="/portal">
+              <motion.button 
+                whileHover={{ scale: 1.03, borderColor: "rgba(239, 68, 68, 0.4)" }}
+                whileTap={{ scale: 0.97 }}
+                className="group px-6 py-3.5 border border-white/[0.08] hover:bg-white/[0.02] text-white rounded-2xl text-[10.5px] font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer transition-all"
+              >
+                <span>Launch Media Portal</span>
+                <ArrowRight size={12} className="group-hover:translate-x-1.5 transition-transform" />
+              </motion.button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+            {updatesLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="animate-pulse bg-white/[0.01] border border-white/[0.04] p-6 rounded-3xl h-[320px] flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="h-4 bg-white/5 rounded w-1/3" />
+                    <div className="h-6 bg-white/5 rounded w-3/4" />
+                    <div className="h-20 bg-white/5 rounded w-full" />
+                  </div>
+                  <div className="h-8 bg-white/5 rounded w-1/2" />
+                </div>
+              ))
+            ) : homeUpdates.length === 0 ? (
+              <div className="md:col-span-2 lg:col-span-3 py-16 text-center border border-dashed border-white/[0.08] rounded-3xl bg-white/[0.01]">
+                <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">No Bulletins Loaded</p>
+              </div>
+            ) : (
+              homeUpdates.map((item, idx) => {
+                const isVideoType = item.type === 'video' || item.type === 'video_post';
+                const isAchievement = item.type === 'achievement';
+                const isOffer = item.type === 'offer';
+
+                let badgeColor = "bg-indigo-500/15 text-indigo-400 border-indigo-500/20";
+                if (isAchievement) badgeColor = "bg-amber-500/15 text-amber-400 border-amber-500/20";
+                if (isOffer) badgeColor = "bg-rose-500/15 text-rose-500 border-rose-500/20 animate-pulse";
+                if (isVideoType) badgeColor = "bg-emerald-500/15 text-emerald-400 border-emerald-500/20";
+
+                return (
+                  <motion.div
+                    key={item.id || idx}
+                    initial={{ opacity: 0, y: 15 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.08 }}
+                    className="flex flex-col justify-between bg-[#040410]/90 border border-white/[0.04] hover:border-indigo-500/20 p-6 sm:p-7 rounded-[2rem] transition-all relative overflow-hidden group shadow-lg shadow-indigo-950/20"
+                  >
+                    {/* Shimmer gradient effect on cards */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/[0.01] to-transparent -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-[1200ms] ease-out pointer-events-none" />
+
+                    <div className="space-y-4">
+                      {/* Media image preview if available */}
+                      {item.mediaUrl && (
+                        <div className="w-full h-36 rounded-2xl overflow-hidden border border-white/[0.05] relative bg-slate-950/80 mb-2">
+                          <img 
+                            src={item.mediaUrl} 
+                            alt={item.title} 
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-700"
+                            referrerPolicy="no-referrer"
+                          />
+                          {isVideoType && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                              <div className="w-9 h-9 rounded-full bg-red-650 flex items-center justify-center text-white border border-red-500/30 shadow-lg">
+                                <Play size={14} className="fill-current ml-0.5" />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded border ${badgeColor}`}>
+                          {item.badgeText || item.type.toUpperCase()}
+                        </span>
+                        <span className="text-[9.5px] text-slate-500 font-mono font-bold flex items-center gap-1">
+                          <Calendar size={10} /> {item.dateString}
+                        </span>
+                      </div>
+
+                      <h3 className="text-md font-black uppercase text-white tracking-tight leading-tight group-hover:text-indigo-400 transition-colors">
+                        {item.title}
+                      </h3>
+
+                      <p className="text-slate-400 text-xs leading-relaxed font-semibold italic line-clamp-3">
+                        "{item.content}"
+                      </p>
+                    </div>
+
+                    <div className="pt-6 mt-6 border-t border-white/[0.03] flex items-center justify-between">
+                      <span className="text-slate-500 font-bold uppercase tracking-wider text-[9px] font-mono">
+                        {isVideoType ? "Video Dispatch" : "Live Feed Item"}
+                      </span>
+                      <Link to="/portal" className="text-indigo-400 hover:text-white font-mono text-[9px] uppercase tracking-widest flex items-center gap-1.5 transition-colors font-extrabold select-none">
+                        <span>Explore Portal</span>
+                        <ArrowRight size={10} />
+                      </Link>
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
           </div>
         </div>
       </section>

@@ -56,8 +56,8 @@ export default function NexoraHeader() {
             <motion.div 
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              className="bg-white rounded-xl p-[3px] border border-white/10 shadow-lg flex items-center justify-center overflow-hidden" 
-              style={{ height: `${scrolled ? 36 : (settings.logoHeight || 40)}px`, transition: 'height 0.5s ease' }}
+              className="bg-white rounded-xl p-[4px] border border-white/10 shadow-lg flex items-center justify-center overflow-hidden" 
+              style={{ height: `${scrolled ? 46 : (settings.logoHeight ? settings.logoHeight * 1.3 : 60)}px`, transition: 'height 0.5s ease' }}
             >
               <img 
                 src={settings.companyLogoLight || settings.companyLogo} 
@@ -70,10 +70,10 @@ export default function NexoraHeader() {
               <motion.div 
                 whileHover={{ scale: 1.08, rotate: 5 }}
                 whileTap={{ scale: 0.92 }}
-                className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-650 via-indigo-600 to-purple-500 p-[1.5px] shadow-lg shadow-indigo-500/10 transition-all duration-300"
+                className="w-11 h-11 rounded-xl bg-gradient-to-tr from-rose-650 via-indigo-600 to-purple-500 p-[1.5px] shadow-lg shadow-indigo-500/10 transition-all duration-300"
               >
                 <div className="w-full h-full bg-[#03030c] rounded-[10px] flex items-center justify-center">
-                  <span className="font-sans font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-indigo-400 to-pink-400 text-sm">
+                  <span className="font-sans font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-indigo-400 to-pink-400 text-md">
                     {(settings.companyName || 'N').charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -225,7 +225,12 @@ export default function NexoraHeader() {
                         isActive ? "text-indigo-400" : "text-slate-400 hover:text-white"
                       )}
                     >
-                      <span>{link.name}</span>
+                      <span className="flex items-center gap-1.5">
+                        {link.name}
+                        {link.name === 'Live Bulletin' && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                        )}
+                      </span>
                       <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-indigo-400" />
                     </Link>
                   </motion.div>

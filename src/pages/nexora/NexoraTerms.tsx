@@ -47,7 +47,7 @@ export default function NexoraTerms() {
           <div className="inline-flex items-center gap-3 bg-indigo-950/20 border border-indigo-900/30 px-4 py-2 rounded-2xl">
             <Scale size={14} className="text-indigo-400 animate-pulse" />
             <span className="text-[10px] font-mono font-black text-indigo-300 tracking-widest uppercase">
-              // NexaSphere IT & Nexora Legal Protocol
+              // NexaSphere IT Legal Protocol
             </span>
           </div>
 
