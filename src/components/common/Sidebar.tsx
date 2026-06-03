@@ -67,7 +67,7 @@ export default function Sidebar() {
   const handleLogout = async () => {
     localStorage.removeItem('customUser');
     await signOut(auth);
-    window.location.reload();
+    window.location.href = '/';
   };
 
   const isDocCreationActive = ['/quotations', '/cvs', '/receipts'].some(p => location.pathname.startsWith(p));
