@@ -9,7 +9,7 @@ import {
 import { Link } from 'react-router-dom';
 import { 
   getDocs, collection, addDoc, deleteDoc, doc, updateDoc, 
-  serverTimestamp, query, orderBy, setDoc 
+  serverTimestamp, query, orderBy, setDoc, onSnapshot
 } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
@@ -74,7 +74,7 @@ export default function NexoraAdmin() {
   const [pagesConfig, setPagesConfig] = useState({
     servicesCapsule: 'OUR SCALE MATRIX',
     servicesTitle: 'SCALABLE ACQUISITION BLUEPRINTS',
-    servicesSubtitle: 'Each service card details our standard metrics parameters. Browse our 10 primary digital capabilities, or configure special bundles below.',
+    servicesSubtitle: 'Each service card details our standard metrics parameters. Explore our 10 primary digital capabilities, or configure special bundles below.',
     servicesCtaText: 'Secure Retainer Blueprint',
     portfolioCapsule: 'OUR HISTORIC ROAS DELIVERY',
     portfolioTitle: 'VERIFIED BRAND ACHIEVEMENTS',

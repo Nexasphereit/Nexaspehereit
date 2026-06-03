@@ -86,7 +86,7 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
       onLogin(matchedUser);
 
       setTimeout(() => {
-        navigate('/it-sales');
+        navigate(matchedUser.role === 'admin' ? '/it-sales' : '/dashboard');
       }, 300);
     } catch (err: any) {
       toast.error(err.message || "Failed to log in.");
@@ -304,9 +304,9 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
         toast.success(`Welcome back, ${matchedUser.name}!`);
         onLogin(matchedUser);
         
-        // Refresh routing context safely and redirect directly to admin panel
+        // Refresh routing context safely and redirect directly to admin panel or dashboard depending on role
         setTimeout(() => {
-          navigate('/it-sales');
+          navigate(matchedUser.role === 'admin' ? '/it-sales' : '/dashboard');
         }, 300);
       } else {
         // Did not match any pre-configured User ID or password

@@ -42,7 +42,6 @@ export default function Sidebar() {
 
   const sidebarItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Sparkles, label: 'Agency View', path: '/' },
     { icon: Building2, label: 'IT Sales Hub', path: '/it-sales' },
     { icon: FileText, label: 'Quotation', path: '/quotations' },
     { icon: UserCircle, label: 'CV / Resume', path: '/cvs' },
@@ -52,10 +51,7 @@ export default function Sidebar() {
     { icon: Sliders, label: 'Website Customizer', path: '/admin' }
   ];
 
-  const sidebarItemsFiltered = isAdmin ? sidebarItems : [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Sparkles, label: 'Agency View', path: '/' }
-  ];
+  const sidebarItemsFiltered = isAdmin ? sidebarItems : sidebarItems.filter(item => item.path !== '/settings' && item.path !== '/admin');
 
   useEffect(() => {
     // Set open by default on desktop
@@ -67,21 +63,22 @@ export default function Sidebar() {
   const handleLogout = async () => {
     localStorage.removeItem('customUser');
     await signOut(auth);
-    window.location.href = '/';
+    window.location.href = '/login';
   };
 
   const isDocCreationActive = ['/quotations', '/cvs', '/receipts'].some(p => location.pathname.startsWith(p));
 
-  const mobileNavItems = isAdmin ? [
+  const mobileNavItems = [
     { icon: LayoutDashboard, label: 'Home', path: '/dashboard' },
-    { icon: Sparkles, label: 'Agency', path: '/' },
+    { icon: Building2, label: 'IT Sales', path: '/it-sales' },
     { isCreateCenter: true },
     { icon: History, label: 'History', path: '/history' },
-    { icon: SettingsIcon, label: 'Settings', path: '/settings' },
-  ] : [
-    { icon: LayoutDashboard, label: 'Home', path: '/dashboard' },
-    { icon: Sparkles, label: 'Agency', path: '/' },
+    { icon: SettingsIcon, label: 'Settings', path: '/settings' }
   ];
+
+  const mobileNavItemsFiltered = isAdmin 
+    ? mobileNavItems 
+    : mobileNavItems.filter(item => item.path !== '/settings');
 
   return (
     <>
@@ -123,19 +120,21 @@ export default function Sidebar() {
             {isDark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
           
-          <NavLink
-            to="/settings"
-            className={({ isActive }) => cn(
-              "w-9 h-9 rounded-xl flex items-center justify-center transition-all",
-              isActive 
-                ? "text-white" 
-                : isDark ? "bg-slate-900/50 text-slate-400" : "bg-slate-50 text-slate-500"
-            )}
-            style={({ isActive }) => isActive ? { backgroundColor: settings.primaryColor } : {}}
-            title="Settings"
-          >
-            <SettingsIcon size={16} />
-          </NavLink>
+          {isAdmin && (
+            <NavLink
+              to="/settings"
+              className={({ isActive }) => cn(
+                "w-9 h-9 rounded-xl flex items-center justify-center transition-all",
+                isActive 
+                  ? "text-white" 
+                  : isDark ? "bg-slate-900/50 text-slate-400" : "bg-slate-50 text-slate-500"
+              )}
+              style={({ isActive }) => isActive ? { backgroundColor: settings.primaryColor } : {}}
+              title="Settings"
+            >
+              <SettingsIcon size={16} />
+            </NavLink>
+          )}
 
           <button 
             onClick={handleLogout}
@@ -154,7 +153,7 @@ export default function Sidebar() {
           ? "bg-slate-950/70 border-slate-800/80 text-white" 
           : "bg-white/95 border-slate-100 text-slate-900"
       )}>
-        {mobileNavItems.map((item, idx) => {
+        {mobileNavItemsFiltered.map((item, idx) => {
           if (item.isCreateCenter) {
             return (
               <button
@@ -341,49 +340,30 @@ export default function Sidebar() {
         </div>
 
         <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
-          {sidebarItemsFiltered.map((item) => {
-            const isHomePath = item.path === '/';
-            if (isHomePath) {
-              return (
-                <a
-                  key={item.path}
-                  href="/"
-                  className={cn(
-                    "flex items-center gap-4 px-4 py-4 rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest relative group",
-                    isDark ? "text-slate-500 hover:text-white hover:bg-slate-900" : "text-slate-400 hover:text-slate-900 hover:bg-slate-50",
-                    !isOpen && "justify-center px-0"
-                  )}
-                >
-                  <item.icon size={18} className={cn("shrink-0 transition-transform group-hover:scale-110", isDark ? "group-hover:text-white" : "group-hover:text-slate-900")} />
+          {sidebarItemsFiltered.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => cn(
+                "flex items-center gap-4 px-4 py-4 rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest relative group",
+                isActive 
+                  ? "text-white shadow-lg" 
+                  : isDark ? "text-slate-500 hover:text-white hover:bg-slate-900" : "text-slate-400 hover:text-slate-900 hover:bg-slate-50",
+                !isOpen && "justify-center px-0"
+              )}
+              style={({ isActive }) => isActive ? {
+                backgroundColor: settings.primaryColor,
+                boxShadow: `0 8px 16px -4px ${settings.primaryColor}55`
+              } : {}}
+            >
+              {({ isActive }) => (
+                <>
+                  <item.icon size={18} className={cn("shrink-0 transition-transform group-hover:scale-110", isActive ? "text-white" : isDark ? "group-hover:text-white" : "group-hover:text-slate-900")} />
                   {isOpen && <span className="truncate">{item.label}</span>}
-                </a>
-              );
-            }
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) => cn(
-                  "flex items-center gap-4 px-4 py-4 rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest relative group",
-                  isActive 
-                    ? "text-white shadow-lg" 
-                    : isDark ? "text-slate-500 hover:text-white hover:bg-slate-900" : "text-slate-400 hover:text-slate-900 hover:bg-slate-50",
-                  !isOpen && "justify-center px-0"
-                )}
-                style={({ isActive }) => isActive ? {
-                  backgroundColor: settings.primaryColor,
-                  boxShadow: `0 8px 16px -4px ${settings.primaryColor}55`
-                } : {}}
-              >
-                {({ isActive }) => (
-                  <>
-                    <item.icon size={18} className={cn("shrink-0 transition-transform group-hover:scale-110", isActive ? "text-white" : isDark ? "group-hover:text-white" : "group-hover:text-slate-900")} />
-                    {isOpen && <span className="truncate">{item.label}</span>}
-                  </>
-                )}
-              </NavLink>
-            );
-          })}
+                </>
+              )}
+            </NavLink>
+          ))}
         </nav>
 
         <div className={cn("p-6 border-t", isDark ? "border-slate-900" : "border-slate-50")}>

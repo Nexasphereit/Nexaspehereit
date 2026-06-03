@@ -333,50 +333,6 @@ export default function ITSalesDashboard() {
     }
   };
 
-  const handleTriggerPauseBackend = async (customerId: string) => {
-    const loading = toast.loading("Taking pause for IT Sales in the back-end...");
-    try {
-      const res = await fetch("/api/it-sales/pause", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerId,
-          customMessage: smsPauseText
-        })
-      });
-      if (res.ok) {
-        toast.success("Order paused in backend & dispatch message logged!", { id: loading });
-        fetchSmsTemplatesAndLogs();
-      } else {
-        throw new Error("Backend pause request failed");
-      }
-    } catch (e: any) {
-      toast.error(`Could not complete backend pause: ${e.message}`, { id: loading });
-    }
-  };
-
-  const handleTriggerResumeBackend = async (customerId: string) => {
-    const loading = toast.loading("Lifting pause & accepting payment on back-end...");
-    try {
-      const res = await fetch("/api/it-sales/resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerId,
-          customMessage: smsResumeText
-        })
-      });
-      if (res.ok) {
-        toast.success("Pause lifted and active SMS dispatched to user's phone!", { id: loading });
-        fetchSmsTemplatesAndLogs();
-      } else {
-        throw new Error("Backend resume request failed");
-      }
-    } catch (e: any) {
-      toast.error(`Could not process backend resume: ${e.message}`, { id: loading });
-    }
-  };
-
   const handleTriggerCustomBroadcast = async () => {
     if (!draftPhone.trim() || !draftMessage.trim()) {
       toast.error("Please provide both a target phone number and your custom message.");
@@ -1523,25 +1479,29 @@ export default function ITSalesDashboard() {
 
           <div className="flex gap-2 shrink-0">
             {/* Seed Sandbox data button */}
-            <button
-              onClick={handleSeedData}
-              title="Populate beautiful real IT sales data in firestore instantly"
-              className={cn(
-                "p-3 rounded-2xl flex items-center justify-center border transition-all active:scale-95 text-slate-400 hover:text-white",
-                isDark ? "bg-slate-900/40 border-white/5 hover:bg-slate-800" : "bg-slate-100 border-slate-200 hover:bg-slate-200"
-              )}
-            >
-              <RefreshCw size={14} className="animate-spin-slow text-orange-500" />
-            </button>
+            {activeRole === 'admin' && (
+              <button
+                onClick={handleSeedData}
+                title="Populate beautiful real IT sales data in firestore instantly"
+                className={cn(
+                  "p-3 rounded-2xl flex items-center justify-center border transition-all active:scale-95 text-slate-400 hover:text-white",
+                  isDark ? "bg-slate-900/40 border-white/5 hover:bg-slate-800" : "bg-slate-100 border-slate-200 hover:bg-slate-200"
+                )}
+              >
+                <RefreshCw size={14} className="animate-spin-slow text-orange-500" />
+              </button>
+            )}
             
-            <button
-              onClick={handleExportAllToExcel}
-              className="text-white px-5 py-3 rounded-2.5xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2 transition-all hover:brightness-115 active:scale-95 shrink-0"
-              style={{ backgroundColor: settings.primaryColor }}
-            >
-              <FileSpreadsheet size={14} />
-              Export Excel
-            </button>
+            {activeRole === 'admin' && (
+              <button
+                onClick={handleExportAllToExcel}
+                className="text-white px-5 py-3 rounded-2.5xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2 transition-all hover:brightness-115 active:scale-95 shrink-0"
+                style={{ backgroundColor: settings.primaryColor }}
+              >
+                <FileSpreadsheet size={14} />
+                Export Excel
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -1756,7 +1716,8 @@ export default function ITSalesDashboard() {
       )}
 
       {/* NEW SECTION: ACTIVE USER CREDENTIALS SWAPPER, PASSKEY DIRECTORY, & QUICK REGISTRY */}
-      <section className={cn(
+      {activeRole === 'admin' && (
+        <section className={cn(
         "rounded-[2.5rem] p-6 lg:p-8 border shadow-xl space-y-6 transition-all text-left",
         isDark ? "bg-[#0c0d1b]/70 border-white/5" : "bg-slate-50 border-slate-200"
       )}>
@@ -2017,6 +1978,7 @@ export default function ITSalesDashboard() {
           </motion.div>
         )}
       </section>
+      )}
 
       {/* QUICK CORE ANALYTICS CARDS */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
@@ -2241,56 +2203,58 @@ export default function ITSalesDashboard() {
             </div>
           </motion.div>
 
-          {/* PACKAGE 2: SERVICES CATALOGUE */}
-          <motion.div
-            whileHover={{ y: -4, scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              if (activeSubTab === 'services') {
-                setActiveSubTab(null);
-                toast.success('Services Catalog collapsed.');
-              } else {
-                setActiveSubTab('services');
-                toast.success('Opened Service Catalog Repository!');
-              }
-            }}
-            className={cn(
-              "p-4 rounded-[2rem] border transition-all text-center cursor-pointer flex flex-col items-center justify-between min-h-[130px] md:min-h-[140px] relative overflow-hidden group select-none hover:shadow-xl backdrop-blur-md",
-              activeSubTab === 'services'
-                ? "bg-indigo-500/10 border-indigo-500 shadow-xl ring-2 ring-indigo-500/20 font-bold"
-                : isDark 
-                  ? "bg-slate-900/40 border-white/5 hover:bg-slate-800/60" 
-                  : "bg-slate-50 border-slate-200 hover:bg-slate-100"
-            )}
-          >
-            <div 
-              className="p-3.5 rounded-2xl mb-2.5 shrink-0 transition-all group-hover:scale-110 shadow-md"
-              style={{ 
-                backgroundColor: activeSubTab === 'services' ? `${settings.primaryColor}25` : isDark ? '#1e293b' : '#fff',
-                color: activeSubTab === 'services' ? settings.primaryColor : '#8e9bb0',
-                border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+          {/* PACKAGE 2: SERVICES CATALOGUE (Only visible to admin to control services) */}
+          {isUserAdmin && (
+            <motion.div
+              whileHover={{ y: -4, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                if (activeSubTab === 'services') {
+                  setActiveSubTab(null);
+                  toast.success('Services Catalog collapsed.');
+                } else {
+                  setActiveSubTab('services');
+                  toast.success('Opened Service Catalog Repository!');
+                }
               }}
+              className={cn(
+                "p-4 rounded-[2rem] border transition-all text-center cursor-pointer flex flex-col items-center justify-between min-h-[130px] md:min-h-[140px] relative overflow-hidden group select-none hover:shadow-xl backdrop-blur-md",
+                activeSubTab === 'services'
+                  ? "bg-indigo-500/10 border-indigo-500 shadow-xl ring-2 ring-indigo-500/20 font-bold"
+                  : isDark 
+                    ? "bg-slate-900/40 border-white/5 hover:bg-slate-800/60" 
+                    : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+              )}
             >
-              <Database size={22} />
-            </div>
-            <div className="text-center w-full">
-              <p className={cn("text-[11px] font-black uppercase tracking-wider leading-none", (activeSubTab === 'services' ? "text-slate-100 font-extrabold" : isDark ? "text-slate-300" : "text-slate-850"))} style={activeSubTab === 'services' ? { color: settings.primaryColor } : {}}>
-                IT Services
-              </p>
-              <p className="text-[9.5px] text-slate-500 font-bold mt-1.5 font-sans leading-none">
-                সার্ভিসেস ক্যাটালগ
-              </p>
-            </div>
-            
-            <div className="absolute top-2.5 right-2.5">
-              <span className={cn(
-                "w-2.5 h-2.5 rounded-full block border shadow-sm",
-                activeSubTab === 'services' 
-                  ? "bg-emerald-400 border-emerald-300/40 animate-pulse" 
-                  : "bg-slate-600 border-slate-500/30"
-              )} />
-            </div>
-          </motion.div>
+              <div 
+                className="p-3.5 rounded-2xl mb-2.5 shrink-0 transition-all group-hover:scale-110 shadow-md"
+                style={{ 
+                  backgroundColor: activeSubTab === 'services' ? `${settings.primaryColor}25` : isDark ? '#1e293b' : '#fff',
+                  color: activeSubTab === 'services' ? settings.primaryColor : '#8e9bb0',
+                  border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+                }}
+              >
+                <Database size={22} />
+              </div>
+              <div className="text-center w-full">
+                <p className={cn("text-[11px] font-black uppercase tracking-wider leading-none", (activeSubTab === 'services' ? "text-slate-100 font-extrabold" : isDark ? "text-slate-300" : "text-slate-850"))} style={activeSubTab === 'services' ? { color: settings.primaryColor } : {}}>
+                  IT Services
+                </p>
+                <p className="text-[9.5px] text-slate-500 font-bold mt-1.5 font-sans leading-none">
+                  সার্ভিসেস ক্যাটালগ
+                </p>
+              </div>
+              
+              <div className="absolute top-2.5 right-2.5">
+                <span className={cn(
+                  "w-2.5 h-2.5 rounded-full block border shadow-sm",
+                  activeSubTab === 'services' 
+                    ? "bg-emerald-400 border-emerald-300/40 animate-pulse" 
+                    : "bg-slate-600 border-slate-500/30"
+                )} />
+              </div>
+            </motion.div>
+          )}
 
           {/* PACKAGE 3: CRM DECK */}
           <motion.div
@@ -2456,61 +2420,63 @@ export default function ITSalesDashboard() {
             </div>
           )}
 
-          {/* PACKAGE 6: CENTRAL INBOUND INBOX & CUSTOM SMS OUTBOX */}
-          <motion.div
-            whileHover={{ y: -4, scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              if (activeSubTab === 'inbox') {
-                setActiveSubTab(null);
-                toast.success('Inbound Inbox collapsed.');
-              } else {
-                setActiveSubTab('inbox');
-                toast.success('Opened Unified CRM Inbound Inbox!');
-              }
-            }}
-            className={cn(
-              "p-4 rounded-[2rem] border transition-all text-center cursor-pointer flex flex-col items-center justify-between min-h-[130px] md:min-h-[140px] relative overflow-hidden group select-none hover:shadow-xl backdrop-blur-md",
-              activeSubTab === 'inbox'
-                ? "bg-indigo-500/10 border-indigo-500 shadow-xl ring-2 ring-indigo-500/20 font-bold"
-                : isDark 
-                  ? "bg-slate-900/40 border-white/5 hover:bg-slate-800/60" 
-                  : "bg-slate-50 border-slate-200 hover:bg-slate-100"
-            )}
-          >
-            <div 
-              className="p-3.5 rounded-2xl mb-2.5 shrink-0 transition-all group-hover:scale-110 shadow-md"
-              style={{ 
-                backgroundColor: activeSubTab === 'inbox' ? `${settings.primaryColor}25` : isDark ? '#1e293b' : '#fff',
-                color: activeSubTab === 'inbox' ? settings.primaryColor : '#8e9bb0',
-                border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+          {/* PACKAGE 6: CENTRAL INBOUND INBOX & CUSTOM SMS OUTBOX (Only visible to admin to control operations inbox) */}
+          {isUserAdmin && (
+            <motion.div
+              whileHover={{ y: -4, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                if (activeSubTab === 'inbox') {
+                  setActiveSubTab(null);
+                  toast.success('Inbound Inbox collapsed.');
+                } else {
+                  setActiveSubTab('inbox');
+                  toast.success('Opened Unified CRM Inbound Inbox!');
+                }
               }}
-            >
-              <MailOpen size={22} />
-            </div>
-            <div className="text-center w-full">
-              <p className={cn("text-[11px] font-black uppercase tracking-wider leading-none", (activeSubTab === 'inbox' ? "text-white font-extrabold" : isDark ? "text-slate-300" : "text-slate-850"))} style={activeSubTab === 'inbox' ? { color: settings.primaryColor } : {}}>
-                Nexa CRM Inbox
-              </p>
-              <p className="text-[9.5px] text-slate-500 font-bold mt-1.5 font-sans leading-none">
-                ইনবক্স ও এসএমএস
-              </p>
-            </div>
-            
-            <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
-              {inboundLeads.length > 0 && (
-                <span className="bg-rose-500 text-white font-black text-[8px] flex items-center justify-center p-0.5 px-1 rounded-full shadow animate-bounce">
-                  {inboundLeads.length}
-                </span>
+              className={cn(
+                "p-4 rounded-[2rem] border transition-all text-center cursor-pointer flex flex-col items-center justify-between min-h-[130px] md:min-h-[140px] relative overflow-hidden group select-none hover:shadow-xl backdrop-blur-md",
+                activeSubTab === 'inbox'
+                  ? "bg-indigo-500/10 border-indigo-500 shadow-xl ring-2 ring-indigo-500/20 font-bold"
+                  : isDark 
+                    ? "bg-slate-900/40 border-white/5 hover:bg-slate-800/60" 
+                    : "bg-slate-50 border-slate-200 hover:bg-slate-100"
               )}
-              <span className={cn(
-                "w-2.5 h-2.5 rounded-full block border shadow-sm",
-                activeSubTab === 'inbox' 
-                  ? "bg-emerald-400 border-emerald-300/40 animate-pulse" 
-                  : "bg-indigo-500 border-indigo-500/30"
-              )} />
-            </div>
-          </motion.div>
+            >
+              <div 
+                className="p-3.5 rounded-2xl mb-2.5 shrink-0 transition-all group-hover:scale-110 shadow-md"
+                style={{ 
+                  backgroundColor: activeSubTab === 'inbox' ? `${settings.primaryColor}25` : isDark ? '#1e293b' : '#fff',
+                  color: activeSubTab === 'inbox' ? settings.primaryColor : '#8e9bb0',
+                  border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+                }}
+              >
+                <MailOpen size={22} />
+              </div>
+              <div className="text-center w-full">
+                <p className={cn("text-[11px] font-black uppercase tracking-wider leading-none", (activeSubTab === 'inbox' ? "text-white font-extrabold" : isDark ? "text-slate-300" : "text-slate-850"))} style={activeSubTab === 'inbox' ? { color: settings.primaryColor } : {}}>
+                  Nexa CRM Inbox
+                </p>
+                <p className="text-[9.5px] text-slate-500 font-bold mt-1.5 font-sans leading-none">
+                  ইনবক্স ও এসএমএস
+                </p>
+              </div>
+              
+              <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+                {inboundLeads.length > 0 && (
+                  <span className="bg-rose-500 text-white font-black text-[8px] flex items-center justify-center p-0.5 px-1 rounded-full shadow animate-bounce">
+                    {inboundLeads.length}
+                  </span>
+                )}
+                <span className={cn(
+                  "w-2.5 h-2.5 rounded-full block border shadow-sm",
+                  activeSubTab === 'inbox' 
+                    ? "bg-emerald-400 border-emerald-300/40 animate-pulse" 
+                    : "bg-indigo-500 border-indigo-500/30"
+                )} />
+              </div>
+            </motion.div>
+          )}
 
         </div>
       </div>
@@ -4509,19 +4475,11 @@ export default function ITSalesDashboard() {
                         <div className="bg-slate-900/10 dark:bg-slate-950/30 p-3.5 rounded-2xl border border-slate-850/5 space-y-2.5">
                           <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Account Pipeline State</p>
                           <div className="flex flex-wrap gap-1">
-                            {['Ongoing', 'Processing', 'Due', 'Refund', 'Order Cancel', 'Paused'].map((opt) => (
+                            {['Ongoing', 'Processing', 'Due', 'Refund', 'Order Cancel'].map((opt) => (
                               <button
                                 key={opt}
                                 type="button"
                                 onClick={async () => {
-                                  if (opt === 'Paused') {
-                                    await handleTriggerPauseBackend(selectedCustomerRecord.id);
-                                    return;
-                                  }
-                                  if (selectedCustomerRecord.status === 'Paused' && (opt === 'Processing' || opt === 'Ongoing')) {
-                                    await handleTriggerResumeBackend(selectedCustomerRecord.id);
-                                    return;
-                                  }
                                   const loadUp = toast.loading(`Adjusting pipeline to ${opt}...`);
                                   try {
                                     await updateDoc(doc(db, 'customers', selectedCustomerRecord.id), {
@@ -4544,88 +4502,6 @@ export default function ITSalesDashboard() {
                                 {opt}
                               </button>
                             ))}
-                          </div>
-                        </div>
-
-                        {/* ADVANCED CUSTOMIZABLE BACK-END COMMUNICATIONS & PAUSE CONTROLLER */}
-                        <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-xs space-y-3">
-                          <div className="flex justify-between items-center pb-2 border-b border-slate-800/10">
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                              <span className="font-black text-[9px] uppercase tracking-wider text-amber-500">CUSTOM SMS COMMUNICATION SYSTEM</span>
-                            </div>
-                            <span className="text-[8px] font-mono p-0.5 px-1 bg-amber-500/10 text-amber-500 rounded border border-amber-500/10">
-                              Active Backend
-                            </span>
-                          </div>
-
-                          <p className="text-[10px] text-slate-400 leading-relaxed italic">
-                            Configure active template variables: <code className="text-pink-400">{`{name}`}</code>, <code className="text-pink-400">{`{deposit}`}</code>, <code className="text-pink-400">{`{customerId}`}</code>
-                          </p>
-
-                          <div className="space-y-3">
-                            {/* Pause template */}
-                            <div className="space-y-1">
-                              <div className="flex justify-between items-center">
-                                <label className="block text-[8.5px] font-black uppercase tracking-wide text-slate-400">
-                                  🟡 CUSTOMIZABLE PAUSED MESSAGE TEMPLATE
-                                </label>
-                              </div>
-                              <textarea
-                                value={smsPauseText}
-                                onChange={(e) => setSmsPauseText(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] font-mono leading-normal text-slate-300 focus:outline-none focus:border-amber-500 transition-colors"
-                                rows={2}
-                                placeholder="Paste customized order hold context..."
-                              />
-                              <div className="text-[8.5px] text-slate-500">
-                                Will resolve as: <span className="font-black text-rose-400 italic">{smsPauseText.replace(/{name}/g, selectedCustomerRecord.name).replace(/{deposit}/g, `${selectedCustomerRecord.totalSpent ? '$' + selectedCustomerRecord.totalSpent.toLocaleString() : '$0'}`).replace(/{customerId}/g, selectedCustomerRecord.id)}</span>
-                              </div>
-                            </div>
-
-                            {/* Resume template */}
-                            <div className="space-y-1">
-                              <div className="flex justify-between items-center">
-                                <label className="block text-[8.5px] font-black uppercase tracking-wide text-slate-400">
-                                  🟢 CUSTOMIZABLE RESUMED MESSAGE TEMPLATE (PAUSE LIFTED & PAYMENT CONFIRMED)
-                                </label>
-                              </div>
-                              <textarea
-                                value={smsResumeText}
-                                onChange={(e) => setSmsResumeText(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] font-mono leading-normal text-slate-300 focus:outline-none focus:border-emerald-500 transition-colors"
-                                rows={2}
-                                placeholder="Paste payment accepted context..."
-                              />
-                              <div className="text-[8.5px] text-slate-500">
-                                Will resolve as: <span className="font-black text-emerald-400 italic">{smsResumeText.replace(/{name}/g, selectedCustomerRecord.name).replace(/{deposit}/g, `${selectedCustomerRecord.totalSpent ? '$' + selectedCustomerRecord.totalSpent.toLocaleString() : '$0'}`).replace(/{customerId}/g, selectedCustomerRecord.id)}</span>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={handleUpdateSmsTemplates}
-                              className="w-full py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/10 hover:bg-amber-500/20 text-white font-extrabold uppercase text-[8px] tracking-widest cursor-pointer transition-all"
-                            >
-                              💾 Save Notification Templates
-                            </button>
-                          </div>
-
-                          <div className="pt-2 border-t border-slate-800/10 grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleTriggerPauseBackend(selectedCustomerRecord.id)}
-                              className="py-2 px-1 rounded-xl bg-amber-500 text-slate-950 font-black uppercase text-[8.5px] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shadow text-center"
-                            >
-                              ⏸️ Take Pause Hold & Send SMS
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleTriggerResumeBackend(selectedCustomerRecord.id)}
-                              className="py-2 px-1 rounded-xl bg-emerald-500 text-slate-950 font-black uppercase text-[8.5px] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shadow text-center"
-                            >
-                              ▶️ Lift Pause (Accept Payment)
-                            </button>
                           </div>
                         </div>
 
@@ -5260,38 +5136,6 @@ export default function ITSalesDashboard() {
                       >
                         🎁 Resolvable Custom Offer Template
                       </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const resolved = smsPauseText
-                            .replace(/{name}/g, draftName || "Valued Account")
-                            .replace(/{customerId}/g, "INQUIRY_PAUSE")
-                            .replace(/{deposit}/g, "$1,500 accepted");
-                          setDraftMessage(resolved);
-                          setDraftType("Manual Service Paused Alert");
-                          toast.success("Applied Resolvable Paused Template!");
-                        }}
-                        className="p-1.5 px-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/10 text-white font-bold text-[8px] uppercase rounded-lg transition-all"
-                      >
-                        ⏸️ Resolvable Pause Template
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const resolved = smsResumeText
-                            .replace(/{name}/g, draftName || "Valued Account")
-                            .replace(/{customerId}/g, "INQUIRY_ACTIVE")
-                            .replace(/{deposit}/g, "Fully accepts payment");
-                          setDraftMessage(resolved);
-                          setDraftType("Manual Pause Lifted Broadcast");
-                          toast.success("Applied Resolvable Resume Template!");
-                        }}
-                        className="p-1.5 px-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/10 text-white font-bold text-[8px] uppercase rounded-lg transition-all"
-                      >
-                        ▶️ Resolvable Resume Lifted Template
-                      </button>
                     </div>
                   </div>
 
@@ -5308,8 +5152,6 @@ export default function ITSalesDashboard() {
                       >
                         <option value="Custom SMS Campaign Outreach">Custom SMS Campaign Outreach</option>
                         <option value="VIP Campaign Offer Dispatch">VIP Campaign Offer Dispatch</option>
-                        <option value="Manual Service Paused Alert">Manual Service Paused Alert</option>
-                        <option value="Manual Pause Lifted Broadcast">Manual Pause Lifted Broadcast</option>
                         <option value="Direct Project Reply Stream">Direct Project Reply Stream</option>
                       </select>
                     </div>
@@ -5391,32 +5233,6 @@ export default function ITSalesDashboard() {
                       </p>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* 1. Pause */}
-                        <div className="space-y-1">
-                          <label className="block text-[8px] font-black uppercase tracking-wide text-slate-400">
-                            ⏸️ Customer Order Paused Template
-                          </label>
-                          <textarea
-                            value={smsPauseText}
-                            onChange={(e) => setSmsPauseText(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-[9.5px] font-mono text-slate-300 focus:outline-none focus:border-indigo-500"
-                            rows={3}
-                          />
-                        </div>
-
-                        {/* 2. Resume */}
-                        <div className="space-y-1">
-                          <label className="block text-[8px] font-black uppercase tracking-wide text-slate-400">
-                            ▶️ Customer Order Lift/Resume Template
-                          </label>
-                          <textarea
-                            value={smsResumeText}
-                            onChange={(e) => setSmsResumeText(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-[9.5px] font-mono text-slate-300 focus:outline-none focus:border-indigo-500"
-                            rows={3}
-                          />
-                        </div>
-
                         {/* 3. FrontEnd auto-reply submission */}
                         <div className="space-y-1">
                           <label className="block text-[8px] font-black uppercase tracking-wide text-slate-400">

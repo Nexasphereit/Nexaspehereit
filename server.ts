@@ -28,14 +28,35 @@ function getGeminiClient() {
 }
 
 // Initialize Firebase for Backend Use
-const firebaseConfigPath = path.resolve(process.cwd(), "firebase-applet-config.json");
 let db: any = null;
 try {
-  const firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf8"));
-  const firebaseApp = initializeApp(firebaseConfig);
-  const dbId = firebaseConfig.firestoreDatabaseId;
-  db = (dbId && dbId !== '(default)') ? getFirestore(firebaseApp, dbId) : getFirestore(firebaseApp);
-  console.log("Firebase initialized successfully for Express backend endpoints.");
+  let firebaseConfig: any = {};
+  const firebaseConfigPath = path.resolve(process.cwd(), "firebase-applet-config.json");
+
+  if (process.env.FIREBASE_API_KEY && process.env.FIREBASE_PROJECT_ID) {
+    firebaseConfig = {
+      apiKey: process.env.FIREBASE_API_KEY,
+      authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.FIREBASE_APP_ID,
+      firestoreDatabaseId: process.env.FIREBASE_DATABASE_ID
+    };
+    console.log("Firebase config loaded from process.env variables.");
+  } else if (fs.existsSync(firebaseConfigPath)) {
+    firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf8"));
+    console.log("Firebase config loaded from firebase-applet-config.json.");
+  }
+
+  if (firebaseConfig.apiKey) {
+    const firebaseApp = initializeApp(firebaseConfig);
+    const dbId = firebaseConfig.firestoreDatabaseId;
+    db = (dbId && dbId !== '(default)') ? getFirestore(firebaseApp, dbId) : getFirestore(firebaseApp);
+    console.log("Firebase initialized successfully for Express backend endpoints.");
+  } else {
+    console.warn("No Firebase configurations found. Backend operating without Firebase DB connectivity.");
+  }
 } catch (e: any) {
   console.error("Backend Firebase Initialization Warning:", e.message);
 }
@@ -102,119 +123,6 @@ async function startServer() {
       res.json({ success: true, message: "Customizable templates updated successfully!" });
     } catch (err: any) {
       res.status(500).json({ error: "Failed to update templates", details: err?.message });
-    }
-  });
-
-  // POST: Trigger a Pause for an IT Sales Order
-  app.post("/api/it-sales/pause", async (req, res) => {
-    const { customerId, customMessage } = req.body;
-    if (!customerId) {
-      return res.status(400).json({ error: "Missing customerId parameter" });
-    }
-    try {
-      if (!db) throw new Error("Firebase database not initialized on backend.");
-      
-      const customerRef = doc(db, "customers", customerId);
-      const custDoc = await getDoc(customerRef);
-      if (!custDoc.exists()) {
-        return res.status(404).json({ error: "Customer not found" });
-      }
-      const customerData = custDoc.data();
-      
-      // Update customer status to Paused
-      await updateDoc(customerRef, {
-        status: "Paused",
-        updatedAt: new Date().toISOString()
-      });
-
-      // Construct customized SMS message
-      const template = customMessage || "Dear {name}, your NexaSphere order has been paused. Ref: {customerId}.";
-      const cleanMessage = String(template)
-        .replace(/{name}/g, customerData.name || "Valued Customer")
-        .replace(/{customerId}/g, customerId)
-        .replace(/{deposit}/g, `${customerData.totalSpent ? '$' + customerData.totalSpent.toLocaleString() : '$0'}`)
-        .replace(/{service}/g, "Premium IT SLA")
-        .replace(/{budget}/g, "N/A");
-
-      const logPayload = {
-        customerId,
-        customerName: customerData.name || "Unknown",
-        phone: customerData.phone || "No phone registered",
-        message: cleanMessage,
-        type: "Order Paused / Payment Lock",
-        status: "Sent",
-        timestamp: new Date().toISOString()
-      };
-
-      await addDoc(collection(db, "sms_logs"), logPayload);
-
-      res.json({
-        success: true,
-        message: "Customer status paused in the back-end successfully.",
-        customerName: customerData.name,
-        dispatchedMessage: cleanMessage,
-        log: logPayload
-      });
-    } catch (err: any) {
-      console.error("Pause route error:", err);
-      res.status(500).json({ error: "Could not execute pause on back-end", details: err?.message });
-    }
-  });
-
-  // POST: Resume / Lift pause for an IT Sales Order (Payment accepted)
-  app.post("/api/it-sales/resume", async (req, res) => {
-    const { customerId, customMessage } = req.body;
-    if (!customerId) {
-      return res.status(400).json({ error: "Missing customerId parameter" });
-    }
-    try {
-      if (!db) throw new Error("Firebase database not initialized on backend.");
-      
-      const customerRef = doc(db, "customers", customerId);
-      const custDoc = await getDoc(customerRef);
-      if (!custDoc.exists()) {
-        return res.status(404).json({ error: "Customer not found" });
-      }
-      const customerData = custDoc.data();
-
-      // Lift the pause and mark payment as accepted (set dueAmount to 0, status to Processing)
-      await updateDoc(customerRef, {
-        status: "Processing",
-        dueAmount: 0,
-        updatedAt: new Date().toISOString()
-      });
-
-      // Construct customized SMS message
-      const template = customMessage || "Great news {name}! Your pause is lifted. Ref: {customerId}.";
-      const cleanMessage = String(template)
-        .replace(/{name}/g, customerData.name || "Valued Customer")
-        .replace(/{customerId}/g, customerId)
-        .replace(/{deposit}/g, `${customerData.totalSpent ? '$' + customerData.totalSpent.toLocaleString() : '$0'}`)
-        .replace(/{service}/g, "Premium IT SLA")
-        .replace(/{budget}/g, "N/A");
-
-      const logPayload = {
-        customerId,
-        customerName: customerData.name || "Unknown",
-        phone: customerData.phone || "No phone registered",
-        message: cleanMessage,
-        type: "Pause Lifted / SMS Dispatched",
-        status: "Delivered",
-        timestamp: new Date().toISOString()
-      };
-
-      await addDoc(collection(db, "sms_logs"), logPayload);
-
-      res.json({
-        success: true,
-        message: "Customer pause lifted, payment recorded as accepted, and SMS dispatched.",
-        customerName: customerData.name,
-        dispatchedMessage: cleanMessage,
-        log: logPayload
-      });
-    } catch (err: any) {
-      console.error("Resume route error:", err);
-      res.status(500).json({ error: "Could not resume pipeline status", details: err?.message });
     }
   });
 

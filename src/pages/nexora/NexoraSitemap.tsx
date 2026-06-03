@@ -31,7 +31,7 @@ export default function NexoraSitemap() {
       title: "Framework Generators & Tools",
       icon: Settings,
       links: [
-        { name: "Active Retainers & History", desc: "Browse previous billing invoices and campaign records", path: "/history" },
+        { name: "Active Retainers & History", desc: "View previous billing invoices and campaign records", path: "/history" },
         { name: "Interactive Quotation App", desc: "Auto-generate dynamic PDFs based on customized requirements", path: "/quotations" },
         { name: "Executive Resume (CV) Builder", desc: "Design elegant developer bios and experience assets", path: "/cvs" },
         { name: "Secure Digital Receipt Generator", desc: "Issue verified business receipts for instant local download", path: "/receipts" },

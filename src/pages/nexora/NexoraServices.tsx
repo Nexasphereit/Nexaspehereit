@@ -15,7 +15,7 @@ export default function NexoraServices() {
   const [pagesConfig, setPagesConfig] = useState({
     servicesCapsule: 'OUR SCALE MATRIX',
     servicesTitle: 'SCALABLE ACQUISITION BLUEPRINTS',
-    servicesSubtitle: 'Each service card details our standard metrics parameters. Browse our 10 primary digital capabilities, or configure special bundles below.',
+    servicesSubtitle: 'Each service card details our standard metrics parameters. Explore our 10 primary digital capabilities, or configure special bundles below.',
     servicesCtaText: 'Enquire Campaign',
     servicesCtaLink: '/contact'
   });

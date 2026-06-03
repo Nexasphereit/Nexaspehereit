@@ -1,5 +1,5 @@
 import { Toaster } from 'react-hot-toast';
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import Sidebar from './components/common/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -13,7 +13,8 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { cn } from './lib/utils';
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './lib/firebase';
+import { auth, db } from './lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import Login from './pages/Login';
 import { GalaxyBackground } from './components/common/GalaxyBackground';
 import { Sparkles, Phone, Mail, MapPin } from 'lucide-react';
@@ -40,6 +41,7 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const { settings, redirection, resetRedirection } = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Compute Route Divisions early to prevent loading screens on public pages
   const publicPaths = ['/about', '/services', '/portfolio', '/case-studies', '/pricing', '/blog', '/contact', '/terms', '/privacy', '/sitemap', '/portal'];
@@ -47,7 +49,6 @@ function AppContent() {
   
   const privatePaths = ['/dashboard', '/it-sales', '/quotations', '/cvs', '/receipts', '/history', '/settings', '/admin'];
   const isPrivateRoute = privatePaths.some(p => location.pathname === p || location.pathname.startsWith(p));
-
   const isLoginPath = location.pathname === '/login';
 
   const [navProgress, setNavProgress] = useState(0);
@@ -341,9 +342,11 @@ function AppContent() {
       <div className="min-h-screen bg-[#02020a] text-white flex flex-col justify-between">
         <NexoraHeader />
         <div className="flex-1 pt-16 flex items-center justify-center">
-          <Login onLogin={(u) => {
-            setUser(u);
-          }} />
+          <div className="w-full max-w-md relative z-10 p-6">
+            <Login onLogin={(u) => {
+              setUser(u);
+            }} />
+          </div>
         </div>
         <NexoraFooter />
         <Toaster position="bottom-right" />
@@ -375,7 +378,7 @@ function AppContent() {
         {isDark && <GalaxyBackground />}
         <NexoraHeader />
         
-        <main className="flex-1 relative z-10 w-full">
+        <main className="flex-1 relative z-10 w-full pt-20">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -444,13 +447,13 @@ function AppContent() {
           >
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/it-sales" element={<ITSalesDashboard />} />
+              <Route path="/it-sales" element={user ? <ITSalesDashboard /> : <Navigate to="/dashboard" replace />} />
               <Route path="/quotations/:id?" element={<QuotationGenerator />} />
               <Route path="/cvs/:id?" element={<CVGenerator />} />
               <Route path="/receipts/:id?" element={<ReceiptGenerator />} />
               <Route path="/history" element={<History />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/admin" element={<NexoraAdmin />} />
+              <Route path="/settings" element={(user?.role === 'admin') ? <Settings /> : <Navigate to="/dashboard" replace />} />
+              <Route path="/admin" element={(user?.role === 'admin') ? <NexoraAdmin /> : <Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </motion.div>
