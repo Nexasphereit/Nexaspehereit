@@ -16,13 +16,14 @@ import {
   Sliders
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { NavLink, useLocation, Link } from 'react-router-dom';
+import { NavLink, useLocation, Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/src/lib/utils';
 import { useTheme } from '../../context/ThemeContext';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
 
 export default function Sidebar() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isToolsOpen, setIsToolsOpen] = useState(false);
   const { settings, toggleDarkMode } = useTheme();
@@ -63,7 +64,7 @@ export default function Sidebar() {
   const handleLogout = async () => {
     localStorage.removeItem('customUser');
     await signOut(auth);
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   const isDocCreationActive = ['/quotations', '/cvs', '/receipts'].some(p => location.pathname.startsWith(p));
