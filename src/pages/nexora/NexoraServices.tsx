@@ -13,94 +13,62 @@ export default function NexoraServices() {
   const [dbServices, setDbServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagesConfig, setPagesConfig] = useState({
-    servicesCapsule: 'OUR SCALE MATRIX',
-    servicesTitle: 'SCALABLE ACQUISITION BLUEPRINTS',
-    servicesSubtitle: 'Each service card details our standard metrics parameters. Explore our 10 primary digital capabilities, or configure special bundles below.',
-    servicesCtaText: 'Enquire Campaign',
+    servicesCapsule: 'ELITE MARKETING SYSTEMS',
+    servicesTitle: 'HIGH-PERFORMANCE DIGITAL ACQUISITION',
+    servicesSubtitle: 'Explore our specialized marketing protocols designed to scale your business. We engineer beautifully persuasive social designs, high-yielding paid ad funnels, and organic search strategies that convert visitors into active customers.',
+    servicesCtaText: 'Launch Campaign',
     servicesCtaLink: '/contact'
   });
 
-  // Core list of 10 designated agency services
+  // Core list of designated agency services focused on Digital Marketing & Creative Growth
   const coreServices = [
+    {
+      id: "social-design",
+      title: "Social Media Post Design",
+      desc: "Premium, visually striking graphic layouts, banners, and interactive carousels for Facebook, Instagram, and LinkedIn designed to tell a beautiful brand story and stop scrolling immediately.",
+      features: ["Custom Post Templates", "Brand Graphics Mastery", "Engaging Carousel Designs"],
+      cat: "Social Presence",
+      color: "#ec4899"
+    },
     {
       id: "fb-ads",
       title: "Facebook Ads",
-      desc: "Architecting elite high-volume social campaigns, custom tracking configurations, and systematic creative testing formats to output maximum qualified acquisition.",
-      features: ["Custom CPA Cap Strategy", "CBO/ABO Scientific Scaling", "UGC Creative Frameworks"],
-      cat: "Paid Acquisition",
+      desc: "Architecting elite high-intent social campaigns with precise custom pixel tracking, target lookup setups, and systematic creative testing to double your brand sales.",
+      features: ["ROI scaling campaigns", "CBO & ABO configuration", "Audience lookalike funnels"],
+      cat: "Paid Campaigns",
       color: "#3b82f6"
     },
     {
+      id: "tiktok-ads",
+      title: "TikTok Ads & Reels",
+      desc: "Drive massive engagement with high-conversion short video layouts, viral hook editing, and gen-z content templates strictly designed to boost product sales.",
+      features: ["3-Second Retentive Hook", "In-App Pixel Calibration", "Viral Sound & Trend Sync"],
+      cat: "Short Video Growth",
+      color: "#06b6d4"
+    },
+    {
       id: "google-ads",
-      title: "Google Ads & PPC",
-      desc: "Maximize high-intent search capture, visual merchant shopping, and Performance Max channels targeted directly at ready-to-purchase prospect cohorts.",
-      features: ["Semantic Intent Bidding", "P-Max Campaign Design", "Structured Asset Optimization"],
-      cat: "Search Capture",
+      title: "Google Ads & PPC Search",
+      desc: "Maximize high-intent search acquisition, smart merchant display feeds, and target keywords to position your business directly in front of active buyers.",
+      features: ["Semantic Intent Targeting", "Performance Max Setup", "Dynamic Search Optimizers"],
+      cat: "Direct Intent Match",
       color: "#ef4444"
     },
     {
       id: "seo",
-      title: "Search Engine Optimization (SEO)",
-      desc: "Gain sustained, authority-dripping organic acquisition. We design programmatic semantic articles, technical schemas, and speed optimization audits.",
-      features: ["Advanced Crawler Tuning", "Thematic Content Architecture", "Bespoke Backlink Blueprinting"],
+      title: "SEO Services",
+      desc: "Sustained website authority through structured semantic content architecture, technical metadata reviews, and ranking parameters to put you at the top of Google.",
+      features: ["High-Authority Keywords", "Speed & Schema Audits", "Programmatic Page Ranks"],
       cat: "Organic Placement",
       color: "#10b981"
     },
     {
-      id: "smm",
-      title: "Social Media Marketing",
-      desc: "Maintain constant narrative presence. We structure multi-platform organic calendars, community response systems, and active social profiles built to engage.",
-      features: ["Dynamic Feed Aesthetics", "Audience Engagement Matrices", "Viral Pattern Hooks"],
-      cat: "Brand Authority",
-      color: "#eab308"
-    },
-    {
-      id: "shopify-design",
-      title: "Shopify Store Design",
-      desc: "Bespoke storefronts styled with high-contrast UI details, speed improvements, and modular shopping mechanics built to double average order value.",
-      features: ["AOV Upgrade Cart Sliders", "Ultra-Light Speed Scores", "Conversion-Optimized Layouts"],
-      cat: "Digital Storefront",
-      color: "#14b8a6"
-    },
-    {
       id: "web-dev",
       title: "Website Development",
-      desc: "Secure, fully typed Next.js and React enterprise sites designed to optimize desktop-to-mobile load intervals and visual interface flows.",
-      features: ["Tailwind & TypeScript Core", "Advanced SEO Semantic Nodes", "Custom API Integrations"],
-      cat: "Full-Stack Tech",
+      desc: "Lightning fast, responsive portfolio sites, sales landing pages, and interactive stores designed with clean code that turn raw visitors into dedicated buyers.",
+      features: ["Tailwind & React Engines", "Mobile Responsive Touchpoints", "Speed Optimization 99+"],
+      cat: "High-Speed Funnels",
       color: "#8b5cf6"
-    },
-    {
-      id: "funnel-building",
-      title: "Funnel Building",
-      desc: "Develop hyper-targeted single product Lander architectures, upsell matrices, checkout redirects, and behavioral abandonment emails.",
-      features: ["Click-Through Rate Spikes", "Dynamic 1-Click Upsells", "Continuous Checkout Audits"],
-      cat: "Conversion Optimization",
-      color: "#ec4899"
-    },
-    {
-      id: "branding",
-      title: "Branding & Visual Language",
-      desc: "Establish your category supremacy. We construct world-class vector branding, color frameworks, standard typographies, and digital guidelines.",
-      features: ["Corporate Identity Guidelines", "Premium Component Outlines", "SVG Icon System Assets"],
-      cat: "Creative Blueprint",
-      color: "#f97316"
-    },
-    {
-      id: "video-editing",
-      title: "Video Editing & Content Ads",
-      desc: "Our creative hook editors forge eye-safe viral hooks, sound layouts, and visual texts strictly matched to stop the user scroll immediately.",
-      features: ["0-3s Retentive Hook Engineering", "Immersive Audio Soundscapes", "UGC Direct Response Editing"],
-      cat: "Creative Production",
-      color: "#06b6d4"
-    },
-    {
-      id: "content-marketing",
-      title: "Content Marketing",
-      desc: "High-value corporate reports, infographics, and technical articles designed to nurture prospects and convert cold searches to premium retainers.",
-      features: ["High-Authority Infographics", "Behavioral Email Nurtures", "Lead Magnet E-Books"],
-      cat: "Inbound Capture",
-      color: "#6366f1"
     }
   ];
 

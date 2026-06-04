@@ -14,56 +14,56 @@ export default function NexoraPortfolio() {
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [pagesConfig, setPagesConfig] = useState({
-    portfolioCapsule: 'OUR HISTORIC ROAS DELIVERY',
+    portfolioCapsule: 'OUR HISTORIC GROWTH STORY',
     portfolioTitle: 'VERIFIED BRAND ACHIEVEMENTS',
-    portfolioSubtitle: 'See the direct, data-driven transformation results of our campaigns. Tap any card below to launch its client feedback details and case summary.'
+    portfolioSubtitle: 'See how we turned confusion into high performance. Click any card below to launch the verified customer story and campaign metrics.'
   });
 
   // Static core campaigns
   const coreProjects = [
     {
       id: "proj-1",
-      title: "Zenith Activewear",
-      cat: "Paid Ads",
-      roas: "6.8x ROAS",
-      before: "$12,400 monthly",
-      after: "$89,500 monthly",
-      feedback: "Nexora completely transformed our visual hooks. We scaled from $12k/mo to nearly six figures in 45 days static.",
-      client: "Sarah Jenkins, Owner",
-      description: "Visual social hook testing & rapid-conversion Shopify Plus scaling campaign."
+      title: "Dhaka Fashion Hub",
+      cat: "Social Design",
+      roas: "4.5x CTR Gain",
+      before: "0.8% Click rate",
+      after: "4.3% Click rate",
+      feedback: "NexaSphere completely handled our custom post layout templates. The new grid color themes and gorgeous ad banners make our products look ultra premium.",
+      client: "Nusrat Jahan, Owner",
+      description: "Custom social media post designs, banner typography, and brand catalog templates."
     },
     {
       id: "proj-2",
-      title: "Hyperion SaaS Platform",
-      cat: "Store Dev",
-      roas: "4.5x Lead Scale",
-      before: "35 leads weekly",
-      after: "160 leads weekly",
-      feedback: "Our user qualification funnel is now fully automated. Leads are highly aligned, making sales close in half the time.",
-      client: "Julian Forrester, CEO",
-      description: "Custom React user capture landing page with predictive CRM score routing."
+      title: "Rokomari Growth Campaign",
+      cat: "Paid Ads",
+      roas: "6.8x Sales Scale",
+      before: "৳৪৮,০০০ per week",
+      after: "৳৩,২০,০০০ per week",
+      feedback: "Their Facebook & TikTok direct response campaigns changed our business. Their audio-aligned visual video hooks delivered a massive flow of automated leads.",
+      client: "Sumit Saha, Campaign Lead",
+      description: "Facebook Ads, viral TikTok video hooks, and CBO multi-tier acquisition funnels."
     },
     {
       id: "proj-3",
-      title: "Verdant Skincare Bundle",
-      cat: "Brand Strategy",
-      roas: "5.2x Conversion Gain",
-      before: "1.2% Conversion Rate",
-      after: "3.9% Conversion Rate",
-      feedback: "The speed upgrade of the cart and typography makeover paid for the entire Nexora retainer in its first week.",
-      client: "Anya Vlasic, Marketing Head",
-      description: "Aesthetic branding makeover and speed optimization program."
+      title: "Chaldal Grocery SEO",
+      cat: "SEO & Code",
+      roas: "5.2x Organic Boost",
+      before: "3,200 search visitors",
+      after: "21,500 search visitors",
+      feedback: "Our page now ranks at the absolute top of major Google Search queries. They completely rebuilt our layout for responsive mobile speeds.",
+      client: "Shafiqul Alam, Director",
+      description: "Google SEO services, structured schemas, semantic indexing, and fast Website Development."
     },
     {
       id: "proj-4",
-      title: "Luna Sleep Ring",
+      title: "Seba Care Brand Ads",
       cat: "Paid Ads",
-      roas: "7.1x ROAS",
-      before: "1.9x ROAS",
-      after: "7.1x ROAS",
-      feedback: "Unrivaled direct-response UGC hooks. Our CPM dropped 40% immediately.",
-      client: "Marcus Aurel, VP of Growth",
-      description: "Direct-response micro-video UGC campaign configuration."
+      roas: "7.1x Click Growth",
+      before: "৳১,২০,০০০ spent with low sales",
+      after: "৳৮,৫০,০০০ revenue captured",
+      feedback: "Unrivaled direct-response strategy. Their Google Ads Display network integration and customer audience setups converted confused traffic into real orders.",
+      client: "Imran Hasan, Director",
+      description: "Google Ads, Google Merchant display setups, and targeted Facebook ads."
     }
   ];
 
@@ -120,7 +120,7 @@ export default function NexoraPortfolio() {
 
         {/* Filter Toolbar */}
         <section className="flex flex-wrap items-center justify-center gap-3">
-          {['All', 'Paid Ads', 'Store Dev', 'Brand Strategy'].map((filter) => (
+          {['All', 'Paid Ads', 'Social Design', 'SEO & Code'].map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}

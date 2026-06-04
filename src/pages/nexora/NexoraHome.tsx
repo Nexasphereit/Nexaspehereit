@@ -27,16 +27,22 @@ export default function NexoraHome() {
     const backup = localStorage.getItem('nexora_hero_backup');
     if (backup) {
       try {
-        return JSON.parse(backup);
+        const parsed = JSON.parse(backup);
+        // Ensure we force marketing-focused content by default if user hasn't explicitly customized it
+        if (parsed.headline && parsed.headline.includes("WEBSITES") && !parsed.headline.includes("MARKETING")) {
+          localStorage.removeItem('nexora_hero_backup');
+        } else {
+          return parsed;
+        }
       } catch (e) {
         // Fallback to defaults
       }
     }
     return {
-      floatingCapsule: "NEXASPHERE WORLD-CLASS CREATIVE AGENCY",
-      headline: "WE BUILD BEAUTIFUL WEBSITES",
-      subGradient: "AND GROW YOUR ONLINE BRAND",
-      subtitle: "We are a friendly, highly skilled team of programmers, creative designers, and digital marketers. We create high-speed web systems and run social media campaigns to increase your sales.",
+      floatingCapsule: "NEXASPHERE ELITE DIGITAL MARKETING & ACQUISITION HUB",
+      headline: "WE GROW YOUR ONLINE BUSINESS",
+      subGradient: "WITH STRATEGIC PAID ADS & DESIGN",
+      subtitle: "Stop losing valuable buyers to confusing, slow designs. We design highly clickable social media posts, run high-converting Facebook, TikTok, & Google ad campaigns, optimize local search SEO, and build fast sales landing pages that multiply your daily checkouts.",
       ctaPrimary: "Get Free Consultation",
       ctaSecondary: "View Our Services",
       featureImage: "/src/assets/images/shakhawat_portrait_1780314607048.png"
@@ -96,29 +102,29 @@ export default function NexoraHome() {
   const defaultHomeHighlights = [
     {
       id: 'mock_news_1',
-      title: 'Collaborative Expansion Sealed with Shajgoj Brands',
+      title: 'Scaling Local Cosmetics Brand with Meta Campaign Design',
       type: 'news',
-      content: 'We have officially finalized our technical multi-channel cloud engine with Shajgoj. This optimization streamlines their localized cosmetics checkout pipelines, improving total ROAS ratio by 18%. The full campaign pipeline is scheduled for a live daily broadcast shortly.',
+      content: 'We drafted a high-impact creative framework for a leading local beauty brand, creating 15 customized post designs and high-converting Meta target funnels. Average click-through rates spiked by 4.2x, causing an incremental 35% ROAS increase within the first 14 days of activation.',
       dateString: '2026-06-02',
-      badgeText: 'HOT UPDATE',
+      badgeText: 'ROAS METRIC BOOSTER',
       mediaUrl: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=600&q=80'
     },
     {
       id: 'mock_ach_1',
-      title: 'Recognized as Top Enterprise Cloud IT Agency in South Asia',
+      title: 'Voted #1 Results-Driven Digital Growth Team in Dhaka',
       type: 'achievement',
-      content: 'NexaSphere IT has been awarded the prestigious "High-Growth IT System Integrator Award" at the Regional Tech Gala 2026. This monumental achievement goes out to our incredible localized partners—Sikho, Seba, Chaldal, and PriyoShop.',
+      content: 'NexaSphere has been awarded the "Premium Digital Innovation Award 2026" for our high-converting TikTok campaigns and responsive landing pages. By focusing on direct audience response and beautiful designs instead of complex unneeded developer-only code, we delivered over 450,000 active sales leads to our partners.',
       dateString: '2026-06-01',
-      badgeText: 'FUTURE ACHIEVED',
-      mediaUrl: 'https://images.unsplash.com/photo-1531545514256-b1400bc00f31?auto=format&fit=crop&w=600&q=80'
+      badgeText: 'AGENCY LEADERSHIP',
+      mediaUrl: 'https://images.unsplash.com/photo-1542744094-3a31f103e35f?auto=format&fit=crop&w=600&q=80'
     },
     {
       id: 'mock_vid_1',
-      title: 'Inside PriyoShop: Replatforming Bangladesh Retail Commerce',
+      title: 'The Blueprint: Stop User Scrolling Under 3 Seconds',
       type: 'video_post',
-      content: 'Watch how our unified document automation engine, NexaSphere, drives invoice dispatch efficiency for PriyoShop. In this interview, their lead operations supervisor explains how migrating metadata servers achieved a 35% performance booster.',
+      content: 'Watch Asaduzzaman Tohin and Nurnnabi Nobi unpack our exclusive 2026 hook formula. In this walkthrough, we explain how using custom TikTok sound-scaffolded visual edits and structured high-contrast layouts can double instant consumer interest on mobile feeds.',
       dateString: '2026-05-30',
-      badgeText: 'CAMPAIGN REVELATION',
+      badgeText: 'CREATIVE MASTERCLASS',
       mediaUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80'
     }
   ];
@@ -320,12 +326,12 @@ export default function NexoraHome() {
   ];
 
   const defaultServices = [
-    { title: "Beautiful Web Design", desc: "Fast, stylish, and premium websites built with easy controls to capture customers on mobile and computers.", icon: Layout, cat: "Custom Websites" },
-    { title: "Digital Ads & Growth", desc: "Profitable marketing campaigns on Facebook, Google, and YouTube to show your brand to millions of buyers.", icon: TrendingUp, cat: "Paid Campaigns" },
-    { title: "Motion Graphics & Promo Videos", desc: "Exciting, premium animated promotional videos and reels that make your brand stand out instantly.", icon: Video, cat: "Video Editing" },
-    { title: "Branding & Creative Design", desc: "Modern corporate logos, visual graphics, color palettes, and brochures designed to look premium.", icon: Edit3, cat: "Visual Identity" },
-    { title: "Search Engine Optimization (SEO)", desc: "Help your business show up at the very top of Google Search results so customers can find you first.", icon: Globe, cat: "Organic Traffic" },
-    { title: "Smarter Business Platforms", desc: "Build backend billing tools, inventory systems, and easy custom web consoles tailored to your workplace.", icon: Lock, cat: "Software Systems" }
+    { title: "Social Media Post Design", desc: "Striking visual graphic templates, banner layouts, and scroll-stopping carousels custom-made to elevate your social channels.", icon: Edit3, cat: "Social Presence" },
+    { title: "Facebook Ads Campaigning", desc: "Precision-engineered target demographics, pixel tracking, and ABO/CBO scaling campaigns to instantly multiply your sales leads.", icon: TrendingUp, cat: "Meta Ad Suites" },
+    { title: "TikTok Ads & short Reels", desc: "Short-form direct-response video campaigns, creative hook timings, and trend-focused stories built to capture mobile shoppers.", icon: Video, cat: "Gen-Z Reach" },
+    { title: "Google Ads & PPC Search", desc: "Position your brand directly at the top of Google Search query lines when high-intent buyers are looking for you.", icon: Target, cat: "High-Intent Capture" },
+    { title: "Search Engine Optimization", desc: "Structured semantic blogging, technical schema layouts, and speed optimization audits to dominate organical page rankings.", icon: Globe, cat: "Organic Traffic" },
+    { title: "High-Converting Web Systems", desc: "Fast-loading landing pages, modern sales funnels, and responsive online stores built with standard codes to capture leads.", icon: Layout, cat: "Lead Gen Sites" }
   ];
 
   useEffect(() => {

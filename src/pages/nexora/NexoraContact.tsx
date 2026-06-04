@@ -30,10 +30,10 @@ export default function NexoraContact() {
   }, []);
 
   const [pagesConfig, setPagesConfig] = useState({
-    contactCapsule: 'SECURE SYSTEM ALLOCATION',
-    contactTitle: 'INITIAL CORE STRATEGY DEBIEF',
-    contactSubtitle: "Let's build your multi-million scaling blueprint. Complete our target parameters form and our lead marketing architects will execute a custom ROAS analysis within 24 hours.",
-    contactCtaText: 'Authorize strategy request'
+    contactCapsule: 'START YOUR GROWTH CAMPAIGN',
+    contactTitle: 'LET\'S SCALE YOUR BUSINESS',
+    contactSubtitle: "Stop struggling with low conversion rates or confusing campaign setups. Tell us your goals, and our friendly growth team will design a beautiful, high-performance plan within 24 hours.",
+    contactCtaText: 'Send Growth Request'
   });
 
   const [form, setForm] = useState({
@@ -41,7 +41,7 @@ export default function NexoraContact() {
     email: '',
     company: '',
     phone: '',
-    budget: '$5,000 - $10,000',
+    budget: '$5,000 - $10,000 monthly',
     service: initialService,
     plan: initialPlan,
     message: ''
@@ -49,6 +49,8 @@ export default function NexoraContact() {
 
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isCustom, setIsCustom] = useState(false);
+  const [customBudget, setCustomBudget] = useState('');
 
   useEffect(() => {
     // Sync query parameters if page re-routes
@@ -160,22 +162,22 @@ export default function NexoraContact() {
             <form onSubmit={submitContact} className="bg-slate-950/50 border border-white/[0.05] p-8 lg:p-12 rounded-[2.5rem] space-y-6 relative">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">CORPORATE NAME *</label>
+                  <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">YOUR FULL NAME *</label>
                   <input
                     type="text"
                     required
-                    placeholder="E.g. Julian Sterling"
+                    placeholder="E.g. Md. Shakhawat Hossain"
                     value={form.name}
                     onChange={(e) => setForm({...form, name: e.target.value})}
                     className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-semibold focus:border-indigo-500 outline-none text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">CORPORATE EMAIL *</label>
+                  <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">YOUR EMAIL ADDRESS *</label>
                   <input
                     type="email"
                     required
-                    placeholder="E.g. sterling@company.com"
+                    placeholder="E.g. shakhawat@example.com"
                     value={form.email}
                     onChange={(e) => setForm({...form, email: e.target.value})}
                     className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-semibold focus:border-indigo-500 outline-none text-white"
@@ -185,20 +187,20 @@ export default function NexoraContact() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">COMPANY WEBSITE / LINK</label>
+                  <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">WEBSITE OR SOCIAL PAGE LINK</label>
                   <input
                     type="text"
-                    placeholder="E.g. zenithwear.com"
+                    placeholder="E.g. facebook.com/yourbrand"
                     value={form.company}
                     onChange={(e) => setForm({...form, company: e.target.value})}
                     className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-semibold focus:border-indigo-500 outline-none text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">CORPORATE PHONE</label>
+                  <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">YOUR PHONE / WHATSAPP NUMBER</label>
                   <input
                     type="text"
-                    placeholder="E.g. +1 (555) 0192"
+                    placeholder="E.g. +880 1712-XXXXXX"
                     value={form.phone}
                     onChange={(e) => setForm({...form, phone: e.target.value})}
                     className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-semibold focus:border-indigo-500 outline-none text-white"
@@ -208,23 +210,50 @@ export default function NexoraContact() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">MONTHLY AD SPEND CAP</label>
+                  <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">MONTHLY AD CAMPAIGN BUDGET</label>
                   <select
-                    value={form.budget}
-                    onChange={(e) => setForm({...form, budget: e.target.value})}
-                    className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-semibold focus:border-indigo-500 outline-none text-white appearance-none"
+                    value={isCustom ? 'custom' : form.budget}
+                    onChange={(e) => {
+                      if (e.target.value === 'custom') {
+                        setIsCustom(true);
+                        setForm({...form, budget: customBudget ? `$${customBudget} monthly` : 'Custom Amount'});
+                      } else {
+                        setIsCustom(false);
+                        setForm({...form, budget: e.target.value});
+                      }
+                    }}
+                    className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-semibold focus:border-indigo-500 outline-none text-white focus:ring-1 focus:ring-indigo-500"
                   >
-                    <option value="$2,000 - $5,000">$2,000 - $5,000 monthly</option>
-                    <option value="$5,000 - $10,000">$5,000 - $10,000 monthly</option>
-                    <option value="$10,000 - $25,000">$10,000 - $25,000 monthly</option>
-                    <option value="$25,000+">$25,000+ monthly</option>
+                    <option value="Under $1,000 monthly">Under $1,000 monthly</option>
+                    <option value="$1,000 - $3,000 monthly">$1,000 - $3,000 monthly</option>
+                    <option value="$3,000 - $7,000 monthly">$3,000 - $7,000 monthly</option>
+                    <option value="$7,000 - $15,000 monthly">$7,000 - $15,000 monthly</option>
+                    <option value="$15,000+ monthly">$15,000+ monthly</option>
+                    <option value="custom">Custom Budget (Type Below)...</option>
                   </select>
+
+                  {isCustom && (
+                    <div className="mt-2 text-xs flex items-center gap-2 animate-fade-in">
+                      <span className="font-mono text-xs text-indigo-400 font-bold">$</span>
+                      <input
+                        type="text"
+                        placeholder="Enter custom budget (e.g. 12,500)"
+                        value={customBudget}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomBudget(val);
+                          setForm({...form, budget: `$${val} monthly`});
+                        }}
+                        className="w-full bg-[#03030c] border border-indigo-550/30 rounded-xl py-2 px-3 text-xs font-semibold focus:border-indigo-500 outline-none text-white"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">SERVICE OF INTEREST</label>
                   <input
                     type="text"
-                    placeholder="E.g. Facebook Ads"
+                    placeholder="E.g. Facebook Ads, SEO, Post Design"
                     value={form.service}
                     onChange={(e) => setForm({...form, service: e.target.value})}
                     className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-semibold focus:border-indigo-500 outline-none text-white"
@@ -245,11 +274,11 @@ export default function NexoraContact() {
               )}
 
               <div className="space-y-2">
-                <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">METRICS PAIN BRIEF *</label>
+                <label className="text-[9px] font-mono font-black uppercase tracking-widest text-slate-400">HOW CAN WE HELP YOU GROW? *</label>
                 <textarea
                   required
                   rows={4}
-                  placeholder="Outline your current CAC, CPA boundaries, or conversion gaps..."
+                  placeholder="Tell us about your brand or products, and what marketing objectives you want to achieve..."
                   value={form.message}
                   onChange={(e) => setForm({...form, message: e.target.value})}
                   className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-semibold focus:border-indigo-500 outline-none text-white resize-none"

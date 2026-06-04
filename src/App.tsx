@@ -18,6 +18,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import Login from './pages/Login';
 import { GalaxyBackground } from './components/common/GalaxyBackground';
 import { Sparkles, Phone, Mail, MapPin } from 'lucide-react';
+import MessengerWidget from './components/common/MessengerWidget';
 
 // Nexora Digital agency pages
 import NexoraHeader from './components/nexora/NexoraHeader';
@@ -349,6 +350,7 @@ function AppContent() {
           </div>
         </div>
         <NexoraFooter />
+        <MessengerWidget />
         <Toaster position="bottom-right" />
         {renderGlobalOverlays()}
       </div>
@@ -408,6 +410,7 @@ function AppContent() {
         </main>
         
         <NexoraFooter />
+        <MessengerWidget />
         <Toaster position="bottom-right" />
         {renderGlobalOverlays()}
       </div>

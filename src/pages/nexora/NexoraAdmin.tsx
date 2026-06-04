@@ -16,12 +16,46 @@ import { toast } from 'react-hot-toast';
 import { useTheme } from '../../context/ThemeContext';
 import { ImageUpload } from '../../components/common/UI';
 
+const matchSpecialistForService = (serviceName: string) => {
+  const s = (serviceName || '').toLowerCase();
+  if (s.includes('ad') || s.includes('meta') || s.includes('facebook') || s.includes('tiktok') || s.includes('google') || s.includes('marketing') || s.includes('sales')) {
+    return {
+      name: "Asaduzzaman Tohin / Nur Hasan",
+      role: "Growth Architects & Paid Ad Experts",
+      avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=80&h=80&q=80",
+      reason: "Meta Blueprint Certified strategy & scalable conversion loops"
+    };
+  } else if (s.includes('design') || s.includes('graphic') || s.includes('banner') || s.includes('logo') || s.includes('video') || s.includes('post') || s.includes('creative') || s.includes('visual')) {
+    return {
+      name: "Nurnnabi Nobi",
+      role: "Graphics & Motion Lead Artist",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&h=80&q=80",
+      reason: "Scroll-stopping promotional reels and vector corporate typography"
+    };
+  } else if (s.includes('seo') || s.includes('code') || s.includes('site') || s.includes('web') || s.includes('developer') || s.includes('funnel') || s.includes('react') || s.includes('shopify')) {
+    return {
+      name: "Hamim Rahman",
+      role: "Web Design & Development Lead",
+      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=80&h=80&q=80",
+      reason: "Next-gen secure web frameworks, analytics pixels & sub-second loads"
+    };
+  } else {
+    return {
+      name: "Md. Shakhawat Hossain",
+      role: "Founder & CEO",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&h=80&q=80",
+      reason: "General strategic direction, high quality assurance and oversight"
+    };
+  }
+};
+
 export default function NexoraAdmin() {
   const { settings, updateSettings } = useTheme();
   const userRole = (auth.currentUser as any)?.role || 'guest';
   const isAdmin = userRole === 'admin' || userRole === 'guest';
 
-  const [activeTab, setActiveTab] = useState<'leads' | 'ads' | 'services' | 'blogs' | 'customizer' | 'updates'>('leads');
+  const [activeTab, setActiveTab] = useState<'leads' | 'inbox' | 'ads' | 'services' | 'blogs' | 'customizer' | 'updates'>('leads');
+  const [selectedMailId, setSelectedMailId] = useState<string | null>(null);
   
   // Real Firestore States
   const [leads, setLeads] = useState<any[]>([]);
@@ -1184,8 +1218,9 @@ export default function NexoraAdmin() {
         {/* Tab Selection Toolbar */}
         <div className="flex border-b border-white/[0.05] gap-4 overflow-x-auto">
           {[
-            { id: 'leads', label: 'Leads & Messages Hub', icon: FolderHeart },
-            { id: 'ads', label: 'SeedTest Ads (Multiple Rows)', icon: Sliders },
+            { id: 'leads', label: 'Order Desk', icon: FolderHeart },
+            { id: 'inbox', label: '📧 Gmail Inbox Simulation (gwhasu@gmail.com)', icon: Mail },
+            { id: 'ads', label: 'SeedTest Ads', icon: Sliders },
             { id: 'services', label: 'Services Catalogue', icon: LibrarySquare },
             { id: 'blogs', label: 'Blogs Seeder Portal', icon: FileText },
             { id: 'updates', label: 'News & Portal updates', icon: Sparkles },
@@ -1216,50 +1251,295 @@ export default function NexoraAdmin() {
           {activeTab === 'leads' && (
             <div className="space-y-8">
               <div className="space-y-1">
-                <h3 className="text-lg font-black uppercase italic tracking-tight text-white">PROSPECT SUBMISSIONS LEDGER</h3>
-                <p className="text-slate-450 text-[11px] font-semibold italic">These leads and corporate messages were received directly from the front-facing landing page form.</p>
+                <h3 className="text-lg font-black uppercase italic tracking-tight text-white">PROSPECT SUBMISSIONS & ORDER DESK</h3>
+                <p className="text-slate-450 text-[11px] font-semibold italic">These queries and campaign scopes were received directly from the front landing page contact portal.</p>
               </div>
 
-              <div className="space-y-4">
-                {leads.map((l) => (
-                  <div key={l.id} className="p-6 bg-slate-950/80 border border-white/[0.05] rounded-3xl relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-mono font-black uppercase tracking-widest px-2.5 py-0.5 rounded bg-indigo-550/10 text-indigo-400 border border-indigo-550/20">
-                          {l.status}
-                        </span>
-                        <h4 className="text-md font-black uppercase">{l.name}</h4>
-                        <span className="text-[10px] font-mono text-slate-500">{l.company}</span>
-                      </div>
-                      <p className="text-[#94a3b8] text-xs font-semibold italic">Budget: {l.budget} | Phone: {l.phone} | Email: {l.email}</p>
-                      <p className="text-slate-300 text-xs italic bg-white/[0.02] p-4.5 rounded-xl border border-white/[0.03] mt-2 font-medium leading-relaxed">
-                        "{l.message}"
-                      </p>
-                    </div>
+              <div className="space-y-6">
+                {leads.map((l) => {
+                  const matchedSpec = matchSpecialistForService(l.service || '');
+                  return (
+                    <div key={l.id} className="p-6 bg-slate-950/80 border border-white/[0.05] rounded-3xl relative flex flex-col md:flex-row justify-between items-start gap-6 transition-all hover:border-indigo-500/25">
+                      <div className="space-y-3 flex-1 text-left">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="text-[9px] font-mono font-black uppercase tracking-widest px-2.5 py-0.5 rounded bg-indigo-550/10 text-indigo-400 border border-indigo-550/20">
+                            {l.status}
+                          </span>
+                          <h4 className="text-md font-black uppercase text-white">{l.name}</h4>
+                          {l.company && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.08] text-slate-400">
+                              {l.company}
+                            </span>
+                          )}
+                          <span className="text-[10px] font-mono bg-indigo-950/40 text-indigo-300 font-semibold px-2 py-0.5 rounded border border-indigo-500/10">
+                            Target: {l.service || "General Strategy"}
+                          </span>
+                        </div>
+                        
+                        <p className="text-[#94a3b8] text-xs font-semibold">
+                          💰 Campaign Budget: <span className="text-emerald-400 font-black">{l.budget || "Unspecified"}</span> | 📞 Phone: <span className="font-mono text-slate-200">{l.phone || "N/A"}</span> | 📧 Email: <span className="font-mono text-indigo-400">{l.email}</span>
+                        </p>
+                        
+                        <div className="text-slate-300 text-xs italic bg-white/[0.015] p-4 rounded-2xl border border-white/[0.03] leading-relaxed relative">
+                          <span className="text-[8px] font-mono font-black text-indigo-500 uppercase tracking-widest block mb-1">CLIENT INQUIRY & DEMAND PARTICULARS:</span>
+                          "{l.message}"
+                        </div>
 
-                    <div className="flex gap-2.5 shrink-0 self-end md:self-center">
-                      <button 
-                        onClick={() => updateLeadStatus(l.id, l.status === 'New' ? 'Nurtured' : 'Closed')}
-                        className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors"
-                      >
-                        Shift status
-                      </button>
-                      <button 
-                        onClick={() => handleLeadDelete(l.id)}
-                        className="p-2.5 bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-white rounded-xl transition-all border border-rose-500/15"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                        {/* Automated expert pairing node */}
+                        <div className="p-4 bg-indigo-950/25 border border-indigo-500/15 rounded-2xl flex items-center gap-3.5 mt-3">
+                          <img 
+                            src={matchedSpec.avatar} 
+                            alt={matchedSpec.name} 
+                            className="w-10 h-10 object-cover rounded-xl border border-white/[0.1] shrink-0"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="space-y-0.5 text-left">
+                            <span className="text-[7.5px] font-mono font-black text-indigo-450 uppercase tracking-widest block">Automated Campaign Assignment (Who can do what?)</span>
+                            <p className="text-xs font-black text-white">{matchedSpec.name}</p>
+                            <p className="text-[10px] text-indigo-300 font-semibold italic">{matchedSpec.role} — <span className="text-slate-400 font-normal">"{matchedSpec.reason}"</span></p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex md:flex-col gap-2.5 shrink-0 self-end md:self-center">
+                        <button 
+                          onClick={() => updateLeadStatus(l.id, l.status === 'New' ? 'Nurtured' : 'Closed')}
+                          className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all uppercase cursor-pointer"
+                        >
+                          Shift status
+                        </button>
+                        <button 
+                          onClick={() => handleLeadDelete(l.id)}
+                          className="p-2.5 bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-white rounded-xl transition-all border border-rose-500/15 cursor-pointer"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {leads.length === 0 && (
-                  <div className="text-center py-12">
+                  <div className="text-center py-12 bg-slate-950/50 rounded-3xl border border-dashed border-white/[0.06]">
                     <AlertCircle className="mx-auto w-8 h-8 text-indigo-400 mb-2 animate-bounce" />
-                    <p className="text-xs text-slate-500 italic font-semibold">No prospects added. Try messaging via the contact portal!</p>
+                    <p className="text-xs text-slate-450 italic font-semibold">No prospects added yet. Go ahead and submit a strategy form via the contact page!</p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 1.5: Simulated Gmail inbox for gwhasu@gmail.com */}
+          {activeTab === 'inbox' && (
+            <div className="space-y-6">
+              {/* Inbox simulated header bar */}
+              <div className="bg-[#1a050d]/80 border border-red-500/15 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-650/10 border border-red-600/20 text-red-500 rounded-xl">
+                    <Mail size={20} />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-[8px] font-mono font-black text-red-400 uppercase tracking-widest block">SECURED TRANSMITTAL FEED</span>
+                    <h3 className="text-md font-black text-white">Gmail Admin Hub Sim (<span className="text-red-400">gwhasu@gmail.com</span>)</h3>
+                  </div>
+                </div>
+                <div className="text-xs font-mono font-semibold px-3 py-1 rounded bg-emerald-500/10 border border-emerald-500/25 text-emerald-450 flex items-center gap-1.5 animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> SECURE SMTP STREAM
+                </div>
+              </div>
+
+              {/* simulated email split screen */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch min-h-[450px]">
+                {/* Left Mini-Sidebar (3 cols) */}
+                <div className="lg:col-span-3 bg-[#050510]/80 border border-white/[0.04] p-4 rounded-2xl flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <button className="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white font-black uppercase text-[10px] tracking-widest rounded-xl transition-all cursor-not-allowed">
+                      + Compose Message
+                    </button>
+                    <nav className="space-y-1 text-xs">
+                      {[
+                        { label: 'Inbox', count: leads.length, active: true },
+                        { label: 'Starred', count: 0, active: false },
+                        { label: 'Snoozed', count: 0, active: false },
+                        { label: 'Sent Alert Transcripts', count: leads.length, active: false },
+                        { label: 'Trash', count: 0, active: false }
+                      ].map((sub, idx) => (
+                        <div 
+                          key={idx} 
+                          className={`flex justify-between items-center px-3 py-2 rounded-xl font-bold transition-all ${
+                            sub.active 
+                              ? 'bg-red-650/10 text-red-400 border border-red-500/15' 
+                              : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
+                          }`}
+                        >
+                          <span className="font-semibold">{sub.label}</span>
+                          {sub.count > 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px] font-mono font-black">{sub.count}</span>
+                          )}
+                        </div>
+                      ))}
+                    </nav>
+                  </div>
+                  <div className="p-3 bg-red-600/[0.02] border border-red-500/10 rounded-xl text-center text-[9px] text-slate-500 font-mono italic">
+                    All incoming landing leads bypass standard filters and route directly to <span className="text-slate-400">gwhasu@gmail.com</span>.
+                  </div>
+                </div>
+
+                {/* Center Mailbox list (4 cols) */}
+                <div className="lg:col-span-4 bg-[#03030b] border border-white/[0.04] p-3 rounded-2xl flex flex-col space-y-2 overflow-y-auto max-h-[500px]">
+                  <span className="text-[8px] font-mono font-black text-slate-500 tracking-wider uppercase block pb-1 border-b border-white/[0.03] text-left">
+                    Direct Campaign Mail Ledger
+                  </span>
+
+                  {leads.map((l, index) => {
+                    const isNew = l.status === 'New';
+                    const isSelected = selectedMailId === l.id || (!selectedMailId && index === 0);
+                    if (!selectedMailId && index === 0 && !selectedMailId) {
+                      // default selection
+                    }
+                    return (
+                      <button
+                        key={l.id}
+                        type="button"
+                        onClick={() => setSelectedMailId(l.id)}
+                        className={`w-full text-left p-3.5 rounded-xl border transition-all flex flex-col gap-1 cursor-pointer ${
+                          isSelected
+                            ? 'bg-red-950/20 border-red-600/30'
+                            : isNew
+                              ? 'bg-[#0a0715]/90 border-indigo-500/20 hover:border-indigo-500/30'
+                              : 'bg-white/[0.015] border-white/[0.04] hover:bg-white/[0.03]'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-black text-white truncate max-w-[120px]">{l.name}</span>
+                          <span className="text-[8px] font-mono text-slate-500">Just Now</span>
+                        </div>
+                        <p className={`text-[10px] truncate ${isNew ? 'text-indigo-300 font-bold' : 'text-slate-400'}`}>
+                          {l.service || 'Omni CRM Consulting'}
+                        </p>
+                        <p className="text-[9.5px] text-slate-500 italic truncate italic max-w-[170px]">
+                          "{l.message}"
+                        </p>
+                        <div className="flex gap-1.5 mt-1">
+                          <span className="text-[7.5px] font-mono bg-emerald-500/10 text-emerald-450 border border-emerald-500/20 px-1 py-0.5 rounded">
+                            {l.budget}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+
+                  {leads.length === 0 && (
+                    <div className="text-center py-12 text-slate-500 italic text-[11px] font-semibold">
+                      Your inbox simulation is currently clear.
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Mail detail envelope (5 cols) */}
+                <div className="lg:col-span-5 bg-[#050512] border border-white/[0.04] p-5 rounded-2xl flex flex-col justify-between max-h-[500px] overflow-y-auto">
+                  {(() => {
+                    const activeMail = leads.find(l => l.id === selectedMailId) || leads[0];
+                    if (!activeMail) {
+                      return (
+                        <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 text-xs py-12">
+                          <Mail className="w-10 h-10 text-slate-650 animate-pulse mb-2" />
+                          <p>Select an incoming transmittal envelope from your mailing ledger to see its fully formatted data.</p>
+                        </div>
+                      );
+                    }
+                    const matchedSpec = matchSpecialistForService(activeMail.service || '');
+                    return (
+                      <div className="space-y-5 text-left h-full flex flex-col justify-between">
+                        <div className="space-y-4">
+                          {/* Subject Header */}
+                          <div className="border-b border-white/[0.05] pb-3 space-y-1">
+                            <span className="text-[8px] px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full font-mono font-black border border-red-500/20 uppercase tracking-widest inline-block mb-1">
+                              LANDING LEAD TRANSCRIPT
+                            </span>
+                            <h4 className="text-sm font-black text-white uppercase italic tracking-tight">
+                              Fwd: [System Inbound Alert] - Strategic Growth requested by {activeMail.name}
+                            </h4>
+                          </div>
+
+                          {/* Sender/Receiver Meta */}
+                          <div className="text-[10px] space-y-1 bg-white/[0.015] p-3 rounded-xl border border-white/[0.03] font-mono leading-relaxed">
+                            <p className="text-slate-350 font-semibold"><span className="text-slate-500">From:</span> "{activeMail.name}" &lt;{activeMail.email}&gt;</p>
+                            <p className="text-slate-350 font-semibold"><span className="text-slate-500">To:</span> &lt;gwhasu@gmail.com&gt;</p>
+                            <p className="text-slate-500"><span className="text-slate-500">Date:</span> Just Now (Transferred via Firestore DB secure webhook)</p>
+                          </div>
+
+                          {/* Email Body */}
+                          <div className="p-4 bg-slate-950 border border-white/[0.03] rounded-2xl relative space-y-4 text-xs font-semibold leading-relaxed">
+                            <p className="text-slate-300 font-medium">Hello Admin Team,</p>
+                            <p className="text-indigo-200">A brand new customer inquiry has hit the landing page. Here is the validated payload structure parsed for immediate evaluation:</p>
+                            
+                            {/* Structured Payload list */}
+                            <div className="space-y-1.5 pt-1 text-[11px] border-t border-b border-white/[0.04] py-3 text-left">
+                              <div className="grid grid-cols-3 gap-2 py-0.5">
+                                <span className="text-slate-500 uppercase font-mono font-bold text-[8.5px]">PROPOSAL NAME:</span>
+                                <span className="col-span-2 text-white font-black">{activeMail.name}</span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 py-0.5">
+                                <span className="text-slate-500 uppercase font-mono font-bold text-[8.5px]">COMPANY / BRANDTag:</span>
+                                <span className="col-span-2 text-slate-200">{activeMail.company || "Personal Brand / Direct Partner"}</span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 py-0.5">
+                                <span className="text-slate-500 uppercase font-mono font-bold text-[8.5px]">CUSTOM BUDGET:</span>
+                                <span className="col-span-2 text-emerald-450 font-black">{activeMail.budget}</span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 py-0.5">
+                                <span className="text-slate-500 uppercase font-mono font-bold text-[8.5px]">PHONE / CHANNELS:</span>
+                                <span className="col-span-2 font-mono text-indigo-300">{activeMail.phone || "N/A"}</span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 py-0.5">
+                                <span className="text-slate-500 uppercase font-mono font-bold text-[8.5px]">REQUEST SERVICE:</span>
+                                <span className="col-span-2 text-[#cbd5e1]">{activeMail.service || "Growth Pipeline audit"}</span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/[0.03]">
+                                <span className="text-slate-500 uppercase font-mono font-bold text-[8.5px] block">DEMAND SPECS:</span>
+                                <p className="col-span-2 text-slate-300 italic font-medium leading-relaxed">
+                                  "{activeMail.message}"
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Specialist block inside email simulation */}
+                            <div className="p-3 bg-red-500/[0.02] border border-red-500/10 rounded-xl space-y-1.5">
+                              <span className="text-[7.5px] font-mono font-black text-red-400 uppercase tracking-widest block">System Expert Allocator Recommended Assignment</span>
+                              <div className="flex items-center gap-3">
+                                <img src={matchedSpec.avatar} alt={matchedSpec.name} className="w-8 h-8 rounded-lg object-cover border border-white/[0.05]" referrerPolicy="no-referrer" />
+                                <div>
+                                  <p className="text-[11px] font-black text-white">{matchedSpec.name}</p>
+                                  <p className="text-[9px] text-[#94a3b8]">{matchedSpec.role}</p>
+                                </div>
+                              </div>
+                              <p className="text-[8.5px] text-slate-500 font-mono italic leading-normal">
+                                Match Reason: "{matchedSpec.reason}"
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Mark processed buttons */}
+                        <div className="pt-3 border-t border-white/[0.04] flex items-center justify-between">
+                          <span className="text-[8.5px] text-slate-500 font-mono">
+                            Delivered securely to inbox
+                          </span>
+                          <button
+                            onClick={() => {
+                              updateLeadStatus(activeMail.id, activeMail.status === 'New' ? 'Nurtured' : 'Closed');
+                              toast.success(`Campaign status shifted to ${activeMail.status === 'New' ? 'Nurtured' : 'Closed'} inside simulation!`);
+                            }}
+                            className="px-4 py-2 bg-red-650 hover:bg-red-500 text-white text-[9.5px] font-black tracking-widest uppercase rounded-xl transition-all cursor-pointer"
+                          >
+                            Proceed / Match Assignment
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
           )}

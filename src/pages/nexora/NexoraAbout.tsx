@@ -15,12 +15,12 @@ export default function NexoraAbout() {
       }
     }
     return {
-      storyTitle: "SCALING THE DIGITAL FUTURE",
-      storySubtitle: "Founded with the belief that digital campaigns should be mathematically rigorous, NexaSphere It has scaled from a boutique local optimization team into a fully connected international advertising powerhub.",
-      missionTitle: "OUR MISSION BLUEPRINT",
-      missionDesc: "Our absolute objective is to secure unmatched client profitability through bulletproof analytics, preternatural ad copy hook optimization, and high-speed checkout experience builds. We eliminate useless spending to optimize metrics that translate into actual revenue growth.",
-      visionTitle: "OUR ULTIMATE VISION",
-      visionDesc: "We envision a unified ecosystem where performance marketing is fully integrated with administrative utility—bridging CRM data capture directly with elite back-office document automation."
+      storyTitle: "WE ARE CO-AUTHORS OF YOUR GROWTH STORY",
+      storySubtitle: "Nexosphere IT is an elite digital marketing & visual brand growth company based in Dhaka, Bangladesh. We do not just run ads or make designs; we map user psychology and run custom campaigns built to turn simple clicks into massive sales.",
+      missionTitle: "OUR MARKETING BLUEPRINT",
+      missionDesc: "Our daily mission is to streamline customer acquisition for corporate and e-commerce companies. By combining highly clickable social media banner designs, structured Facebook & TikTok viral ads, and bulletproof Google SEO parameters, we eliminate wasted budgets.",
+      visionTitle: "OUR STRATEGIC INTEGRATION",
+      visionDesc: "We believe visual beauty and data performance must live together. Every banner we design, video reel we edit, and web funnel we write serves one ultimate purpose: helping your business secure higher ROI and trust from local customers."
     };
   });
 
@@ -34,9 +34,9 @@ export default function NexoraAbout() {
       }
     }
     return [
-      { name: "Julian Sterling", role: "Founder & Chief Marketing Architect", exp: "Ex-Google Ads Elite team. Scaled 12+ SaaS products to successful IPO exits.", initial: "JS" },
-      { name: "Sienna Martinez", role: "Creative Director & Hook Engineer", exp: "Award-winning visual storyteller. Designs high-impact social frameworks.", initial: "SM" },
-      { name: "Dax Thornton", role: "Head of Funnels & Conversion Analytics", exp: "Full-stack Shopify engineer. Passionate about custom React pixel tracking.", initial: "DT" }
+      { name: "Md. Shakhawat Hossain", role: "Founder & Chief Executive Officer", exp: "Guides the high-quality creative vision, branding guidelines, and digital growth systems.", initial: "SH" },
+      { name: "Asaduzzaman Tohin", role: "Head of Sales & Strategy", exp: "Designs direct acquisition frameworks and configures scalable Meta/Google marketing funnels.", initial: "AT" },
+      { name: "Nurnnabi Nobi", role: "Graphics & Motion Lead Artist", exp: "Creates gorgeous vector brand logos, high-yielding social posts, and scroll-stopping promo videos.", initial: "NN" }
     ];
   });
 
@@ -52,9 +52,9 @@ export default function NexoraAbout() {
       }
     }
     return [
-      { year: "2021", title: "NexaSphere Foundation", desc: "Launched in NY with a small team of 3 analysts optimizing local retail campaigns." },
-      { year: "2023", title: "NexaSphere Suite Release", desc: "Introduced integrated back-office PDF creation modules to support enterprise clients." },
-      { year: "2025", title: "Global Expand", desc: "Maintained a portfolio of over 45 high-end SaaS accounts tracking $185M+ in revenue." }
+      { year: "2022", title: "NexaSphere Launch", desc: "Started as a visual design and local optimization crew in Dhaka." },
+      { year: "2024", title: "450k+ Customers Captured", desc: "Seeded elite lead systems and premium ad visual kits for national commerce partners." },
+      { year: "2026", title: "Scale and Integration", desc: "Voted #1 Results-Driven Digital Growth Team delivering optimized Google Ads, SEO, and social funnels." }
     ];
   });
 

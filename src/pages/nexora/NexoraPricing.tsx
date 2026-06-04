@@ -8,55 +8,55 @@ import { db } from '../../lib/firebase';
 
 export default function NexoraPricing() {
   const [pagesConfig, setPagesConfig] = useState({
-    pricingCapsule: 'TRANSPARENT RECOV_ALLOCATIONS',
-    pricingTitle: 'ELITE SCALE RETAINERS',
-    pricingSubtitle: 'Zero hidden fees. Full SLA transparency. Choose the growth blueprint aligned to your seven-figure scaling parameters.'
+    pricingCapsule: 'SIMPLE & TRANSPARENT PRICING',
+    pricingTitle: 'CLEAR GROWTH PLANS',
+    pricingSubtitle: 'No complex developer jargon or confusing terms. Choose a simple campaign blueprint tailored to scale your brand leads and online sales.'
   });
 
   const [plans, setPlans] = useState<any[]>([
     {
-      name: "Pilot Launch Retainer",
-      price: "৳২,৫০,০০০",
+      name: "Starter Growth Plan",
+      price: "৳৫০,০০০",
       period: "monthly",
-      desc: "Perfect for venture-backed seed startups targeting clear proof-of-concept metric scaling on a single primary ad platform.",
+      desc: "Perfect for local businesses starting their digital marketing journey. We design beautiful social posts and launch your ads.",
       features: [
-        "Single Ad Platform Scale (FB or GG)",
-        "3 UGC Custom Video Hooks Monthly",
-        "Direct pixel tracking verification",
-        "Weekly performance reports via Slack Dashboard",
-        "NexaSphere basic quotation synchronizer"
+        "Social Media Post Design (10 premium layouts)",
+        "Facebook Ads Setup & Demographics Config",
+        "Targeted audience research & testing",
+        "1 Fast Sales Landing Page built",
+        "Weekly progress review & consulting"
       ],
       popular: false,
       color: "border-white/[0.05]"
     },
     {
-      name: "Enterprise Scaling Engine",
-      price: "৳৫,০০,০০০",
+      name: "Professional Scaler Plan",
+      price: "৳১,৫০,০০০",
       period: "monthly",
-      desc: "Our most coveted scale package. Built for established businesses seeking category dominance across both search and social.",
+      desc: "Perfect for growing brands and e-commerce stores looking to capture massive customer interest across multiple social feeds.",
       features: [
-        "Multi-Platform Scale (Meta + TikTok + Google PPC)",
-        "12 Direct-Response UGC Ad Hooks Monthly",
-        "1 Custom React or Shopify Lander designed to split-test",
-        "Predictive CRM multi-lead score configurations",
-        "Full NexaSphere Admin backoffice connectivity",
-        "Dedicated marketing architect hotline"
+        "Meta Ads scaling (Facebook & Instagram)",
+        "TikTok Video Ads directly edited for scroll-stopping hooks",
+        "Google Ads & PPC Search campaign design",
+        "Full Search Engine Optimization (SEO) audit & strategy",
+        "Continuous Multi-Page Website Development",
+        "Direct consulting hotline & premium support team"
       ],
       popular: true,
       color: "border-indigo-500/40 bg-indigo-950/20 shadow-indigo-500/5"
     },
     {
-      name: "Ultimate Category Leader",
-      price: "৳১০,০০,০০০",
+      name: "Omni-Channel Leader Plan",
+      price: "৳৩,০০,০০০",
       period: "monthly",
-      desc: "Omnichannel brand siege. Absolute focus of our visual engineering team scaling unlimited funnels and operations globally.",
+      desc: "Ultimate category authority. Unify your social branding and paid performance campaigns for non-stop customer acquisition.",
       features: [
-        "Unrestricted omnichannel scale channels",
-        "Unlimited custom ad creatives & UGC clips on demand",
-        "Unlimited split Lander page development",
-        "Lifetime Premium NexaSphere Workspace Access",
-        "Custom billing integrations & legal SLA frameworks",
-        "Priority 1-hour response service level agreement"
+        "Unlimited Custom Social Media Post Designs",
+        "All-inclusive Paid Ads (Meta + TikTok + Google Search)",
+        "Top-Tier Google SEO ranking & daily indexing reports",
+        "Continuous Website updates and high-performance sales funnels",
+        "Premium promo video editing & soundscapes",
+        "24/7 priority support with your dedicated growth champion"
       ],
       popular: false,
       color: "border-pink-500/30"
