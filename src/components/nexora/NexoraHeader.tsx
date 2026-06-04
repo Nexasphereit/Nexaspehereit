@@ -150,7 +150,7 @@ export default function NexoraHeader() {
             </motion.button>
           </Link>
 
-          <Link to="/admin">
+          <Link to="/contact">
             <motion.button
               whileHover={{ 
                 scale: 1.03, 
@@ -161,16 +161,16 @@ export default function NexoraHeader() {
             >
               {/* Inner glowing light shimmer effect */}
               <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-150%] group-hover:translate-x-[300%] transition-transform duration-1000 ease-out" />
-              <LayoutDashboard size={13} className="group-hover:rotate-12 group-hover:scale-110 transition-transform duration-300 text-indigo-200" />
-              <span>Portal Desk</span>
+              <Sparkles size={13} className="group-hover:rotate-12 group-hover:scale-110 transition-transform duration-300 text-indigo-200" />
+              <span>Free Consultation</span>
             </motion.button>
           </Link>
         </div>
 
         {/* Mobile Menu Actions */}
         <div className="flex lg:hidden items-center gap-3">
-          <Link to="/admin" className="p-2 text-indigo-400 hover:text-indigo-300 transition-colors">
-            <LayoutDashboard size={20} className="active:scale-95 transition-transform" />
+          <Link to="/contact" className="p-2 text-indigo-400 hover:text-indigo-300 transition-colors">
+            <Sparkles size={20} className="active:scale-95 transition-transform" />
           </Link>
           <motion.button
             whileTap={{ scale: 0.9 }}
@@ -249,10 +249,10 @@ export default function NexoraHeader() {
                     Sign In
                   </button>
                 </Link>
-                <Link to="/admin" onClick={() => setIsOpen(false)} className="w-full">
+                <Link to="/contact" onClick={() => setIsOpen(false)} className="w-full">
                   <button className="w-full text-xs font-black uppercase tracking-widest text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all">
-                    <LayoutDashboard size={14} />
-                    Portal Area
+                    <Sparkles size={14} />
+                    Free Consultation
                   </button>
                 </Link>
               </motion.div>

@@ -517,42 +517,9 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
             </div>
           )}
 
-          {/* DYNAMIC LIST OF AUTHORIZED SANDBOX STAFF PROFILES */}
-          {dbUsers.length > 0 && (
-            <div className="pt-6 border-t border-slate-900/60 text-left space-y-3 mt-4">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Authorized Staff Credentials</span>
-                <span className="text-[8px] bg-slate-900 border border-slate-800 text-rose-500 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">SANDBOX TRACE</span>
-              </div>
-              <p className="text-[9px] text-slate-500 font-semibold leading-relaxed">
-                Tap any pre-configured employee or administrative profile below to bypass and authenticate instantly, or type username/password above (e.g. admin):
-              </p>
-              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
-                {dbUsers.map((u) => (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => handleQuickLogin(u)}
-                    className="flex flex-col items-start p-2.5 bg-slate-900/30 border border-slate-900/80 hover:border-rose-500/35 hover:bg-rose-500/5 rounded-xl transition-all text-left group"
-                  >
-                    <span className="text-xs font-bold text-slate-300 group-hover:text-rose-400 transition-colors truncate w-full">{u.name}</span>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[8px] px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-400 font-extrabold uppercase tracking-widest font-mono">
-                        {u.role || 'executive'}
-                      </span>
-                      <span className="text-[8px] text-slate-600 font-semibold truncate uppercase max-w-[80px]">
-                        ID: {u.id}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div className="pt-4 border-t border-slate-900 text-center">
             <p className="text-[8px] text-slate-600 uppercase tracking-[0.25em] font-black">
-              Authorized Personnel Only • Seed Admin: admin / admin
+              Authorized Personnel Only
             </p>
           </div>
         </div>
