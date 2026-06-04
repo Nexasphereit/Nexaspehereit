@@ -4,14 +4,16 @@ import {
   ArrowRight, Sparkles, Rocket, Globe, BarChart3, Target, 
   TrendingUp, Award, CheckCircle, HelpCircle, Star, 
   Lock, ArrowUpRight, ChevronDown, Check, Video, Edit3, Heart, Layout, Code2, ShieldAlert,
-  Play, FileText, Calendar, Trophy
+  Play, FileText, Calendar, Trophy, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { collection, getDocs, query, limit, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { toast as hotToast } from 'react-hot-toast';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function NexoraHome() {
+  const { setConsultationOpen } = useTheme();
   const [faqs, setFaqs] = useState([
     { q: "How long until we see our first website or marketing results?", a: "We launch most beautiful, custom web layouts within 14 to 20 days. Paid advertising campaigns usually start showing traffic and customer activity within the first week of going live.", open: true },
     { q: "Do you design the company logos and brand materials too?", a: "Yes, we handle all creative needs. Our team can design your company logo, official brand color guidelines, social media layouts, and high-quality promo videos.", open: false },
@@ -22,6 +24,9 @@ export default function NexoraHome() {
   const toggleFaq = (index: number) => {
     setFaqs(p => p.map((f, i) => i === index ? { ...f, open: !f.open } : f));
   };
+
+  const [activeReview, setActiveReview] = useState(0);
+  const [reviewDirection, setReviewDirection] = useState<'left' | 'right'>('right');
 
   const [heroConfig, setHeroConfig] = useState(() => {
     const backup = localStorage.getItem('nexora_hero_backup');
@@ -300,28 +305,68 @@ export default function NexoraHome() {
   // Customer Reviews
   const reviews = [
     {
-      text: "NexaSphere It designed our brand refresh and launched our newest marketing dashboard. The process was extremely simple, the team communicated well, and we got real customers within two weeks!",
-      author: "Nusrat Jahan",
-      origin: "Founder, Dhaka Fashion Hub",
+      text: "নেক্সাস্ফিয়ার আইটি আমাদের ব্র্যান্ডকে সম্পূর্ণ নতুন রূপ দিয়েছে এবং আমাদের নতুন মার্কেটিং ড্যাশবোর্ড চালু করেছে। পুরো প্রক্রিয়াটি অত্যন্ত সহজ ছিল, তাদের যোগাযোগ ছিল চমৎকার এবং মাত্র ২ সপ্তাহের মধ্যে আমরা বাস্তব ক্রেতা পেতে শুরু করি!",
+      author: "নুসরাত জাহান",
+      origin: "প্রতিষ্ঠাতা, ঢাকা ফ্যাশন হাব",
       rating: 5,
-      role: "E-Commerce Director",
+      role: "ই-কমার্স ডিরেক্টর",
       avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&h=200&q=80"
     },
     {
-      text: "Working with them was the best business choice we made this year. Their simple, beautifully formatted web design gets us positive comments daily. Highly recommended!",
-      author: "Shafiqul Alam",
-      origin: "Corporate Director, Brand Glo Bangladesh",
+      text: "তাদের সাথে কাজ করা এই বছরের আমাদের সেরা ব্যবসায়িক সিদ্ধান্ত ছিল। তাদের ডিজাইন করা চমৎকার ও দৃষ্টিনন্দন ওয়েব ড্যাশবোর্ডটি প্রতিদিন আমাদের গ্রাহকদের কাছ থেকে প্রশংসা কুড়াচ্ছে। আমরা তাদের কাজ অত্যন্ত জোরালোভাবে সাজেস্ট করছি!",
+      author: "শফিকুল আলম",
+      origin: "কর্পোরেট ডিরেক্টর, ব্র্যান্ড গ্লো বাংলাদেশ",
       rating: 5,
-      role: "Executive Partner",
+      role: "এক্সিকিউটিভ পার্টনার",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200&q=80"
     },
     {
-      text: "They created our online booking site and took the pressure off our marketing campaign. Every document, quotation, and receipt is organized. Simple English, premium results, with clear timelines.",
-      author: "Imran Hasan",
-      origin: "CEO, Shwapno Tech-Ventures",
+      text: "তারা আমাদের অনলাইন বুকিং পোর্টাল তৈরি করে দিয়েছে এবং আমাদের মার্কেটিং ক্যাম্পেইনের যাবতীয় কাজের চাপ নিজেরা নিয়ে নিয়েছে। প্রতিটি ডকুমেন্ট, কোটেশন এবং বিলিং সিস্টেম অত্যন্ত নিখুঁত ও গোছানো। সহজ যোগাযোগ, সময়মতো ডেলিভারি ও প্রিমিয়াম আউটপুট!",
+      author: "ইমরান হাসান",
+      origin: "সিইও, স্বপ্ন টেক-ভেঞ্চারস",
       rating: 5,
-      role: "Managing Director",
+      role: "ম্যানেজিং ডিরেক্টর",
       avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&h=200&q=80"
+    },
+    {
+      text: "তাদের ফেসবুক এবং গুগল অ্যাড ক্যাম্পেইনের মাধ্যমে আমাদের সেলস প্রায় ৩ গুণ বৃদ্ধি পেয়েছে! যেকোনো ব্যবসার প্রচারণা বাড়ানোর জন্য তারা আসলেই বিশ্বস্ত ও দক্ষ সহযোগী। ধন্যবাদ নেক্সাস্ফিয়ার আইটি!",
+      author: "তানভীর আহমেদ",
+      origin: "চিফ এক্সিকিউটিভ, রেইমেন্ট বাজার",
+      rating: 5,
+      role: "ফাউন্ডার ও সিইও",
+      avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&h=200&q=80"
+    },
+    {
+      text: "নেক্সাস্ফিয়ার টিমের ডিজাইন সেন্স অসাধারণ! আমাদের নতুন ডিজিটাল প্রোডাক্ট লঞ্চিংয়ের সময় চমৎকার গ্রাফিক্স ও সোশ্যাল মিডিয়া কিটস রেডি করে দিয়েছিল, যা কাস্টমারদের প্রচুর আকৃষ্ট করেছে। তাদের উপস্থাপনা এককথায় অনন্য!",
+      author: "মেহজাবিন চৌধুরী",
+      origin: "ক্রিয়েটিভ হেড, এলিগ্যান্ট আর্টস বিডি",
+      rating: 5,
+      role: "মার্কেটিং স্পেশালিস্ট",
+      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&h=200&q=80"
+    },
+    {
+      text: "খুব অল্প সময়ে ডাবল রেসপন্সিভ সাইট ডেভেলপমেন্ট এবং নিখুঁত এসইও সেটআপ করে দেওয়ায় আমাদের অর্গানিক ট্রাফিক ৫০% বেড়েছে। তাদের কাজের প্রিমিয়াম কোয়ালিটি এবং কাজের প্রতি দায়বদ্ধতা সতত প্রশংসনীয়!",
+      author: "জাহিদুল ইসলাম",
+      origin: "টেক টিম লিড, প্রগ্রেসিভ ডিস্ট্রিবিউশন",
+      rating: 5,
+      role: "অপারেশনস হেড",
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&h=200&q=80"
+    },
+    {
+      text: "নেক্সাস্ফিয়ার আইটি-র কাস্টমার সাপোর্ট ও গাইডলাইন অসাধারণ। তারা শুধু ওয়েবসাইট বা বিজ্ঞাপন বানিয়েই দায়িত্ব শেষ করে না, পরবর্তীতে সেলস বৃদ্ধি ও কারিগরি সহায়তায় সবসময় পাশে থাকে। তাদের সার্ভিস ১০ এ ১০!",
+      author: "ফারিহা রহমান",
+      origin: "সহ-প্রতিষ্ঠাতা, লাক্সারি লাইফ বাংলাদেশ",
+      rating: 5,
+      role: "পার্টনারশিপস ম্যানেজার",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&h=200&q=80"
+    },
+    {
+      text: "ডিজিটাল প্রেসেন্স ও সোশ্যাল মিডিয়া অপ্টিমাইজেশানের জন্য বাংলাদেশে নেক্সাস্ফিয়ার এর চেয়ে ভালো দ্বিতীয় কোনো অপশন নেই। তাদের স্ট্র্যাটেজিক পরিকল্পনা অত্যন্ত নিখুঁত এবং রিটার্ন অন ইনভেস্টমেন্ট অসাধারণ!",
+      author: "আরিয়ান সাইদ",
+      origin: "মার্কেটিং ডিরেক্টর, ফুড ট্রেইলস বিডি",
+      rating: 5,
+      role: "ব্র্যান্ড অ্যাম্বাসেডর",
+      avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&h=200&q=80"
     }
   ];
 
@@ -406,6 +451,25 @@ export default function NexoraHome() {
     };
     fetchLiveBulletins();
   }, []);
+
+  // Auto-slide effect for testimonials
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setReviewDirection('right');
+      setActiveReview((prev) => (prev + 1) % reviews.length);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [reviews.length]);
+
+  const handlePrevReview = () => {
+    setReviewDirection('left');
+    setActiveReview((prev) => (prev - 1 + reviews.length) % reviews.length);
+  };
+
+  const handleNextReview = () => {
+    setReviewDirection('right');
+    setActiveReview((prev) => (prev + 1) % reviews.length);
+  };
 
   useEffect(() => {
     const fetchConfigsAndFaqs = async () => {
@@ -570,16 +634,15 @@ export default function NexoraHome() {
 
             {/* Call to Actions with subtle beautiful hovers */}
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full pt-2">
-              <Link to={pagesConfig.heroCtaPrimaryLink || "/contact"} className="w-full sm:w-auto">
-                <motion.button 
-                  whileHover={{ scale: 1.03, boxShadow: "0 0 30px rgba(99, 102, 241, 0.4)" }}
-                  whileTap={{ scale: 0.97 }}
-                  className="w-full sm:w-auto text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-10 py-4.5 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3 cursor-pointer shadow-lg select-none"
-                >
-                  <span>{heroConfig.ctaPrimary}</span>
-                  <ArrowRight size={14} />
-                </motion.button>
-              </Link>
+              <motion.button 
+                onClick={() => setConsultationOpen(true)}
+                whileHover={{ scale: 1.03, boxShadow: "0 0 30px rgba(99, 102, 241, 0.4)" }}
+                whileTap={{ scale: 0.97 }}
+                className="w-full sm:w-auto text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-10 py-4.5 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3 cursor-pointer shadow-lg select-none"
+              >
+                <span>{heroConfig.ctaPrimary}</span>
+                <ArrowRight size={14} />
+              </motion.button>
 
               <Link to={pagesConfig.heroCtaSecondaryLink || "/services"} className="w-full sm:w-auto">
                 <motion.button 
@@ -945,64 +1008,183 @@ export default function NexoraHome() {
       </section>
 
       {/* HIGHLY ATTRACTIVE CUSTOMER REVIEWS SECTION */}
-      <section className="bg-slate-950/45 border-y border-white/[0.03] py-24 relative z-10">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center space-y-3 mb-16">
-            <span className="text-[10px] text-rose-500 font-black uppercase tracking-[0.25em] italic">Real Customer Words</span>
-            <h2 className="text-3xl sm:text-5xl font-sans font-black uppercase tracking-tighter italic">WHAT OUR CLIENTS SAY</h2>
+      <section className="bg-slate-950/45 border-y border-white/[0.03] py-20 sm:py-24 relative z-10 overflow-hidden">
+        {/* Decorative ambient glowing backdrops */}
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-72 h-72 bg-rose-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 right-0 -translate-y-1/2 w-72 h-72 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="text-center space-y-3 mb-12 sm:mb-16">
+            <span className="text-[10px] text-rose-500 font-black uppercase tracking-[0.25em] italic">
+              আমাদের সন্তুষ্ট গ্রাহকদের মতামত
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-sans font-black uppercase tracking-tighter italic text-white leading-tight">
+              গ্রাহকদের মূল্যবান মন্তব্য
+            </h2>
             
             {/* Dynamic Google Scorecard indicator */}
-            <div className="flex items-center justify-center gap-2 pt-2 bg-gradient-to-r from-transparent via-indigo-950/20 to-transparent p-2">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/[0.04] bg-white/[0.01] shadow-inner">
               <div className="flex items-center gap-0.5">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={15} className="fill-yellow-500 text-yellow-500" />
+                  <Star key={i} size={14} className="fill-yellow-500 text-yellow-500" />
                 ))}
               </div>
-              <span className="text-xs font-black uppercase tracking-wide text-white italic">
-                4.9 / 5.0 Google Score (120+ Verified Reviews)
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wide text-slate-300 italic">
+                ৪.৯ / ৫.০ গুগল স্কোর (১২০+ যাচাইকৃত রিভিউ)
               </span>
             </div>
           </div>
 
-          {/* Customer Reviews Elegant Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {reviews.map((rev, idx) => (
-              <div 
-                key={idx} 
-                className="bg-[#030310]/80 border border-white/[0.05] p-8 rounded-3xl relative h-full flex flex-col justify-between hover:border-rose-500/20 transition-colors"
-              >
-                {/* Five Stars Indicator */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-0.5">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={13} className="fill-yellow-500 text-yellow-500" />
-                    ))}
-                  </div>
-                  <p className="text-slate-300 text-xs sm:text-sm leading-relaxed italic font-semibold">
-                    "{rev.text}"
-                  </p>
-                </div>
+          {/* Testimonial Slider Frame */}
+          <div className="relative min-h-[360px] sm:min-h-[280px] flex flex-col justify-between">
+            
+            {/* Active Card Slider Window with AnimatePresence */}
+            <div className="relative overflow-hidden w-full px-1 py-4">
+              <AnimatePresence mode="wait" custom={reviewDirection}>
+                <motion.div
+                  key={activeReview}
+                  custom={reviewDirection}
+                  variants={{
+                    enter: (direction: 'left' | 'right') => ({
+                      x: direction === 'right' ? 80 : -80,
+                      opacity: 0,
+                      scale: 0.98
+                    }),
+                    center: {
+                      x: 0,
+                      opacity: 1,
+                      scale: 1,
+                      transition: {
+                        x: { type: "spring", stiffness: 300, damping: 28 },
+                        opacity: { duration: 0.25 },
+                        scale: { duration: 0.25 }
+                      }
+                    },
+                    exit: (direction: 'left' | 'right') => ({
+                      x: direction === 'right' ? -80 : 80,
+                      opacity: 0,
+                      scale: 0.98,
+                      transition: {
+                        x: { type: "spring", stiffness: 300, damping: 28 },
+                        opacity: { duration: 0.2 },
+                        scale: { duration: 0.2 }
+                      }
+                    })
+                  }}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  className="w-full max-w-3xl mx-auto"
+                >
+                  <div className="bg-gradient-to-b from-[#060613]/90 to-[#020207]/95 border border-white/[0.07] p-6 sm:p-10 rounded-[2.5rem] relative shadow-2xl shadow-indigo-950/10 flex flex-col justify-between hover:border-slate-800/80 transition-all group backdrop-blur-md">
+                    {/* Glowing corner overlay */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-500/5 to-transparent rounded-tr-[2.5rem] pointer-events-none" />
+                    
+                    {/* Upper Side Accent Rating & Quote Icon */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-0.5">
+                        {[...Array(reviews[activeReview].rating)].map((_, i) => (
+                          <Star key={i} size={15} className="fill-yellow-500 text-yellow-500" />
+                        ))}
+                      </div>
+                      
+                      {/* Premium styled quote icon */}
+                      <span className="text-4xl font-serif text-indigo-500/20 font-black tracking-tighter select-none">
+                        “ ”
+                      </span>
+                    </div>
 
-                {/* Client Profile Section */}
-                <div className="flex items-center gap-3.5 pt-6 border-t border-white/[0.03] mt-8 select-none">
-                  <div className="w-11 h-11 rounded-full overflow-hidden border border-white/10 shrink-0 bg-slate-900">
-                    <img 
-                      src={rev.avatar} 
-                      alt={rev.author} 
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as any).src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200&q=80";
-                      }}
-                    />
+                    {/* Review text in Bengali */}
+                    <blockquote className="text-slate-200 text-sm sm:text-lg leading-relaxed font-medium tracking-wide italic mb-8 relative pr-2 select-text">
+                      "{reviews[activeReview].text}"
+                    </blockquote>
+
+                    {/* Client Profile Section */}
+                    <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-white/[0.05] relative select-none">
+                      <div className="flex items-center gap-3.5">
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-indigo-500/20 shrink-0 bg-slate-900 shadow-md">
+                            <img 
+                              src={reviews[activeReview].avatar} 
+                              alt={reviews[activeReview].author} 
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              onError={(e) => {
+                                (e.target as any).src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200&q=80";
+                              }}
+                            />
+                          </div>
+                          {/* Green active premium dot */}
+                          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#020207] rounded-full" />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-sm font-black text-white tracking-wide uppercase italic">
+                            {reviews[activeReview].author}
+                          </p>
+                          <p className="text-[10px] text-indigo-300 font-extrabold tracking-wider uppercase mt-0.5">
+                            {reviews[activeReview].role}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Origin badge */}
+                      <div className="px-3.5 py-1.5 rounded-full border border-white/[0.03] bg-white/[0.01]">
+                        <span className="text-[10px] font-mono text-[#818cf8] font-black uppercase tracking-widest tracking-[0.1em]">
+                          {reviews[activeReview].origin}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="text-xs font-black text-white uppercase italic tracking-tight">{rev.author}</p>
-                    <p className="text-[9px] text-[#818cf8] uppercase tracking-widest font-black mt-0.5">{rev.origin}</p>
-                  </div>
-                </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Slider Controls Container */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 max-w-2xl mx-auto w-full pt-4 px-2">
+              
+              {/* Slidenumber counter in Bengali style */}
+              <div className="text-slate-500 font-mono text-xs font-bold uppercase select-none tracking-widest">
+                মতামত: <span className="text-indigo-400 font-black">{'০' + (activeReview + 1)}</span> / {'০' + reviews.length}
               </div>
-            ))}
+
+              {/* Slider Dots */}
+              <div className="flex items-center gap-2">
+                {reviews.map((_, dotIdx) => (
+                  <button
+                    key={dotIdx}
+                    onClick={() => {
+                      setReviewDirection(dotIdx > activeReview ? 'right' : 'left');
+                      setActiveReview(dotIdx);
+                    }}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                      activeReview === dotIdx 
+                        ? 'w-6 bg-indigo-500 shadow-md shadow-indigo-500/20' 
+                        : 'w-2 bg-slate-800 hover:bg-slate-700'
+                    }`}
+                    title={`Review ${dotIdx + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* Slider Chevrons */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handlePrevReview}
+                  className="w-10 h-10 rounded-xl border border-white/[0.04] bg-slate-900/40 text-slate-400 hover:text-white hover:border-white/[0.1] hover:bg-slate-900/80 active:scale-90 transition-all flex items-center justify-center cursor-pointer shadow-lg select-none"
+                  aria-label="Previous review"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  onClick={handleNextReview}
+                  className="w-10 h-10 rounded-xl border border-white/[0.04] bg-slate-900/40 text-slate-400 hover:text-white hover:border-white/[0.1] hover:bg-slate-900/80 active:scale-90 transition-all flex items-center justify-center cursor-pointer shadow-lg select-none"
+                  aria-label="Next review"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+
+            </div>
           </div>
         </div>
       </section>

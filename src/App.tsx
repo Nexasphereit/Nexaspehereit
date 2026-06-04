@@ -36,6 +36,7 @@ import NexoraPortal from './pages/nexora/NexoraPortal';
 import NexoraTerms from './pages/nexora/NexoraTerms';
 import NexoraPrivacy from './pages/nexora/NexoraPrivacy';
 import NexoraSitemap from './pages/nexora/NexoraSitemap';
+import ConsultationModal from './components/nexora/ConsultationModal';
 
 function AppContent() {
   const [user, setUser] = useState<any>(null);
@@ -352,6 +353,7 @@ function AppContent() {
         <NexoraFooter />
         <MessengerWidget />
         <Toaster position="bottom-right" />
+        <ConsultationModal />
         {renderGlobalOverlays()}
       </div>
     );
@@ -412,6 +414,7 @@ function AppContent() {
         <NexoraFooter />
         <MessengerWidget />
         <Toaster position="bottom-right" />
+        <ConsultationModal />
         {renderGlobalOverlays()}
       </div>
     );
@@ -463,6 +466,7 @@ function AppContent() {
         </AnimatePresence>
       </main>
       <Toaster position="bottom-right" />
+      <ConsultationModal />
       {renderGlobalOverlays()}
     </div>
   );

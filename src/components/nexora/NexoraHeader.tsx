@@ -7,7 +7,7 @@ import { auth } from '../../lib/firebase';
 import { cn } from '../../lib/utils';
 
 export default function NexoraHeader() {
-  const { settings } = useTheme();
+  const { settings, setConsultationOpen } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -150,28 +150,30 @@ export default function NexoraHeader() {
             </motion.button>
           </Link>
 
-          <Link to="/contact">
-            <motion.button
-              whileHover={{ 
-                scale: 1.03, 
-                boxShadow: "0 0 25px rgba(99, 102, 241, 0.3)",
-              }}
-              whileTap={{ scale: 0.97 }}
-              className="text-[10px] font-black uppercase tracking-widest text-white bg-gradient-to-r from-indigo-650 via-purple-650 to-pink-500 px-6 py-2.5 rounded-xl shadow-lg shadow-indigo-500/10 flex items-center gap-2 cursor-pointer relative overflow-hidden group border border-indigo-400/25 select-none"
-            >
-              {/* Inner glowing light shimmer effect */}
-              <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-150%] group-hover:translate-x-[300%] transition-transform duration-1000 ease-out" />
-              <Sparkles size={13} className="group-hover:rotate-12 group-hover:scale-110 transition-transform duration-300 text-indigo-200" />
-              <span>Free Consultation</span>
-            </motion.button>
-          </Link>
+          <motion.button
+            onClick={() => setConsultationOpen(true)}
+            whileHover={{ 
+              scale: 1.03, 
+              boxShadow: "0 0 25px rgba(99, 102, 241, 0.3)",
+            }}
+            whileTap={{ scale: 0.97 }}
+            className="text-[10px] font-black uppercase tracking-widest text-white bg-gradient-to-r from-indigo-650 via-purple-650 to-pink-500 px-6 py-2.5 rounded-xl shadow-lg shadow-indigo-500/10 flex items-center gap-2 cursor-pointer relative overflow-hidden group border border-indigo-400/25 select-none"
+          >
+            {/* Inner glowing light shimmer effect */}
+            <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-150%] group-hover:translate-x-[300%] transition-transform duration-1000 ease-out" />
+            <Sparkles size={13} className="group-hover:rotate-12 group-hover:scale-110 transition-transform duration-300 text-indigo-200" />
+            <span>Free Consultation</span>
+          </motion.button>
         </div>
 
         {/* Mobile Menu Actions */}
         <div className="flex lg:hidden items-center gap-3">
-          <Link to="/contact" className="p-2 text-indigo-400 hover:text-indigo-300 transition-colors">
+          <button 
+            onClick={() => setConsultationOpen(true)}
+            className="p-2 text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
+          >
             <Sparkles size={20} className="active:scale-95 transition-transform" />
-          </Link>
+          </button>
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsOpen(!isOpen)}
@@ -249,12 +251,16 @@ export default function NexoraHeader() {
                     Sign In
                   </button>
                 </Link>
-                <Link to="/contact" onClick={() => setIsOpen(false)} className="w-full">
-                  <button className="w-full text-xs font-black uppercase tracking-widest text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all">
-                    <Sparkles size={14} />
-                    Free Consultation
-                  </button>
-                </Link>
+                <button 
+                  onClick={() => {
+                    setIsOpen(false);
+                    setConsultationOpen(true);
+                  }}
+                  className="w-full text-xs font-black uppercase tracking-widest text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all"
+                >
+                  <Sparkles size={14} />
+                  Free Consultation
+                </button>
               </motion.div>
             </motion.div>
           </motion.div>

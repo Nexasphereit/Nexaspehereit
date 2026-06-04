@@ -28,6 +28,8 @@ interface ThemeContextType {
   };
   triggerRedirection: (type: 'call' | 'mail' | 'map', target: string, label?: string) => void;
   resetRedirection: () => void;
+  isConsultationOpen: boolean;
+  setConsultationOpen: (open: boolean) => void;
 }
 
 const logoSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 650 160'>
@@ -180,6 +182,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return defaultSettings;
   });
 
+  const [isConsultationOpen, setConsultationOpen] = useState(false);
+
   const [redirection, setRedirection] = useState<{
     active: boolean;
     type: 'call' | 'mail' | 'map' | null;
@@ -301,7 +305,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [settings]);
 
   return (
-    <ThemeContext.Provider value={{ settings, updateSettings, toggleDarkMode, redirection, triggerRedirection, resetRedirection }}>
+    <ThemeContext.Provider value={{ 
+      settings, 
+      updateSettings, 
+      toggleDarkMode, 
+      redirection, 
+      triggerRedirection, 
+      resetRedirection,
+      isConsultationOpen,
+      setConsultationOpen 
+    }}>
       {children}
     </ThemeContext.Provider>
   );
