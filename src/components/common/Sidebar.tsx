@@ -31,7 +31,7 @@ export default function Sidebar() {
   const isDark = settings.sidebarTheme === 'dark';
 
   let userRole = 'executive';
-  const savedCustomUser = localStorage.getItem('customUser');
+  const savedCustomUser = typeof window !== 'undefined' ? localStorage.getItem('customUser') : null;
   if (savedCustomUser) {
     try {
       userRole = JSON.parse(savedCustomUser)?.role || 'executive';

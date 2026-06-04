@@ -63,7 +63,7 @@ export default function ITSalesDashboard() {
   const isDark = settings.sidebarTheme === 'dark';
 
   const loggedInUser = React.useMemo(() => {
-    const saved = localStorage.getItem('customUser');
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('customUser') : null;
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -104,7 +104,7 @@ export default function ITSalesDashboard() {
 
   // --- State for Currency Selection ---
   const [currency, setCurrency] = useState<string>(() => {
-    return settings.currency || localStorage.getItem('it_sales_currency') || 'BDT';
+    return settings.currency || (typeof window !== 'undefined' ? localStorage.getItem('it_sales_currency') : null) || 'BDT';
   });
 
   const getCurrencySymbol = (code: string) => {

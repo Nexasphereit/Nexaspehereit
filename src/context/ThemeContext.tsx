@@ -144,7 +144,7 @@ function hexToRgb(hex: string) {
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<ThemeSettings>(() => {
-    const saved = localStorage.getItem('nexasphere-theme');
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('nexasphere-theme') : null;
     if (saved) {
       try {
         const parsedObject = JSON.parse(saved);

@@ -25,7 +25,7 @@ export default function Dashboard() {
 
   // --- Session Profile States ---
   const loggedInUser = useMemo(() => {
-    const saved = localStorage.getItem('customUser');
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('customUser') : null;
     if (saved) {
       try {
         return JSON.parse(saved);
