@@ -91,7 +91,7 @@ export default function NexoraCaseStudies() {
                 </div>
                 <div className="flex gap-4">
                   <div className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-center">
-                    <span className="text-[8px] text-slate-500 font-black uppercase tracking-wider block">PRE-NEXORA</span>
+                    <span className="text-[8px] text-slate-500 font-black uppercase tracking-wider block">PRE-NEXASPHERE</span>
                     <span className="text-xs font-black text-rose-500 line-through mt-0.5">{c.revenueInitial}</span>
                   </div>
                   <div className="bg-indigo-950/50 border border-indigo-505 px-4 py-2 rounded-xl text-center">
