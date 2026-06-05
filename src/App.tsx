@@ -36,6 +36,7 @@ import NexoraPortal from './pages/nexora/NexoraPortal';
 import NexoraTerms from './pages/nexora/NexoraTerms';
 import NexoraPrivacy from './pages/nexora/NexoraPrivacy';
 import NexoraSitemap from './pages/nexora/NexoraSitemap';
+import NexasphereNotFound from './pages/nexora/NexasphereNotFound';
 import ConsultationModal from './components/nexora/ConsultationModal';
 
 function AppContent() {
@@ -405,7 +406,7 @@ function AppContent() {
                 <Route path="/terms" element={<NexoraTerms />} />
                 <Route path="/privacy" element={<NexoraPrivacy />} />
                 <Route path="/sitemap" element={<NexoraSitemap />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<NexasphereNotFound />} />
               </Routes>
             </motion.div>
           </AnimatePresence>

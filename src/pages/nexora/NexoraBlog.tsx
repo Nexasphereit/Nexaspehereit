@@ -8,8 +8,20 @@ import { Link } from 'react-router-dom';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
+import { useSEO } from '../../hooks/useSEO';
 
 export default function NexoraBlog() {
+  // High efficiency dynamic SEO hooks integration
+  useSEO({
+    title: 'Digital Marketing Blog & SEO Guide | NexaSphere IT Dhaka',
+    description: 'Read the latest tips on customer psychology, landing page conversion designs, local SEO tactics, and high-ROAS paid media advertising campaigns from NexaSphere IT.',
+    keywords: 'digital marketing blog Bangladesh, Facebook marketing tips, professional SEO guide Dhaka, ecommerce sales hacks BD, local business scale tips, NexaSphere IT blog online',
+    canonical: 'https://nexasphere.it/blog',
+    ogTitle: 'Digital Marketing & Growth Blog | NexaSphere IT',
+    ogDescription: 'Read advanced client attraction strategies, conversion pixel configuration hacks, and Google ranking strategies from leading industry professionals.',
+    lang: 'en'
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [dbBlogs, setDbBlogs] = useState<any[]>([]);

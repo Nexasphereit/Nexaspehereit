@@ -7,8 +7,20 @@ import {
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
+import { useSEO } from '../../hooks/useSEO';
 
 export default function NexoraPortfolio() {
+  // High efficiency dynamic SEO hooks integration
+  useSEO({
+    title: 'Brand Portfolio & Creative Showcase | NexaSphere IT Dhaka',
+    description: 'Explore the creative portfolio of NexaSphere IT (nexasphereit). View our collection of premium social poster designs, responsive custom landing pages, high-converting banner layouts, and successful ad campaign frameworks.',
+    keywords: 'web design portfolio Dhaka, professional banner design Bangladesh, social media post examples, custom landing page portfolio, Facebook ad designs BD, digital marketing cases Dhaka, NexaSphere IT projects',
+    canonical: 'https://nexasphere.it/portfolio',
+    ogTitle: 'Elite Marketing & Design Portfolio | NexaSphere IT',
+    ogDescription: 'From high-converting retail landing pages to scroll-stopping TikTok video hooks and standard premium posters. See our five years of client conversion proof.',
+    lang: 'en'
+  });
+
   const [activeFilter, setActiveFilter] = useState('All');
   const [dbProjects, setDbProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

@@ -5,8 +5,20 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { useSEO } from '../../hooks/useSEO';
 
 export default function NexoraPricing() {
+  // High efficiency dynamic SEO hooks integration
+  useSEO({
+    title: 'Packages & Pricing Plans | NexaSphere IT Dhaka',
+    description: 'Explore affordable digital marketing packages and web development pricing by NexaSphere IT (nexasphereit). Transparent rates for SEO services, Facebook boosting charges in Bangladesh, and Google Ads management.',
+    keywords: 'digital marketing cost Bangladesh, Facebook boosting charges BD, website design price Dhaka, affordable SEO services BD, hire digital marketer charge, NexaSphere IT packages rates',
+    canonical: 'https://nexasphere.it/pricing',
+    ogTitle: 'Transparent Pricing Plans & Bundles | NexaSphere IT',
+    ogDescription: 'No hidden setup fees or fine print. Browse our budget-friendly scale plans for local commerce and enterprise search engine optimization campaigns.',
+    lang: 'en'
+  });
+
   const [pagesConfig, setPagesConfig] = useState({
     pricingCapsule: 'SIMPLE & TRANSPARENT PRICING',
     pricingTitle: 'CLEAR GROWTH PLANS',

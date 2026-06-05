@@ -79,7 +79,7 @@ export default function NexoraAdmin() {
 
   const [aboutConfig, setAboutConfig] = useState({
     storyTitle: 'SCALING THE DIGITAL FUTURE',
-    storySubtitle: 'Founded with the belief that digital campaigns should be mathematically rigorous, Nexora has scaled from a boutique local optimization team into a fully connected international advertising powerhub.',
+    storySubtitle: 'Founded with the belief that digital campaigns should be mathematically rigorous, NexaSphere IT has scaled from a boutique local optimization team into a fully connected international advertising powerhub.',
     missionTitle: 'OUR MISSION BLUEPRINT',
     missionDesc: 'Our absolute objective is to secure unmatched client profitability through bulletproof analytics, preternatural ad copy hook optimization, and high-speed checkout experience builds. We eliminate useless spending to optimize metrics that translate into actual revenue growth.',
     visionTitle: 'OUR ULTIMATE VISION',
@@ -362,7 +362,7 @@ export default function NexoraAdmin() {
 
   const loadDefaultMilestones = () => {
     setCustomMilestones([
-      { id: 'local_m1', year: "2021", title: "Nexora Foundation", desc: "Launched in NY with a small team of 3 analysts optimizing local retail campaigns." },
+      { id: 'local_m1', year: "2021", title: "NexaSphere IT Foundation", desc: "Launched with a small team of 3 analysts optimizing local retail campaigns." },
       { id: 'local_m2', year: "2023", title: "NexaSphere Suite Release", desc: "Introduced integrated back-office PDF creation modules to support enterprise clients." },
       { id: 'local_m3', year: "2025", title: "Global Expand", desc: "Maintained a portfolio of over 45 high-end SaaS accounts tracking $185M+ in revenue." }
     ]);
@@ -407,8 +407,8 @@ export default function NexoraAdmin() {
     setCustomFaqs([
       { id: 'local_fq1', q: "What is your typical ROAS (Return on Ad Spend) average?", a: "Across Facebook, Tik Tok, and Google Ads, our corporate average for active campaigns sits at 4.2x ROAS, with high-intent premium Shopify scaling funnels regularly achieving over 6.8x ROAS." },
       { id: 'local_fq2', q: "Do you build the landing pages and sales funnels too?", a: "Yes, we handle the full stack. Our international design team designs high-speed Shopify Stores, custom React funnels, and high-conversion landing pages engineered strictly to maximize lead qualification and purchases." },
-      { id: 'local_fq3', q: "How long before we see our first marketing results?", a: "With our specialized Nexora launch protocol, standard PPC and paid social channels go live with optimized creatives within 10-14 days. Major metrics improvements are visible in your custom analytics portal immediately." },
-      { id: 'local_fq4', q: "Do you integrate custom CRM or tools like the NexaSphere Suite?", a: "Absolutely! Every Nexora Digital retainer grants lifetime premium access to the integrated NexaSphere workspace—where clients and executive staff can instantly manage Quotations, Money Receipts, and custom Sales tracking in real-time." }
+      { id: 'local_fq3', q: "How long before we see our first marketing results?", a: "With our specialized NexaSphere IT launch protocol, standard PPC and paid social channels go live with optimized creatives within 10-14 days. Major metrics improvements are visible in your custom analytics portal immediately." },
+      { id: 'local_fq4', q: "Do you integrate custom CRM or tools like the NexaSphere Suite?", a: "Absolutely! Every NexaSphere IT retainer grants lifetime premium access to the integrated NexaSphere workspace—where clients and executive staff can instantly manage Quotations, Money Receipts, and custom Sales tracking in real-time." }
     ]);
   };
 
@@ -544,7 +544,7 @@ export default function NexoraAdmin() {
 
     const backupMilestones = JSON.parse(localStorage.getItem('nexora_milestones_backup') || '[]');
     setCustomMilestones(backupMilestones.length > 0 ? backupMilestones : [
-      { id: 'local_m1', year: "2021", title: "Nexora Foundation", desc: "Launched in NY with a small team of 3 analysts optimizing local retail campaigns." },
+      { id: 'local_m1', year: "2021", title: "NexaSphere IT Foundation", desc: "Launched with a small team of 3 analysts optimizing local retail campaigns." },
       { id: 'local_m2', year: "2023", title: "NexaSphere Suite Release", desc: "Introduced integrated back-office PDF creation modules to support enterprise clients." },
       { id: 'local_m3', year: "2025", title: "Global Expand", desc: "Maintained a portfolio of over 45 high-end SaaS accounts tracking $185M+ in revenue." }
     ]);
@@ -587,8 +587,8 @@ export default function NexoraAdmin() {
     setCustomFaqs(backupFaqs.length > 0 ? backupFaqs : [
       { id: 'local_fq1', q: "What is your typical ROAS (Return on Ad Spend) average?", a: "Across Facebook, Tik Tok, and Google Ads, our corporate average for active campaigns sits at 4.2x ROAS, with high-intent premium Shopify scaling funnels regularly achieving over 6.8x ROAS." },
       { id: 'local_fq2', q: "Do you build the landing pages and sales funnels too?", a: "Yes, we handle the full stack. Our international design team designs high-speed Shopify Stores, custom React funnels, and high-conversion landing pages engineered strictly to maximize lead qualification and purchases." },
-      { id: 'local_fq3', q: "How long before we see our first marketing results?", a: "With our specialized Nexora launch protocol, standard PPC and paid social channels go live with optimized creatives within 10-14 days. Major metrics improvements are visible in your custom analytics portal immediately." },
-      { id: 'local_fq4', q: "Do you integrate custom CRM or tools like the NexaSphere Suite?", a: "Absolutely! Every Nexora Digital retainer grants lifetime premium access to the integrated NexaSphere workspace—where clients and executive staff can instantly manage Quotations, Money Receipts, and custom Sales tracking in real-time." }
+      { id: 'local_fq3', q: "How long before we see our first marketing results?", a: "With our specialized NexaSphere IT launch protocol, standard PPC and paid social channels go live with optimized creatives within 10-14 days. Major metrics improvements are visible in your custom analytics portal immediately." },
+      { id: 'local_fq4', q: "Do you integrate custom CRM or tools like the NexaSphere Suite?", a: "Absolutely! Every NexaSphere IT retainer grants lifetime premium access to the integrated NexaSphere workspace—where clients and executive staff can instantly manage Quotations, Money Receipts, and custom Sales tracking in real-time." }
     ]);
   };
 

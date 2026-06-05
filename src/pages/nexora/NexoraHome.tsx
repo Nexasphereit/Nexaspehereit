@@ -11,9 +11,22 @@ import { collection, getDocs, query, limit, doc, getDoc } from 'firebase/firesto
 import { db } from '../../lib/firebase';
 import { toast as hotToast } from 'react-hot-toast';
 import { useTheme } from '../../context/ThemeContext';
+import { useSEO } from '../../hooks/useSEO';
 
 export default function NexoraHome() {
   const { setConsultationOpen } = useTheme();
+  
+  // High efficiency dynamic SEO hooks integration
+  useSEO({
+    title: 'NexaSphere IT - Elite Digital Marketing Agency & Web Development Dhaka',
+    description: 'NexaSphere IT (nexasphereit) is the leading digital marketing agency in Dhaka, Bangladesh. We provide professional SEO services, custom web design, high-converting Facebook Ads, Google PPC campaigns, and premium social media post design.',
+    keywords: 'best digital marketing agency Dhaka, professional SEO services Bangladesh, Web design team Dhaka, custom landing page development, Facebook Ads expert BD, Google PPC ads management, social media marketing agency Bangladesh, NexaSphere IT solutions, top digital marketing BD',
+    canonical: 'https://nexasphere.it/',
+    ogTitle: 'NexaSphere IT - #1 Advanced Digital Marketing & Web Agency in Bangladesh',
+    ogDescription: 'Scale your business with expert social media management and Google search engine optimization. We create custom high-converting retail funnels with 100% transparent tracking dashboard.',
+    ogImage: 'https://images.unsplash.com/photo-1542744094-3a31f103e35f?auto=format&fit=crop&w=1200&q=80',
+    lang: 'en'
+  });
   const [faqs, setFaqs] = useState([
     { q: "How long until we see our first website or marketing results?", a: "We launch most beautiful, custom web layouts within 14 to 20 days. Paid advertising campaigns usually start showing traffic and customer activity within the first week of going live.", open: true },
     { q: "Do you design the company logos and brand materials too?", a: "Yes, we handle all creative needs. Our team can design your company logo, official brand color guidelines, social media layouts, and high-quality promo videos.", open: false },
@@ -706,13 +719,13 @@ export default function NexoraHome() {
                     <div className="w-2.5 h-2.5 rounded-full bg-amber-500/70" />
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
                   </div>
-                  <span className="text-[7.5px] font-mono text-slate-500 uppercase tracking-widest">NexaSphere Core Programmer</span>
+                  <span className="text-[7.5px] font-mono text-slate-500 uppercase tracking-widest">NexaSphere Lead Digital Marketer</span>
                 </div>
 
                 <div className="w-full h-[calc(100%-25px)] rounded-3xl overflow-hidden relative group">
                   <img 
                     src={heroConfig.featureImage} 
-                    alt="Senior Lead Programmer/Engineer" 
+                    alt="Senior Lead Digital Marketer" 
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     onError={(e) => {
@@ -724,7 +737,7 @@ export default function NexoraHome() {
                   
                   {/* Small absolute programmer tag */}
                   <span className="absolute bottom-3 left-4 px-3 py-1 bg-indigo-500 text-white rounded-md text-[8px] font-black tracking-widest uppercase">
-                    OUR LEAD PROGRAMMER IN FRAME
+                    OUR LEAD DIGITAL MARKETER IN FRAME
                   </span>
                 </div>
               </div>

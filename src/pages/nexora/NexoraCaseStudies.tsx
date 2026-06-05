@@ -1,8 +1,20 @@
 import { motion } from 'motion/react';
 import { Target, ArrowRight, TrendingUp, Sparkles, ShieldCheck, Cpu } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSEO } from '../../hooks/useSEO';
 
 export default function NexoraCaseStudies() {
+  // High efficiency dynamic SEO hooks integration
+  useSEO({
+    title: 'Case Studies & Success Stories | NexaSphere IT Dhaka',
+    description: 'Read the verified success stories of ecommerce stores and corporate businesses scaled by NexaSphere IT (nexasphereit). See how we boosted ROAS of brands with expert SEO and ad optimization.',
+    keywords: 'ecommerce case studies, scale Shopify sales Bangladesh, best digital marketing results, expert SEO rank proof, Facebook ads ROAS case studies Dhaka, NexaSphere IT success story',
+    canonical: 'https://nexasphere.it/case-studies',
+    ogTitle: 'Case Studies & Verified Marketing Results | NexaSphere IT',
+    ogDescription: 'Real sales matrices, transparent local SEO proofs, and high-yielding Meta Ad funnels. Explore how our senior marketers scale client businesses.',
+    lang: 'en'
+  });
+
   const cases = [
     {
       title: "Zenith Activewear Hook Scale Study",

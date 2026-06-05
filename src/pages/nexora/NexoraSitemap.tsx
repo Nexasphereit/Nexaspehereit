@@ -1,8 +1,20 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Network, Home, Info, ShieldCheck, HelpCircle, FileText, Briefcase, Mail, Cpu, Settings, Calendar, DollarSign, Award, ArrowRight } from 'lucide-react';
+import { useSEO } from '../../hooks/useSEO';
 
 export default function NexoraSitemap() {
+  // High efficiency dynamic SEO hooks integration
+  useSEO({
+    title: 'HTML XML Sitemap | NexaSphere IT Dhaka',
+    description: 'NexaSphere IT (nexasphereit) website sitemap. Easily find links to our digital marketing services, SEO campaign pages, web development options, pricing packages, portfolio, and blog posts.',
+    keywords: 'NexaSphere IT sitemap, NexaSphere IT sitemap link index, digital marketing agency pages Dhaka, standard XML HTML index, search engine friendly sitemap',
+    canonical: 'https://nexasphere.it/sitemap',
+    ogTitle: 'HTML XML Sitemap & Location Index | NexaSphere IT',
+    ogDescription: 'Quickly find and navigate all core links, operational services, client packages, administrative client workspace hubs, and professional SEO entries.',
+    lang: 'en'
+  });
+
   const categories = [
     {
       title: "Core Framework Pages",

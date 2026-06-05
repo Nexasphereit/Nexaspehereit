@@ -8,8 +8,20 @@ import { Link } from 'react-router-dom';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
+import { useSEO } from '../../hooks/useSEO';
 
 export default function NexoraServices() {
+  // High efficiency dynamic SEO hooks integration
+  useSEO({
+    title: 'Digital Marketing & SEO Services | NexaSphere IT Dhaka',
+    description: 'Explore high-performance digital marketing services by NexaSphere IT (nexasphereit). We deliver expert local SEO, target Google PPC, high-ROAS Facebook & TikTok ads, custom landing page development, and creative social poster designs.',
+    keywords: 'digital marketing services Bangladesh, local SEO services Dhaka, Facebook advertising agency, Google Ads management BD, social media post design, TikTok marketing agency Bangladesh, landing page design Dhaka, custom ecommerce websites',
+    canonical: 'https://nexasphere.it/services',
+    ogTitle: 'Digital Marketing & SEO Services | NexaSphere IT Dhaka',
+    ogDescription: 'We build high-converting landing pages, scale Meta and Google PPC campaigns, rank search keywords organically, and design professional social media banners designed for revenue.',
+    lang: 'en'
+  });
+
   const [dbServices, setDbServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagesConfig, setPagesConfig] = useState({

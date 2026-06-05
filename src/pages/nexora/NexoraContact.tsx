@@ -10,8 +10,20 @@ import { db } from '../../lib/firebase';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '../../context/ThemeContext';
+import { useSEO } from '../../hooks/useSEO';
 
 export default function NexoraContact() {
+  // High efficiency dynamic SEO hooks integration
+  useSEO({
+    title: 'Contact Us | NexaSphere IT Dhaka - Book a Free Strategy Session',
+    description: 'Contact NexaSphere IT (nexasphereit), the premier digital marketing agency in Dhaka, Bangladesh. Reach out to our team of SEO experts and ad managers for a free consultation or custom project pricing.',
+    keywords: 'NexaSphere IT contact number, Hire digital marketing agency Dhaka, best social media marketing Bangladesh, SEO agency Dhaka phone number, NexaSphere IT office address, freelance marketer BD booking',
+    canonical: 'https://nexasphere.it/contact',
+    ogTitle: 'Contact Us | NexaSphere IT Dhaka - Book a Free Strategy Session',
+    ogDescription: 'Get in touch with our lead digital marketer and campaign directors. Schedule a free optimization consultation for your ecommerce brand today!',
+    lang: 'en'
+  });
+
   const { triggerRedirection } = useTheme();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
