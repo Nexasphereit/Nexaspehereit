@@ -461,7 +461,7 @@ function AppContent() {
               <Route path="/history" element={<History />} />
               <Route path="/settings" element={(user?.role === 'admin') ? <Settings /> : <Navigate to="/dashboard" replace />} />
               <Route path="/admin" element={(user?.role === 'admin') ? <NexoraAdmin /> : <Navigate to="/dashboard" replace />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<NexasphereNotFound />} />
             </Routes>
           </motion.div>
         </AnimatePresence>

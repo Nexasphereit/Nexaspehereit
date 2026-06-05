@@ -8,6 +8,7 @@ export default function NexasphereNotFound() {
   const navigate = useNavigate();
   const { settings } = useTheme();
   const primaryColor = settings?.primaryColor || '#f43f5e';
+  const hasUser = typeof window !== 'undefined' ? !!localStorage.getItem('customUser') : false;
 
   useSEO({
     title: '404 - Coordinate Lost in Code Orbit | NexaSphere IT',
@@ -94,12 +95,12 @@ export default function NexasphereNotFound() {
           </p>
         </div>
 
-        {/* Dynamic Teleport Button linking back to Hompage */}
+        {/* Dynamic Teleport Button linking back to Hompage/Dashboard */}
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
           <motion.button
             whileHover={{ scale: 1.04, translateY: -2 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/')}
+            onClick={() => navigate(hasUser ? '/dashboard' : '/')}
             className="px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-white flex items-center gap-2.5 shadow-lg group relative overflow-hidden"
             style={{ 
               backgroundColor: primaryColor,
@@ -110,7 +111,7 @@ export default function NexasphereNotFound() {
             <div className="absolute inset-x-0 top-0 h-[40%] bg-white/15 skew-y-12 transition-all group-hover:skew-y-6" />
             
             <Rocket size={15} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300 text-white animate-pulse" />
-            RETURN TO HOME BASE
+            {hasUser ? 'RETURN TO DASHBOARD' : 'RETURN TO HOME BASE'}
           </motion.button>
 
           <motion.button
