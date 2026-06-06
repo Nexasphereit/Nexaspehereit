@@ -172,7 +172,7 @@ export const ImageUpload = ({ label, value, onChange, className }: ImageUploadPr
       >
         {value ? (
           <div className="relative w-full h-full flex items-center justify-center">
-            <img src={value} alt="Preview" className="max-h-[100px] object-contain rounded-xl shadow-md" />
+            <img src={value || undefined} alt="Preview" className="max-h-[100px] object-contain rounded-xl shadow-md" />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
               <p className="text-white text-xs font-bold">Change Image</p>
             </div>

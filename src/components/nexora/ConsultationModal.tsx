@@ -496,7 +496,7 @@ export default function ConsultationModal() {
                         
                         <div className="flex items-center gap-3">
                           <img 
-                            src={currentSpecialist.avatar} 
+                            src={currentSpecialist.avatar || undefined} 
                             alt={currentSpecialist.name} 
                             className="w-10 h-10 rounded-xl object-cover border border-white/[0.08]"
                             referrerPolicy="no-referrer"
@@ -700,7 +700,7 @@ export default function ConsultationModal() {
                         {/* Beautiful dedicated visual avatar card */}
                         <div className="p-4 bg-slate-950/80 border border-white/[0.04] rounded-xl flex items-center gap-4 text-left">
                           <img 
-                            src={submittedData.assignedExpertAvatar} 
+                            src={submittedData.assignedExpertAvatar || undefined} 
                             alt={submittedData.assignedExpert} 
                             className="w-14 h-14 rounded-2xl object-cover border border-indigo-500/20 shadow-md shadow-indigo-950/30"
                             referrerPolicy="no-referrer"
@@ -751,7 +751,7 @@ export default function ConsultationModal() {
               <div className="flex items-center gap-2.5">
                 <div className="relative">
                   <img 
-                    src={currentSpecialist.avatar} 
+                    src={currentSpecialist.avatar || undefined} 
                     alt={currentSpecialist.name} 
                     className="w-9 h-9 rounded-lg object-cover border border-white/[0.1]"
                     referrerPolicy="no-referrer"

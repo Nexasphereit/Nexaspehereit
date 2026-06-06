@@ -448,7 +448,7 @@ export default function NexoraPortal() {
                           {item.mediaUrl ? (
                             <div className="w-full md:w-36 h-28 rounded-2xl overflow-hidden relative shrink-0 border border-white/[0.06] bg-slate-950 select-none">
                               <img 
-                                src={item.mediaUrl} 
+                                src={item.mediaUrl || undefined} 
                                 alt={item.title} 
                                 className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500"
                                 referrerPolicy="no-referrer"

@@ -61,7 +61,7 @@ export default function NexoraFooter() {
             {(settings.companyLogoLight || settings.companyLogo) ? (
               <div className="bg-white rounded-lg p-0.5" style={{ height: `${settings.logoHeight || 40}px` }}>
                 <img 
-                  src={settings.companyLogoLight || settings.companyLogo} 
+                  src={(settings.companyLogoLight || settings.companyLogo) || undefined} 
                   alt="Logo" 
                   className="h-full w-auto object-contain transition-transform duration-300 hover:scale-102" 
                 />

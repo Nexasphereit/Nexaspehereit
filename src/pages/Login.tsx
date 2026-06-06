@@ -8,7 +8,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from 'firebase/auth';
-import { db, auth } from '../lib/firebase';
+import { db, auth, getRealCurrentUser } from '../lib/firebase';
 import { doc, getDoc, setDoc, query, collection, where, getDocs } from 'firebase/firestore';
 import { Button, Card } from '../components/common/UI';
 import { LogIn, ShieldAlert, KeyRound, User as UserIcon } from 'lucide-react';
@@ -77,7 +77,8 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
       localStorage.setItem('customUser', JSON.stringify(matchedUser));
 
       try {
-        if (!auth.currentUser || auth.currentUser.isAnonymous) {
+        const realUserSession = getRealCurrentUser();
+        if (!realUserSession || realUserSession.isAnonymous) {
           await signInAnonymously(auth);
         }
       } catch (_) {}
@@ -294,7 +295,8 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
 
         // Trigger Standard Firebase Auth in the background (Anonymous session) to enable Firestore rules only if not already authenticated
         try {
-          if (!auth.currentUser || auth.currentUser.isAnonymous) {
+          const realUserSession = getRealCurrentUser();
+          if (!realUserSession || realUserSession.isAnonymous) {
             await signInAnonymously(auth);
           }
         } catch (authError) {
@@ -330,7 +332,7 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
         <div className="text-center space-y-6 relative z-10 px-4 py-6">
           {settings.companyLogo ? (
             <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-2xl bg-white border border-slate-200 p-3 transition-transform hover:scale-105 duration-300">
-              <img src={settings.companyLogo} alt="Company Logo" className="max-w-full max-h-full object-contain" />
+              <img src={settings.companyLogo || undefined} alt="Company Logo" className="max-w-full max-h-full object-contain" />
             </div>
           ) : (
             <div className="w-24 h-24 bg-gradient-to-br from-rose-600 to-red-800 rounded-[2.5rem] mx-auto flex items-center justify-center rotate-6 shadow-2xl shadow-rose-900/40 border border-rose-500/30">

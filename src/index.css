@@ -1,8 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Anek+Bangla:wght@100..800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Montserrat", "Hind Siliguri", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Montserrat", "Anek Bangla", ui-sans-serif, system-ui, sans-serif;
   --color-indigo-600: #4f46e5;
   --color-indigo-700: #4338ca;
   --color-slate-900: #0f172a;
@@ -25,11 +25,6 @@
 @layer base {
   body {
     @apply font-sans antialiased;
-  }
-  
-  /* Enforce normal font style and eliminate all slanted/italic text glitches */
-  *, *::before, *::after {
-    font-style: normal !important;
   }
 }
 

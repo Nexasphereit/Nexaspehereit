@@ -95,7 +95,7 @@ const defaultSettings: ThemeSettings = {
     { name: 'Default Sans (Outfit)', id: 'font-sans' },
     { name: 'Lora (Classic Elegant)', id: 'Lora' },
     { name: 'Inter (Sleek Modern)', id: 'Inter' },
-    { name: 'Hind Siliguri (Bengali)', id: 'Hind Siliguri' },
+    { name: 'Anek Bangla (Bengali)', id: 'Anek Bangla' },
     { name: 'Playfair Display (Serif)', id: 'Playfair Display' },
     { name: 'Fira Code (Technical)', id: 'font-mono' },
   ],

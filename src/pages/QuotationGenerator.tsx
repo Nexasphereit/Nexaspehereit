@@ -522,7 +522,7 @@ const resolveOklchColor = (colorStr: string): string => {
               <div className="space-y-3 w-full sm:w-auto mb-6 sm:mb-0">
                 {quotation.companyLogo ? (
                   <div className="flex flex-col gap-2">
-                    <img src={quotation.companyLogo} alt="Logo" className="max-h-16 w-auto object-contain rounded-md print:grayscale print:contrast-150" crossOrigin="anonymous" />
+                    <img src={quotation.companyLogo || undefined} alt="Logo" className="max-h-16 w-auto object-contain rounded-md print:grayscale print:contrast-150" crossOrigin="anonymous" />
                     <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 italic">new ideas new success</p>
                   </div>
                 ) : (

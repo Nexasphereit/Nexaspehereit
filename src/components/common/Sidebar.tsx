@@ -93,7 +93,7 @@ export default function Sidebar() {
         <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-all cursor-pointer">
           {settings.companyLogo ? (
             <div className="rounded-lg overflow-hidden shrink-0 shadow-md bg-white border border-slate-100 flex items-center justify-center p-0.5" style={{ height: `${Math.min(settings.logoHeight || 40, 32)}px`, width: `${Math.min(settings.logoHeight || 40, 32)}px` }}>
-              <img src={settings.companyLogo} alt="Logo" className="max-h-full max-w-full object-contain" />
+              <img src={settings.companyLogo || undefined} alt="Logo" className="max-h-full max-w-full object-contain" />
             </div>
           ) : (
             <div 
@@ -314,7 +314,7 @@ export default function Sidebar() {
           <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-all cursor-pointer overflow-hidden w-full select-none">
             {settings.companyLogo ? (
               <div className="rounded-xl overflow-hidden shrink-0 shadow-lg border-2 border-slate-100 bg-white flex items-center justify-center p-1" style={{ height: `${settings.logoHeight || 40}px`, width: `${settings.logoHeight || 40}px` }}>
-                 <img src={settings.companyLogo} alt="Logo" className="max-h-full max-w-full object-contain" />
+                 <img src={settings.companyLogo || undefined} alt="Logo" className="max-h-full max-w-full object-contain" />
               </div>
             ) : (
               <div 

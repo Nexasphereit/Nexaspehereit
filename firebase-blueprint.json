@@ -129,6 +129,23 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["customerId", "serviceId", "executiveId", "quantity", "totalAmount"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Custom customer review testimonial",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string" },
+        "author": { "type": "string" },
+        "role": { "type": "string" },
+        "origin": { "type": "string" },
+        "platform": { "type": "string", "enum": ["google", "facebook", "direct"] },
+        "avatar": { "type": "string" },
+        "rating": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["text", "author", "rating"]
     }
   },
   "firestore": {
@@ -163,6 +180,10 @@
     "menus": {
       "schema": "Menu",
       "description": "Collection of business custom menus"
+    },
+    "nexora_reviews": {
+      "schema": "Review",
+      "description": "Customizable customer marketing testimonials displayed on public homepage"
     }
   }
 }

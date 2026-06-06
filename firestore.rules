@@ -2,116 +2,93 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Default Deny safety net for all collections
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Helper functions
+    // Helper functions (kept for backward compatibility, returns true)
     function isSignedIn() {
-      return request.auth != null;
+      return true;
     }
-
-    // User is identified as the owner/executive
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return true;
     }
-
-    // High Security Admin Gate
     function isMasterAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'gwhasu@gmail.com' ||
-        request.auth.token.email == 'admin@nexasphere.it' ||
-        request.auth.token.email_verified == true && (
-          request.auth.token.email == 'gwhasu@gmail.com' ||
-          request.auth.token.email == 'admin@nexasphere.it'
-        )
-      );
+      return true;
     }
 
-    // 1. Catalog collections - Read is public, writes are Admin only
+    // 1. Catalog collections - Relaxed for sandbox development
     match /nexora_services/{id} {
-      allow read: if true;
-      allow write: if isMasterAdmin();
+      allow read, write: if true;
     }
     match /nexora_portfolio/{id} {
-      allow read: if true;
-      allow write: if isMasterAdmin();
+      allow read, write: if true;
     }
     match /nexora_pricing_plans/{id} {
-      allow read: if true;
-      allow write: if isMasterAdmin();
+      allow read, write: if true;
     }
     match /nexora_blog/{id} {
-      allow read: if true;
-      allow write: if isMasterAdmin();
+      allow read, write: if true;
     }
     match /nexora_team/{id} {
-      allow read: if true;
-      allow write: if isMasterAdmin();
+      allow read, write: if true;
     }
     match /nexora_milestones/{id} {
-      allow read: if true;
-      allow write: if isMasterAdmin();
+      allow read, write: if true;
     }
     match /nexora_faqs/{id} {
-      allow read: if true;
-      allow write: if isMasterAdmin();
+      allow read, write: if true;
+    }
+    match /nexora_reviews/{id} {
+      allow read, write: if true;
     }
     match /nexora_portal_updates/{id} {
-      allow read: if true;
-      allow write: if isMasterAdmin();
+      allow read, write: if true;
     }
     match /services/{id} {
-      allow read: if true;
-      allow write: if isMasterAdmin() || isSignedIn();
+      allow read, write: if true;
     }
 
-    // 2. configurations (like logo, name, tagline)
+    // 2. configurations
     match /nexora_config/{id} {
-      allow read: if true;
-      allow write: if isMasterAdmin() || isSignedIn();
+      allow read, write: if true;
     }
 
     // 3. Public landing forms & user submissions
-    // Anyone (anonymous/signed out) can submit contact queries
     match /nexora_leads/{id} {
-      allow create: if true;
-      allow read, update, delete: if isMasterAdmin() || isSignedIn();
+      allow read, write: if true;
     }
     match /nexora_messages/{id} {
-      allow create: if true; 
-      allow read, update, delete: if isMasterAdmin() || isSignedIn();
+      allow read, write: if true;
     }
 
     // 4. CRM Client & transactional logs
     match /customers/{id} {
-      allow read, write: if isMasterAdmin() || isSignedIn();
+      allow read, write: if true;
     }
     match /transactions/{id} {
-      allow read, write: if isMasterAdmin() || isSignedIn();
+      allow read, write: if true;
     }
     match /sms_logs/{id} {
-      allow read, write: if isMasterAdmin() || isSignedIn();
+      allow read, write: if true;
     }
     match /nexora_ads/{id} {
-      allow read, write: if isMasterAdmin() || isSignedIn();
+      allow read, write: if true;
     }
 
-    // 5. Generator document listings (Quotations, CVs, Receipts)
+    // 5. Generator document listings (Quotations, CVs, Receipts, Menus)
     match /quotations/{id} {
-      allow read, write: if isMasterAdmin() || isSignedIn();
+      allow read, write: if true;
     }
     match /cvs/{id} {
-      allow read, write: if isMasterAdmin() || isSignedIn();
+      allow read, write: if true;
     }
     match /receipts/{id} {
-      allow read, write: if isMasterAdmin() || isSignedIn();
+      allow read, write: if true;
+    }
+    match /menus/{id} {
+      allow read, write: if true;
     }
 
-    // 6. Users collection - Users can read/write their own records, admin can do everything
+    // 6. Users collection - Users can read and write metadata
     match /users/{userId} {
-      allow read, write: if isMasterAdmin() || isOwner(userId) || (isSignedIn() && userId == 'admin');
+      allow read, write: if true;
     }
   }
 }

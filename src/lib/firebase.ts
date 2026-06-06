@@ -78,6 +78,17 @@ const getCustomUserFromStorage = () => {
   return null;
 };
 
+// Safe helper to grab the raw untampered currentUser from the SDK
+export function getRealCurrentUser(): any {
+  try {
+    const proto = Object.getPrototypeOf(auth);
+    const desc = Object.getOwnPropertyDescriptor(proto, 'currentUser');
+    return (desc && desc.get) ? desc.get.call(auth) : null;
+  } catch {
+    return null;
+  }
+}
+
 // Overwrite auth.currentUser's getter so it returns our logged-in custom profile in a safe way
 try {
   const originalAuth = auth;
@@ -86,7 +97,7 @@ try {
   // This guarantees there is always a valid Firebase token context for Firestore calls.
   if (typeof window !== 'undefined' && localStorage.getItem('customUser')) {
     import('firebase/auth').then(({ signInAnonymously }) => {
-      if (!originalAuth.currentUser) {
+      if (!getRealCurrentUser()) {
         signInAnonymously(originalAuth).catch(err => {
           console.warn("Auto anonymous sign-in failed:", err);
         });
@@ -107,91 +118,54 @@ try {
         realUser = null;
       }
 
-      // Detect if called by Firebase or Firestore internal mechanisms.
-      // For any Firebase/Firestore SDK internals, we must return the untampered realUser object.
-      // This eliminates the risk of SDK runtime assertion failures or "Unexpected state" errors.
-      const stack = new Error().stack || '';
-      const isFirebaseInternal = 
-        stack.includes('@firebase') || 
-        stack.includes('firestore') || 
-        stack.includes('firebase-auth') || 
-        stack.includes('node_modules') || 
-        /credential|token|compat|getIdToken|stsTokenManager/i.test(stack);
-
-      if (isFirebaseInternal) {
-        return realUser;
+      if (!realUser) {
+        return null;
       }
 
       const custom = getCustomUserFromStorage();
-      
-      if (realUser) {
-        if (custom) {
-          // Wrap the real Firebase User in a Proxy so application pages see Custom IDs/Roles.
-          // Directly load from target without passing receiver to avoid strict JS engine Proxy invariants.
-          return new Proxy(realUser, {
-            get(target, prop, receiver) {
-              if (prop === 'uid') {
-                return custom.uid || 'admin';
-              }
-              if (prop === 'email') {
-                return custom.email;
-              }
-              if (prop === 'displayName') {
-                return custom.displayName;
-              }
-              if (prop === 'role') {
-                return custom.role || 'executive';
-              }
-              if (prop === 'commissionPercentage') {
-                return custom.commissionPercentage ?? 0;
-              }
-              if (prop === 'auth') {
-                return undefined; // Break circular auth reference for external serializers/traversers
-              }
-              
-              const val = (target as any)[prop];
-              if (typeof val === 'function') {
-                return val.bind(target);
-              }
-              return val;
-            }
-          });
-        }
+      if (!custom) {
         return realUser;
       }
 
-      // Fallback custom user with mock safety fields to prevent deeply nested reading crashes in components
-      if (custom) {
-        return new Proxy(custom, {
-          get(target, prop, receiver) {
-            // Guarantee nested token fields are empty objects so that reading .accessToken does not throw TypeError.
-            // Returning empty/undefined ensures that the Firestore client treats this as unauthenticated
-            if (prop === 'stsTokenManager' || prop === '_credentials') {
-              return {};
-            }
-            if (prop === 'getIdToken') {
-              return () => Promise.resolve(null);
-            }
-            if (prop === 'getIdTokenResult') {
-              return () => Promise.resolve({ token: undefined });
-            }
-            if (prop === 'accessToken') {
-              return undefined;
-            }
-            if (prop === 'auth') {
-              return undefined; // Break circular auth reference for external serializers/traversers
-            }
-            
-            const val = (target as any)[prop];
-            if (typeof val === 'function') {
-              return val.bind(target);
-            }
-            return val;
-          }
-        });
-      }
+      // App properties that our pages might read. Everything else is passed to the real Firebase User instances, ensuring zero-dependency on stack trace sniffing.
+      const appProperties = ['uid', 'id', 'email', 'displayName', 'name', 'role', 'commissionPercentage'];
 
-      return null;
+      return new Proxy(realUser, {
+        get(target, prop, receiver) {
+          const propStr = typeof prop === 'string' ? prop : String(prop);
+          const isAppProp = appProperties.includes(propStr);
+
+          if (isAppProp) {
+            const cAny = custom as any;
+            if (propStr === 'uid' || propStr === 'id') {
+              return cAny.uid || 'admin';
+            }
+            if (propStr === 'email') {
+              return cAny.email;
+            }
+            if (propStr === 'displayName' || propStr === 'name') {
+              return cAny.name || cAny.displayName || 'Sales Executive';
+            }
+            if (propStr === 'role') {
+              return cAny.role || 'executive';
+            }
+            if (propStr === 'commissionPercentage') {
+              return cAny.commissionPercentage ?? 0;
+            }
+          }
+
+          if (propStr === 'auth') {
+            return undefined; // Break circular references
+          }
+
+          // Fallback to real Firebase User SDK internals securely
+          const val = (realUser as any)[prop];
+          if (typeof val === 'function') {
+            return val.bind(realUser);
+          }
+          return val;
+        }
+      });
     },
     set: (v) => {
       // Allow writing or delegate to original setter to prevent throwing in strict mode

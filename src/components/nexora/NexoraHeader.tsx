@@ -60,7 +60,7 @@ export default function NexoraHeader() {
               style={{ height: `${scrolled ? 46 : (settings.logoHeight ? settings.logoHeight * 1.3 : 60)}px`, transition: 'height 0.5s ease' }}
             >
               <img 
-                src={settings.companyLogoLight || settings.companyLogo} 
+                src={(settings.companyLogoLight || settings.companyLogo) || undefined} 
                 alt="Logo" 
                 className="h-full w-auto object-contain" 
               />

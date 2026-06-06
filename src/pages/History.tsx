@@ -22,11 +22,42 @@ export default function History() {
   const [cvsSnap] = useCollection(query(cvsRef, where('userId', '==', auth.currentUser?.uid || ''), orderBy('createdAt', 'desc')));
   const [receiptsSnap] = useCollection(query(receiptsRef, where('userId', '==', auth.currentUser?.uid || ''), orderBy('createdAt', 'desc')));
 
+  const safeFetchDate = (createdAtField: any): string => {
+    if (!createdAtField) return '';
+    try {
+      if (typeof createdAtField.toDate === 'function') {
+        const d = createdAtField.toDate();
+        if (d instanceof Date && !isNaN(d.getTime())) {
+          return d.toISOString().split('T')[0];
+        }
+      }
+      if (typeof createdAtField === 'string') {
+        return createdAtField.split('T')[0];
+      }
+      if (createdAtField instanceof Date && !isNaN(createdAtField.getTime())) {
+        return createdAtField.toISOString().split('T')[0];
+      }
+      if (typeof createdAtField === 'number') {
+        const d = new Date(createdAtField);
+        if (!isNaN(d.getTime())) {
+          return d.toISOString().split('T')[0];
+        }
+      }
+    } catch (e) {
+      console.warn("Date resolution failed safely:", e);
+    }
+    return '';
+  };
+
   const allDocuments = [
-    ...(quotationsSnap?.docs.map(d => ({ id: d.id, type: 'Quotation', title: d.data().quotationNumber, client: d.data().clientName, date: d.data().date || (d.data().createdAt?.toDate().toISOString().split('T')[0] || ''), amount: d.data().totalAmount })) || []),
-    ...(cvsSnap?.docs.map(d => ({ id: d.id, type: 'CV', title: d.data().fullName, client: d.data().fullName, date: d.data().createdAt?.toDate().toISOString().split('T')[0] || '', amount: null })) || []),
-    ...(receiptsSnap?.docs.map(d => ({ id: d.id, type: 'Receipt', title: d.data().receiptNumber, client: d.data().receivedFrom, date: d.data().date || (d.data().createdAt?.toDate().toISOString().split('T')[0] || ''), amount: d.data().amount })) || []),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    ...(quotationsSnap?.docs.map(d => ({ id: d.id, type: 'Quotation', title: d.data().quotationNumber, client: d.data().clientName, date: d.data().date || (safeFetchDate(d.data().createdAt) || ''), amount: d.data().totalAmount })) || []),
+    ...(cvsSnap?.docs.map(d => ({ id: d.id, type: 'CV', title: d.data().fullName, client: d.data().fullName, date: safeFetchDate(d.data().createdAt) || '', amount: null })) || []),
+    ...(receiptsSnap?.docs.map(d => ({ id: d.id, type: 'Receipt', title: d.data().receiptNumber, client: d.data().receivedFrom, date: d.data().date || (safeFetchDate(d.data().createdAt) || ''), amount: d.data().amount })) || []),
+  ].sort((a, b) => {
+    const timeA = a.date ? new Date(a.date).getTime() : 0;
+    const timeB = b.date ? new Date(b.date).getTime() : 0;
+    return timeB - timeA;
+  });
 
   const filteredHistory = allDocuments.filter(item => {
     const matchesTab = activeTab === 'All' || item.type === activeTab;

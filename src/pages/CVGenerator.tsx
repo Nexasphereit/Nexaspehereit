@@ -527,7 +527,7 @@ const resolveOklchColor = (colorStr: string): string => {
                <div className="flex justify-center mt-6">
                  <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-white/20 p-1.5 bg-white/10 shadow-2xl">
                    {cv.profilePhoto ? (
-                     <img src={cv.profilePhoto} alt="Profile" className="w-full h-full object-cover rounded-full grayscale-print" crossOrigin="anonymous" />
+                     <img src={cv.profilePhoto || undefined} alt="Profile" className="w-full h-full object-cover rounded-full grayscale-print" crossOrigin="anonymous" />
                    ) : (
                      <div className="w-full h-full bg-black/20 flex items-center justify-center rounded-full">
                        <UserCircle size={80} className="text-white/20" />

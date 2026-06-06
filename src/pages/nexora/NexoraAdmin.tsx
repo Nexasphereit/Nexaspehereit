@@ -4,7 +4,8 @@ import {
   Heart, LayoutDashboard, PlusCircle, Trash2, ListMinus, LayoutGrid, 
   Settings, Mail, FileText, Plus, UserCheck, MessageSquare, 
   Sliders, Calendar, Eye, Send, Sparkles, LogOut, CheckSquare, 
-  ExternalLink, Upload, FolderHeart, LibrarySquare, AlertCircle, ArrowRight
+  ExternalLink, Upload, FolderHeart, LibrarySquare, AlertCircle, ArrowRight,
+  Star
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { 
@@ -139,15 +140,17 @@ export default function NexoraAdmin() {
   const [customMilestones, setCustomMilestones] = useState<any[]>([]);
   const [customPricing, setCustomPricing] = useState<any[]>([]);
   const [customFaqs, setCustomFaqs] = useState<any[]>([]);
+  const [customReviews, setCustomReviews] = useState<any[]>([]);
 
   // Add Item states for customizer arrays
   const [newTeamMember, setNewTeamMember] = useState({ name: '', role: '', exp: '', initial: '', image: '' });
   const [newMilestone, setNewMilestone] = useState({ year: '', title: '', desc: '' });
   const [newPlan, setNewPlan] = useState({ name: '', price: '', period: 'monthly', desc: '', features: '', popular: false, color: 'border-white/[0.05]' });
   const [newFaq, setNewFaq] = useState({ q: '', a: '' });
+  const [newReview, setNewReview] = useState({ text: '', author: '', role: '', origin: '', platform: 'google', rating: 5, avatar: '' });
 
   // Customizer active sub-tab switching
-  const [customizerSubTab, setCustomizerSubTab] = useState<'identity' | 'hero' | 'about' | 'pages' | 'team_chrono' | 'pricing' | 'faqs' | 'footer_terms'>('identity');
+  const [customizerSubTab, setCustomizerSubTab] = useState<'identity' | 'hero' | 'about' | 'pages' | 'team_chrono' | 'pricing' | 'reviews' | 'faqs' | 'footer_terms'>('identity');
 
   // Multiple Ads Creation Form State
   const [multipleAds, setMultipleAds] = useState<any[]>([
@@ -255,6 +258,14 @@ export default function NexoraAdmin() {
         setCustomFaqs(faqSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       } else {
         loadDefaultFaqs();
+      }
+
+      // Custom reviews
+      const reviewsSnap = await getDocs(collection(db, 'nexora_reviews'));
+      if (!reviewsSnap.empty) {
+        setCustomReviews(reviewsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } else {
+        loadDefaultReviews();
       }
 
     } catch (e) {
@@ -409,6 +420,91 @@ export default function NexoraAdmin() {
       { id: 'local_fq2', q: "Do you build the landing pages and sales funnels too?", a: "Yes, we handle the full stack. Our international design team designs high-speed Shopify Stores, custom React funnels, and high-conversion landing pages engineered strictly to maximize lead qualification and purchases." },
       { id: 'local_fq3', q: "How long before we see our first marketing results?", a: "With our specialized NexaSphere IT launch protocol, standard PPC and paid social channels go live with optimized creatives within 10-14 days. Major metrics improvements are visible in your custom analytics portal immediately." },
       { id: 'local_fq4', q: "Do you integrate custom CRM or tools like the NexaSphere Suite?", a: "Absolutely! Every NexaSphere IT retainer grants lifetime premium access to the integrated NexaSphere workspace—where clients and executive staff can instantly manage Quotations, Money Receipts, and custom Sales tracking in real-time." }
+    ]);
+  };
+
+  const loadDefaultReviews = () => {
+    setCustomReviews([
+      {
+        id: 'default_rev1',
+        text: "নেক্সাস্ফিয়ার আইটি আমাদের ব্র্যান্ডকে সম্পূর্ণ নতুন রূপ দিয়েছে এবং আমাদের নতুন মার্কেটিং ড্যাশবোর্ড চালু করেছে। পুরো প্রক্রিয়াটি অত্যন্ত সহজ ছিল, তাদের যোগাযোগ ছিল চমৎকার এবং মাত্র ২ সপ্তাহের মধ্যে আমরা বাস্তব ক্রেতা পেতে শুরু করি!",
+        author: "নুসরাত জাহান",
+        origin: "প্রতিষ্ঠাতা, ঢাকা ফ্যাশন হাব",
+        rating: 5,
+        role: "ই-কমার্স ডিরেক্টর",
+        platform: "google",
+        avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&h=200&q=80"
+      },
+      {
+        id: 'default_rev2',
+        text: "তাদের সাথে কাজ করা এই বছরের আমাদের সেরা ব্যবসায়িক সিদ্ধান্ত ছিল। তাদের ডিজাইন করা চমৎকার ও দৃষ্টিনন্দন ওয়েব ড্যাশবোর্ডটি প্রতিদিন আমাদের গ্রাহকদের কাছ থেকে প্রশংসা কুড়াচ্ছে। আমরা তাদের কাজ অত্যন্ত জোরালোভাবে সাজেস্ট করছি!",
+        author: "শফিকুল আলম",
+        origin: "কর্পোরেট ডিরেক্টর, ব্র্যান্ড গ্লো বাংলাদেশ",
+        rating: 5,
+        role: "এক্সিকিউティブ পার্টনার",
+        platform: "facebook",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200&q=80"
+      },
+      {
+        id: 'default_rev3',
+        text: "তারা আমাদের অনলাইন বুকিং পোর্টাল তৈরি করে দিয়েছে এবং আমাদের মার্কেটিং ক্যাম্পেইনের যাবতীয় কাজের চাপ নিজেরা নিয়ে নিয়েছে। প্রতিটি ডকুমেন্ট, কোটেশন এবং বিলিং সিস্টেম অত্যন্ত নিখুঁত ও গোছানো। সহজ যোগাযোগ, সময়মতো ডেলিভারি ও প্রিমিয়াম আউটপুট!",
+        author: "ইমরান হাসান",
+        origin: "সিইও, স্বপ্ন টেক-ভেঞ্চারস",
+        rating: 5,
+        role: "ম্যানেজিং ডিরেক্টর",
+        platform: "google",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&h=200&q=80"
+      },
+      {
+        id: 'default_rev4',
+        text: "তাদের ফেসবুক এবং গুগল অ্যাড ক্যাম্পেইনের মাধ্যমে আমাদের সেলস প্রায় ৩ গুণ বৃদ্ধি পেয়েছে! যেকোনো ব্যবসার প্রচারণা বাড়ানোর জন্য তারা আসলেই বিশ্বস্ত ও দক্ষ সহযোগী। ধন্যবাদ নেক্সাস্ফিয়ার আইটি!",
+        author: "তানভীর আহমেদ",
+        origin: "চিফ এক্সিকিউティブ, রেইমেন্ট বাজার",
+        rating: 5,
+        role: "ফাউন্ডার ও সিইও",
+        platform: "facebook",
+        avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&h=200&q=80"
+      },
+      {
+        id: 'default_rev5',
+        text: "নেক্সাস্ফিয়ার টিমের ডিজাইন সেন্স অসাধারণ! আমাদের নতুন ডিজিটাল প্রোডাক্ট লঞ্চিংয়ের সময় চমৎকার গ্রাফিক্স ও সোশ্যাল মিডিয়া কিটস রেডি করে দিয়েছিল, যা কাস্টমারদের প্রচুর আকৃষ্ট করেছে। তাদের উপস্থাপনা এককথায় অনন্য!",
+        author: "মেহজাবিন চৌধুরী",
+        origin: "ক্রিয়েটিভ হেড, এলিগ্যান্ট আর্টস বিডি",
+        rating: 5,
+        role: "মার্কেটিং স্পেশালিস্ট",
+        platform: "direct",
+        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&h=200&q=80"
+      },
+      {
+        id: 'default_rev6',
+        text: "খুব অল্প সময়ে ডাবল রেসপন্সিভ সাইট ডেভেলপমেন্ট এবং নিখুঁত এসইও সেটআপ করে দেওয়ায় আমাদের অর্গানিক ট্রাফিক ৫০% বেড়েছে। তাদের কাজের প্রিমিয়াম কোয়ালিটি এবং কাজের প্রতি দায়বদ্ধতা সতত প্রশংসনীয়!",
+        author: "জাহিদুল ইসলাম",
+        origin: "টেক টিম লিড, প্রগ্রেসিভ ডিস্ট্রিবিউশন",
+        rating: 5,
+        role: "অপারেশনস হেড",
+        platform: "direct",
+        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&h=200&q=80"
+      },
+      {
+        id: 'default_rev7',
+        text: "নেক্সাস্ফিয়ার আইটি-র কাস্টমার সাপোর্ট ও গাইডলাইন অসাধারণ। তারা শুধু ওয়েবসাইট বা বিজ্ঞাপন বানিয়েই দায়িত্ব শেষ করে না, পরবর্তীতে সেলস বৃদ্ধি ও কারিগরি সহায়তায় সবসময় পাশে থাকে। তাদের সার্ভিস ১০ এ ১০!",
+        author: "ফারিহা রহমান",
+        origin: "সহ-প্রতিষ্ঠাতা, লাক্সারি লাইফ বাংলাদেশ",
+        rating: 5,
+        role: "পার্টনারশিপস ম্যানেজার",
+        platform: "google",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&h=200&q=80"
+      },
+      {
+        id: 'default_rev8',
+        text: "ডিজিটাল প্রেসেন্স ও সোশ্যাল মিডিয়া অপ্টিমাইজেশানের জন্য বাংলাদেশে নেক্সাস্ফিয়ার এর চেয়ে ভালো দ্বিতীয় কোনো অপশন নেই। তাদের স্ট্র্যাটেজিক পরিকল্পনা অত্যন্ত নিখুঁত এবং রিটার্ন অন ইনভেস্টমেন্ট অসাধারণ!",
+        author: "আরিয়ান সাইদ",
+        origin: "মার্কেটিং ডিরেক্টর, ফুড ট্রেইলস বিডি",
+        rating: 5,
+        role: "ব্র্যান্ড অ্যাম্বাসেডর",
+        platform: "facebook",
+        avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&h=200&q=80"
+      }
     ]);
   };
 
@@ -590,6 +686,13 @@ export default function NexoraAdmin() {
       { id: 'local_fq3', q: "How long before we see our first marketing results?", a: "With our specialized NexaSphere IT launch protocol, standard PPC and paid social channels go live with optimized creatives within 10-14 days. Major metrics improvements are visible in your custom analytics portal immediately." },
       { id: 'local_fq4', q: "Do you integrate custom CRM or tools like the NexaSphere Suite?", a: "Absolutely! Every NexaSphere IT retainer grants lifetime premium access to the integrated NexaSphere workspace—where clients and executive staff can instantly manage Quotations, Money Receipts, and custom Sales tracking in real-time." }
     ]);
+
+    const backupReviews = JSON.parse(localStorage.getItem('nexora_reviews_backup') || '[]');
+    if (backupReviews.length > 0) {
+      setCustomReviews(backupReviews);
+    } else {
+      loadDefaultReviews();
+    }
   };
 
   useEffect(() => {
@@ -1145,6 +1248,61 @@ export default function NexoraAdmin() {
     }
   };
 
+  // Custom reviews handlers
+  const handleAddReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReview.text.trim() || !newReview.author.trim() || !newReview.role.trim() || !newReview.origin.trim()) {
+      toast.error("Please fill all required review fields!");
+      return;
+    }
+    const payload = {
+      text: newReview.text,
+      author: newReview.author,
+      role: newReview.role,
+      origin: newReview.origin,
+      platform: newReview.platform,
+      rating: Number(newReview.rating || 5),
+      avatar: newReview.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200&q=80"
+    };
+
+    try {
+      const docRef = await addDoc(collection(db, 'nexora_reviews'), payload);
+      const added = { id: docRef.id, ...payload };
+      const updated = [...customReviews, added];
+      setCustomReviews(updated);
+      localStorage.setItem('nexora_reviews_backup', JSON.stringify(updated));
+      setNewReview({ text: '', author: '', role: '', origin: '', platform: 'google', rating: 5, avatar: '' });
+      toast.success("Review testimonial saved successfully!");
+    } catch (err: any) {
+      const id = 'local_rev_' + Date.now();
+      const added = { id, ...payload };
+      const updated = [...customReviews, added];
+      setCustomReviews(updated);
+      localStorage.setItem('nexora_reviews_backup', JSON.stringify(updated));
+      setNewReview({ text: '', author: '', role: '', origin: '', platform: 'google', rating: 5, avatar: '' });
+      toast.success("Review saved locally!");
+    }
+  };
+
+  const handleDeleteReview = async (id: string) => {
+    try {
+      if (id.startsWith('local_') || id.startsWith('default_') || id.length < 5) {
+        const list = customReviews.filter(r => r.id !== id);
+        setCustomReviews(list);
+        localStorage.setItem('nexora_reviews_backup', JSON.stringify(list));
+        toast.success("Review removed successfully.");
+      } else {
+        await deleteDoc(doc(db, 'nexora_reviews', id));
+        const list = customReviews.filter(r => r.id !== id);
+        setCustomReviews(list);
+        localStorage.setItem('nexora_reviews_backup', JSON.stringify(list));
+        toast.success("Deleted review from cloud.");
+      }
+    } catch (e) {
+      toast.error("Removed locally.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#02020a] text-white pt-24 pb-20 relative overflow-hidden font-sans">
       {/* Background Neon Glow Nodes */}
@@ -1288,7 +1446,7 @@ export default function NexoraAdmin() {
                         {/* Automated expert pairing node */}
                         <div className="p-4 bg-indigo-950/25 border border-indigo-500/15 rounded-2xl flex items-center gap-3.5 mt-3">
                           <img 
-                            src={matchedSpec.avatar} 
+                            src={matchedSpec.avatar || undefined} 
                             alt={matchedSpec.name} 
                             className="w-10 h-10 object-cover rounded-xl border border-white/[0.1] shrink-0"
                             referrerPolicy="no-referrer"
@@ -1508,7 +1666,7 @@ export default function NexoraAdmin() {
                             <div className="p-3 bg-red-500/[0.02] border border-red-500/10 rounded-xl space-y-1.5">
                               <span className="text-[7.5px] font-mono font-black text-red-400 uppercase tracking-widest block">System Expert Allocator Recommended Assignment</span>
                               <div className="flex items-center gap-3">
-                                <img src={matchedSpec.avatar} alt={matchedSpec.name} className="w-8 h-8 rounded-lg object-cover border border-white/[0.05]" referrerPolicy="no-referrer" />
+                                <img src={matchedSpec.avatar || undefined} alt={matchedSpec.name} className="w-8 h-8 rounded-lg object-cover border border-white/[0.05]" referrerPolicy="no-referrer" />
                                 <div>
                                   <p className="text-[11px] font-black text-white">{matchedSpec.name}</p>
                                   <p className="text-[9px] text-[#94a3b8]">{matchedSpec.role}</p>
@@ -2041,6 +2199,7 @@ export default function NexoraAdmin() {
                   { id: 'pages', label: 'Inner Sections & Button Action CTAs' },
                   { id: 'team_chrono', label: 'Team & Chronology Timeline' },
                   { id: 'pricing', label: 'SLA Pricing Plan Packages' },
+                  { id: 'reviews', label: 'Customer Testimonials' },
                   { id: 'faqs', label: 'Client FAQs Accordion' },
                   { id: 'footer_terms', label: 'Footer Terms & Conditions' }
                 ].map(sub => (
@@ -2146,7 +2305,7 @@ export default function NexoraAdmin() {
                       <div className="p-5 rounded-2xl border border-white/[0.05] bg-[#02020a] flex items-center gap-3 shadow-2xl">
                         {settings.companyLogo ? (
                           <div className="bg-white rounded-lg p-0.5" style={{ height: `${settings.logoHeight || 40}px` }}>
-                            <img src={settings.companyLogo} alt="Logo" className="h-full w-auto object-contain" />
+                            <img src={settings.companyLogo || undefined} alt="Logo" className="h-full w-auto object-contain" />
                           </div>
                         ) : (
                           <>
@@ -2827,7 +2986,7 @@ export default function NexoraAdmin() {
                         <div className="p-3 bg-[#020208] border border-white/[0.04] rounded-xl flex items-center gap-4">
                           <div className="w-12 h-12 rounded-xl bg-slate-900 border border-white/[0.08] overflow-hidden flex items-center justify-center shrink-0 relative group">
                             {ceoProfile.image ? (
-                              <img src={ceoProfile.image} alt="CEO Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                              <img src={ceoProfile.image || undefined} alt="CEO Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                             ) : (
                               <span className="text-[10px] text-slate-500 font-mono">No Pic</span>
                             )}
@@ -2918,7 +3077,7 @@ export default function NexoraAdmin() {
                       <div className="p-3 bg-[#020208] border border-white/[0.04] rounded-xl flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-slate-900 border border-white/[0.08] overflow-hidden flex items-center justify-center shrink-0 relative">
                           {newTeamMember.image ? (
-                            <img src={newTeamMember.image} alt="Officer Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                            <img src={newTeamMember.image || undefined} alt="Officer Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-[9px] text-slate-500 font-mono">No Pic</span>
                           )}
@@ -2995,7 +3154,7 @@ export default function NexoraAdmin() {
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-black text-sm border border-indigo-500/20 overflow-hidden shrink-0">
                                 {t.image || t.avatar ? (
-                                  <img src={t.image || t.avatar} alt={t.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                                  <img src={(t.image || t.avatar) || undefined} alt={t.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                                 ) : (
                                   t.initial
                                 )}
@@ -3212,6 +3371,178 @@ export default function NexoraAdmin() {
                             className="text-slate-500 hover:text-rose-500 transition-colors p-2 cursor-pointer mt-1"
                           >
                             <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SUBVIEW: CUSTOMER TESTIMONIALS */}
+              {customizerSubTab === 'reviews' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
+                  {/* Add Review Form */}
+                  <form onSubmit={handleAddReview} className="lg:col-span-5 bg-slate-950/75 p-6 rounded-[2rem] border border-white/[0.04] space-y-4 text-xs font-semibold h-fit">
+                    <span className="text-[9px] font-mono font-black uppercase text-pink-500 block">CREATE CUSTOMER TESTIMONIAL</span>
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-mono text-slate-455 uppercase">CUSTOMER NAME *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="E.g. নুসরাত জাহান"
+                        value={newReview.author}
+                        onChange={e => setNewReview({ ...newReview, author: e.target.value })}
+                        className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-semibold"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-mono text-slate-455 uppercase">DESIGNATION / ROLE *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="E.g. ই-কমার্স ডিরেক্টর"
+                        value={newReview.role}
+                        onChange={e => setNewReview({ ...newReview, role: e.target.value })}
+                        className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-semibold"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-mono text-slate-455 uppercase">COMPANY / ORIGIN *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="E.g. প্রতিষ্ঠাতা, ঢাকা ফ্যাশন হাব"
+                        value={newReview.origin}
+                        onChange={e => setNewReview({ ...newReview, origin: e.target.value })}
+                        className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-semibold"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-mono text-slate-455 uppercase">PLATFORM CHANNEL</label>
+                        <select
+                          value={newReview.platform}
+                          onChange={e => setNewReview({ ...newReview, platform: e.target.value })}
+                          className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-semibold"
+                        >
+                          <option value="google">Google Reviews</option>
+                          <option value="facebook">Facebook Reviews</option>
+                          <option value="direct">Direct Website Client</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-mono text-slate-455 uppercase">STAR RATING</label>
+                        <select
+                          value={newReview.rating}
+                          onChange={e => setNewReview({ ...newReview, rating: Number(e.target.value) })}
+                          className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-semibold"
+                        >
+                          <option value={5}>5 Stars</option>
+                          <option value={4}>4 Stars</option>
+                          <option value={3}>3 Stars</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Customer Photo URL */}
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-mono text-slate-455 uppercase">CUSTOMER PHOTO URL</label>
+                      <input
+                        type="text"
+                        placeholder="E.g. https://images.unsplash.com/..."
+                        value={newReview.avatar}
+                        onChange={e => setNewReview({ ...newReview, avatar: e.target.value })}
+                        className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-white font-semibold"
+                      />
+                      <p className="text-[9px] text-slate-500 italic">Leave empty to use a standard corporate user avatar placeholder.</p>
+                    </div>
+
+                    {/* Quick photo presets */}
+                    <div className="space-y-1 pb-1">
+                      <label className="text-[7.5px] font-mono text-indigo-400 uppercase">QUICK PHOTO PRESETS</label>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {[
+                          { name: 'Female 1', url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&h=200&q=80' },
+                          { name: 'Male 1', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200&q=80' },
+                          { name: 'Male 2', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&h=200&q=80' },
+                          { name: 'Female 2', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&h=200&q=80' }
+                        ].map((preset, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setNewReview({ ...newReview, avatar: preset.url })}
+                            className="px-2.5 py-1 bg-white/[0.02] border border-white/[0.05] hover:border-indigo-500 rounded text-[9px] hover:text-white transition-all cursor-pointer"
+                          >
+                            {preset.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-mono text-slate-455 uppercase">REVIEW STORY CONTENT *</label>
+                      <textarea
+                        rows={3}
+                        required
+                        placeholder="ভীষণ দক্ষ ও অত্যন্ত প্রিমিয়াম টিম..."
+                        value={newReview.text}
+                        onChange={e => setNewReview({ ...newReview, text: e.target.value })}
+                        className="w-full bg-[#03030c] border border-white/[0.08] rounded-xl py-3 px-4 focus:border-indigo-550 outline-none text-white resize-none font-semibold"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-4 bg-pink-650 hover:bg-pink-600 text-white font-sans uppercase text-[9px] font-black tracking-widest rounded-xl transition-all cursor-pointer shadow-lg active:scale-[0.99]"
+                    >
+                      Publish Custom Review
+                    </button>
+                  </form>
+
+                  {/* Reviews list Preview */}
+                  <div className="lg:col-span-7 space-y-4">
+                    <h5 className="text-[10px] font-black uppercase text-white tracking-widest font-mono italic">ACTIVE CUSTOMER TESTIMONIALS</h5>
+                    <div className="space-y-3 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
+                      {customReviews.length === 0 && (
+                        <p className="text-slate-500 italic text-center py-8">No custom reviews created yet. Falling back to default list on the homepage.</p>
+                      )}
+                      {customReviews.map(r => (
+                        <div key={r.id} className="p-4 bg-[#03030c] border border-white/[0.03] rounded-2xl flex justify-between items-start gap-4 hover:border-white/[0.07] transition-all">
+                          <div className="flex gap-3">
+                            <img
+                              src={r.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200&q=80"}
+                              alt={r.author}
+                              referrerPolicy="no-referrer"
+                              className="w-10 h-10 rounded-full object-cover shrink-0 border border-white/[0.1]"
+                            />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h6 className="font-extrabold text-white text-xs">{r.author}</h6>
+                                <span className="px-2 py-0.5 rounded text-[8px] font-mono bg-indigo-950/40 text-indigo-300 border border-indigo-900/40 capitalize">
+                                  {r.platform || 'direct'}
+                                </span>
+                              </div>
+                              <p className="text-slate-450 text-[9px] font-semibold mt-0.5">{r.role} • {r.origin}</p>
+                              <p className="text-slate-300 text-[10px] italic mt-2 leading-relaxed font-medium">"{r.text}"</p>
+                              <div className="flex items-center mt-1.5 gap-0.5">
+                                {[...Array(r.rating || 5)].map((_, i) => (
+                                  <Star key={i} size={10} className="fill-yellow-500 text-yellow-500" />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteReview(r.id)}
+                            className="text-slate-500 hover:text-rose-500 transition-colors p-2 cursor-pointer shrink-0"
+                          >
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       ))}

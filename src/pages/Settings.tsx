@@ -27,7 +27,7 @@ const Settings = () => {
     { name: 'Default Sans (Outfit)', id: 'font-sans' },
     { name: 'Lora (Classic Elegant)', id: 'Lora' },
     { name: 'Inter (Sleek Modern)', id: 'Inter' },
-    { name: 'Hind Siliguri (Bengali)', id: 'Hind Siliguri' },
+    { name: 'Anek Bangla (Bengali)', id: 'Anek Bangla' },
     { name: 'Playfair Display (Serif)', id: 'Playfair Display' },
     { name: 'Fira Code (Technical)', id: 'font-mono' },
   ];
@@ -228,7 +228,7 @@ const Settings = () => {
                   <div className={cn("p-4 rounded-2xl border flex items-center gap-3 shadow-md transition-all duration-300", isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100")}>
                     {settings.companyLogo ? (
                       <div className="rounded-xl overflow-hidden shadow-sm shrink-0" style={{ height: `${(settings.logoHeight || 40) * 0.85}px` }}>
-                        <img src={settings.companyLogo} alt="Logo" className="h-full w-auto object-contain bg-white" />
+                        <img src={settings.companyLogo || undefined} alt="Logo" className="h-full w-auto object-contain bg-white" />
                       </div>
                     ) : (
                       <div 
@@ -467,7 +467,7 @@ const Settings = () => {
                             className={cn("text-xs text-slate-400 leading-tight tracking-wide truncate font-medium")}
                             style={!isPreset ? { fontFamily: `"${font.id}", sans-serif` } : {}}
                           >
-                            {font.id === 'Hind Siliguri' ? 'আমাদের অত্যন্ত সুদৃশ্য এবং আকর্ষণীয় ইন্টারফেস ফন্ট' : 'The quick brown fox jumps over the lazy dog'}
+                            {font.id === 'Anek Bangla' ? 'আমাদের অত্যন্ত সুদৃশ্য এবং আকর্ষণীয় ইন্টারফেস ফন্ট' : 'The quick brown fox jumps over the lazy dog'}
                           </p>
                         </div>
                       </div>

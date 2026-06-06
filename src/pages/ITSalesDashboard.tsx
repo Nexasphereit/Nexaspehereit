@@ -58,6 +58,30 @@ const PRESEEDED_CUSTOMERS = [
   { name: 'Syeda Chowdhury', phone: '+8801822334455' }
 ];
 
+const safeGetDateOnly = (val: any): string => {
+  if (!val) return '';
+  try {
+    if (typeof val === 'string') {
+      return val.split('T')[0];
+    }
+    if (typeof val.toDate === 'function') {
+      return val.toDate().toISOString().split('T')[0];
+    }
+    if (val instanceof Date && !isNaN(val.getTime())) {
+      return val.toISOString().split('T')[0];
+    }
+    if (typeof val === 'number') {
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        return d.toISOString().split('T')[0];
+      }
+    }
+  } catch (e) {
+    console.warn("Date resolution failed safely:", e);
+  }
+  return '';
+};
+
 export default function ITSalesDashboard() {
   const { settings, updateSettings } = useTheme();
   const isDark = settings.sidebarTheme === 'dark';
@@ -1118,7 +1142,7 @@ export default function ITSalesDashboard() {
   const todayRevenueSum = todayTransactions.reduce((acc, t) => acc + (t.totalAmount || 0), 0);
   
   const todayOnboardedCustomers = customerList.filter(c => {
-    const createdStr = c.createdAt?.split('T')[0] || (c.history && c.history[0]?.createdAt?.split('T')[0]);
+    const createdStr = safeGetDateOnly(c.createdAt) || (c.history && safeGetDateOnly(c.history[0]?.createdAt));
     return createdStr === todayDateStr;
   });
   const todayOnboardedCount = todayOnboardedCustomers.length;

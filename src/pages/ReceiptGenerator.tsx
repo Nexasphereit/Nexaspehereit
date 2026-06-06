@@ -320,7 +320,7 @@ const resolveOklchColor = (colorStr: string): string => {
             <div className="flex flex-col sm:flex-row justify-between items-start mb-12 pb-8 border-b-8" style={{ borderColor: settings.primaryColor }}>
               <div className="flex flex-col gap-6 w-full sm:w-auto">
                 {receipt.companyLogo ? (
-                  <img src={receipt.companyLogo} alt="Logo" className="max-h-20 w-auto rounded-md grayscale-print" crossOrigin="anonymous" />
+                  <img src={receipt.companyLogo || undefined} alt="Logo" className="max-h-20 w-auto rounded-md grayscale-print" crossOrigin="anonymous" />
                 ) : (
                   <div className="w-16 h-16 rounded-xl flex items-center justify-center border-2 border-dashed border-zinc-200" style={{ backgroundColor: `${settings.primaryColor}11`, borderColor: settings.primaryColor }}>
                     <ReceiptIcon style={{ color: settings.primaryColor }} size={24} />
