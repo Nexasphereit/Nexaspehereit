@@ -10,7 +10,7 @@ To ensure maximum security on your live domain, follow these production security
 
 ### A. Firestore Security Rules
 We have deployed secure, Zero-Trust Attribute-Based Access Control (ABAC) rules to your Firestore DB. 
-- All public access is limited to **Read-Only** for product catalogs and blogs (`nexora_services`, `nexora_portfolio`, `nexora_blog`, etc.).
+- All public access is limited to **Read-Only** for product catalogs and blogs (`nexasphereit_services`, `nexasphereit_portfolio`, `nexasphereit_blog`, etc.).
 - Critical administration collections (`customers`, `transactions`, `sms_logs`, `quotations`, `cvs`, `receipts`, etc.) are protected so **only authorized users can read or write**.
 - The main administrative email (`gwhasu@gmail.com`) is explicitly set up with administrative privileges.
 

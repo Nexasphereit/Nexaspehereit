@@ -20,24 +20,24 @@ import { GalaxyBackground } from './components/common/GalaxyBackground';
 import { Sparkles, Phone, Mail, MapPin } from 'lucide-react';
 import MessengerWidget from './components/common/MessengerWidget';
 
-// Nexora Digital agency pages
-import NexoraHeader from './components/nexora/NexoraHeader';
-import NexoraFooter from './components/nexora/NexoraFooter';
-import NexoraHome from './pages/nexora/NexoraHome';
-import NexoraAbout from './pages/nexora/NexoraAbout';
-import NexoraServices from './pages/nexora/NexoraServices';
-import NexoraPortfolio from './pages/nexora/NexoraPortfolio';
-import NexoraCaseStudies from './pages/nexora/NexoraCaseStudies';
-import NexoraPricing from './pages/nexora/NexoraPricing';
-import NexoraBlog from './pages/nexora/NexoraBlog';
-import NexoraContact from './pages/nexora/NexoraContact';
-import NexoraAdmin from './pages/nexora/NexoraAdmin';
-import NexoraPortal from './pages/nexora/NexoraPortal';
-import NexoraTerms from './pages/nexora/NexoraTerms';
-import NexoraPrivacy from './pages/nexora/NexoraPrivacy';
-import NexoraSitemap from './pages/nexora/NexoraSitemap';
-import NexasphereNotFound from './pages/nexora/NexasphereNotFound';
-import ConsultationModal from './components/nexora/ConsultationModal';
+// Nexasphereit agency pages
+import NexasphereitHeader from './components/nexasphereit/NexasphereitHeader';
+import NexasphereitFooter from './components/nexasphereit/NexasphereitFooter';
+import NexasphereitHome from './pages/nexasphereit/NexasphereitHome';
+import NexasphereitAbout from './pages/nexasphereit/NexasphereitAbout';
+import NexasphereitServices from './pages/nexasphereit/NexasphereitServices';
+import NexasphereitPortfolio from './pages/nexasphereit/NexasphereitPortfolio';
+import NexasphereitCaseStudies from './pages/nexasphereit/NexasphereitCaseStudies';
+import NexasphereitPricing from './pages/nexasphereit/NexasphereitPricing';
+import NexasphereitBlog from './pages/nexasphereit/NexasphereitBlog';
+import NexasphereitContact from './pages/nexasphereit/NexasphereitContact';
+import NexasphereitAdmin from './pages/nexasphereit/NexasphereitAdmin';
+import NexasphereitPortal from './pages/nexasphereit/NexasphereitPortal';
+import NexasphereitTerms from './pages/nexasphereit/NexasphereitTerms';
+import NexasphereitPrivacy from './pages/nexasphereit/NexasphereitPrivacy';
+import NexasphereitSitemap from './pages/nexasphereit/NexasphereitSitemap';
+import NexasphereNotFound from './pages/nexasphereit/NexasphereNotFound';
+import ConsultationModal from './components/nexasphereit/ConsultationModal';
 
 function AppContent() {
   const [user, setUser] = useState<any>(null);
@@ -130,7 +130,7 @@ function AppContent() {
     });
   }, []);
 
-  if (loading && (isPrivateRoute || isLoginPath)) {
+  if (loading && isPrivateRoute) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#050510] relative overflow-hidden">
         {/* Abstract design nodes */}
@@ -343,7 +343,7 @@ function AppContent() {
   if (isLoginPath || (isPrivateRoute && !user)) {
     return (
       <div className="min-h-screen bg-[#02020a] text-white flex flex-col justify-between">
-        <NexoraHeader />
+        <NexasphereitHeader />
         <div className="flex-1 pt-16 flex items-center justify-center">
           <div className="w-full max-w-md relative z-10 p-6">
             <Login onLogin={(u) => {
@@ -351,7 +351,7 @@ function AppContent() {
             }} />
           </div>
         </div>
-        <NexoraFooter />
+        <NexasphereitFooter />
         <MessengerWidget />
         <Toaster position="bottom-right" />
         <ConsultationModal />
@@ -360,7 +360,7 @@ function AppContent() {
     );
   }
 
-  // PUBLIC AGENCY WEBSITE WRAPPER (Nexora Digital)
+  // PUBLIC AGENCY WEBSITE WRAPPER (NexaSphere IT)
   if (isPublicRoute || (!isPrivateRoute && !isLoginPath)) {
     return (
       <div className={cn("min-h-screen flex flex-col justify-between transition-colors duration-300 relative overflow-hidden bg-[#02020a] text-white font-sans")}>
@@ -381,7 +381,7 @@ function AppContent() {
         </AnimatePresence>
         
         {isDark && <GalaxyBackground />}
-        <NexoraHeader />
+        <NexasphereitHeader />
         
         <main className="flex-1 relative z-10 w-full pt-20">
           <AnimatePresence mode="wait">
@@ -393,26 +393,26 @@ function AppContent() {
               transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
             >
               <Routes>
-                <Route path="/" element={<NexoraHome />} />
-                <Route path="/about" element={<NexoraAbout />} />
-                <Route path="/services" element={<NexoraServices />} />
-                <Route path="/portfolio" element={<NexoraPortfolio />} />
-                <Route path="/case-studies" element={<NexoraCaseStudies />} />
-                <Route path="/pricing" element={<NexoraPricing />} />
-                <Route path="/blog" element={<NexoraBlog />} />
-                <Route path="/portal" element={<NexoraPortal />} />
-                <Route path="/contact" element={<NexoraContact />} />
-                <Route path="/admin" element={<NexoraAdmin />} />
-                <Route path="/terms" element={<NexoraTerms />} />
-                <Route path="/privacy" element={<NexoraPrivacy />} />
-                <Route path="/sitemap" element={<NexoraSitemap />} />
+                <Route path="/" element={<NexasphereitHome />} />
+                <Route path="/about" element={<NexasphereitAbout />} />
+                <Route path="/services" element={<NexasphereitServices />} />
+                <Route path="/portfolio" element={<NexasphereitPortfolio />} />
+                <Route path="/case-studies" element={<NexasphereitCaseStudies />} />
+                <Route path="/pricing" element={<NexasphereitPricing />} />
+                <Route path="/blog" element={<NexasphereitBlog />} />
+                <Route path="/portal" element={<NexasphereitPortal />} />
+                <Route path="/contact" element={<NexasphereitContact />} />
+                <Route path="/admin" element={<NexasphereitAdmin />} />
+                <Route path="/terms" element={<NexasphereitTerms />} />
+                <Route path="/privacy" element={<NexasphereitPrivacy />} />
+                <Route path="/sitemap" element={<NexasphereitSitemap />} />
                 <Route path="*" element={<NexasphereNotFound />} />
               </Routes>
             </motion.div>
           </AnimatePresence>
         </main>
         
-        <NexoraFooter />
+        <NexasphereitFooter />
         <MessengerWidget />
         <Toaster position="bottom-right" />
         <ConsultationModal />
@@ -460,7 +460,7 @@ function AppContent() {
               <Route path="/receipts/:id?" element={<ReceiptGenerator />} />
               <Route path="/history" element={<History />} />
               <Route path="/settings" element={(user?.role === 'admin') ? <Settings /> : <Navigate to="/dashboard" replace />} />
-              <Route path="/admin" element={(user?.role === 'admin') ? <NexoraAdmin /> : <Navigate to="/dashboard" replace />} />
+              <Route path="/admin" element={(user?.role === 'admin') ? <NexasphereitAdmin /> : <Navigate to="/dashboard" replace />} />
               <Route path="*" element={<NexasphereNotFound />} />
             </Routes>
           </motion.div>

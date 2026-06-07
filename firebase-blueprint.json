@@ -181,7 +181,7 @@
       "schema": "Menu",
       "description": "Collection of business custom menus"
     },
-    "nexora_reviews": {
+    "nexasphereit_reviews": {
       "schema": "Review",
       "description": "Customizable customer marketing testimonials displayed on public homepage"
     }

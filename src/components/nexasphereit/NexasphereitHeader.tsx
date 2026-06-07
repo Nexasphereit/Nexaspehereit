@@ -6,7 +6,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { auth } from '../../lib/firebase';
 import { cn } from '../../lib/utils';
 
-export default function NexoraHeader() {
+export default function NexasphereitHeader() {
   const { settings, setConsultationOpen } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);

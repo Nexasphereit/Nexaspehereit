@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, doc, getDocFromServer, setLogLevel } from 'firebase/firestore';
 import defaultFirebaseConfig from '../../firebase-applet-config.json';
 
 // Support loading Firebase configurations dynamically from client env keys (VITE_ prefixed) or fall back to default JSON file
@@ -16,6 +16,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+setLogLevel('error');
 const dbId = firebaseConfig.firestoreDatabaseId;
 export const db = (dbId && dbId !== '(default)' && dbId !== "") ? getFirestore(app, dbId) : getFirestore(app);
 export const auth = getAuth(app);

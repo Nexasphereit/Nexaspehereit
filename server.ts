@@ -82,7 +82,7 @@ async function startServer() {
   app.get("/api/it-sales/templates", async (req, res) => {
     try {
       if (!db) throw new Error("Firebase database not initialized on backend.");
-      const snap = await getDoc(doc(db, "nexora_config", "sms_templates"));
+      const snap = await getDoc(doc(db, "nexasphereit_config", "sms_templates"));
       if (snap.exists()) {
         const data = snap.data();
         return res.json({
@@ -113,7 +113,7 @@ async function startServer() {
     const { pauseTemplate, resumeTemplate, frontEndSubmitTemplate, customOfferTemplate } = req.body;
     try {
       if (!db) throw new Error("Firebase database not initialized on backend.");
-      await setDoc(doc(db, "nexora_config", "sms_templates"), {
+      await setDoc(doc(db, "nexasphereit_config", "sms_templates"), {
         pauseTemplate: pauseTemplate || "",
         resumeTemplate: resumeTemplate || "",
         frontEndSubmitTemplate: frontEndSubmitTemplate || "",
@@ -180,12 +180,12 @@ async function startServer() {
         status: "New"
       };
 
-      // 1. Add to nexora_leads collection
-      const leadSnap = await addDoc(collection(db, "nexora_leads"), leadPayload);
+      // 1. Add to nexasphereit_leads collection
+      const leadSnap = await addDoc(collection(db, "nexasphereit_leads"), leadPayload);
 
       // 2. Fetch current automated submission template
       let customTemplate = "Hi {name}, NexaSphere has successfully captured your request for the {service} service under budget {budget}. An expert campaign analyst will evaluate your parameters shortly!";
-      const templatesSnap = await getDoc(doc(db, "nexora_config", "sms_templates"));
+      const templatesSnap = await getDoc(doc(db, "nexasphereit_config", "sms_templates"));
       if (templatesSnap.exists()) {
         const templatesData = templatesSnap.data();
         if (templatesData.frontEndSubmitTemplate) {
@@ -250,7 +250,7 @@ async function startServer() {
   app.get("/api/it-sales/inbound-leads", async (req, res) => {
     try {
       if (!db) throw new Error("Firebase database not initialized on backend.");
-      const snapLeads = await getDocs(collection(db, "nexora_leads"));
+      const snapLeads = await getDocs(collection(db, "nexasphereit_leads"));
       const leads = snapLeads.docs.map(d => ({ id: d.id, ...d.data() }));
       leads.sort((a: any, b: any) => new Date(b.createdAt || b.timestamp || 0).getTime() - new Date(a.createdAt || a.timestamp || 0).getTime());
       res.json({ success: true, leads });

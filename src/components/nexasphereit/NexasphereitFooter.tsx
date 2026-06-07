@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { toast as hotToast } from 'react-hot-toast';
 import { useTheme } from '../../context/ThemeContext';
 
-export default function NexoraFooter() {
+export default function NexasphereitFooter() {
   const { settings, triggerRedirection } = useTheme();
   const [email, setEmail] = useState('');
   const [activeTermsTab, setActiveTermsTab] = useState<'terms' | 'privacy' | null>(null);
@@ -21,15 +21,15 @@ export default function NexoraFooter() {
       try {
         const { doc, getDoc } = await import('firebase/firestore');
         const { db } = await import('../../lib/firebase');
-        const tDoc = await getDoc(doc(db, 'nexora_config', 'landing_terms'));
+        const tDoc = await getDoc(doc(db, 'nexasphereit_config', 'landing_terms'));
         if (tDoc.exists()) {
           setTermsData(tDoc.data() as any);
         } else {
-          const backup = localStorage.getItem('nexora_terms_backup');
+          const backup = localStorage.getItem('nexasphereit_terms_backup');
           if (backup) setTermsData(JSON.parse(backup));
         }
       } catch (e) {
-        const backup = localStorage.getItem('nexora_terms_backup');
+        const backup = localStorage.getItem('nexasphereit_terms_backup');
         if (backup) setTermsData(JSON.parse(backup));
       }
     };

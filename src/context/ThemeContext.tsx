@@ -47,8 +47,8 @@ const logoSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 650 160'>
     <path d='M 55,130 L 105,80 L 105,45' fill='none' stroke='url(#logo-red-grad)' stroke-width='11' stroke-linecap='round' stroke-linejoin='round' />
     <circle cx='115' cy='30' r='12' fill='#ffffff' stroke='url(#logo-red-grad)' stroke-width='6' />
     <circle cx='55' cy='130' r='12' fill='#ffffff' stroke='url(#logo-red-grad)' stroke-width='6' />
-    <text x='170' y='82' font-family='&quot;Space Grotesk&quot;, &quot;Outfit&quot;, &quot;Inter&quot;, sans-serif' font-size='56' font-weight='800' fill='#000000' letter-spacing='-1'>NexaSphere It</text>
-    <text x='172' y='122' font-family='&quot;Alex Brush&quot;, &quot;Playfair Display&quot;, cursive, serif' font-size='32' font-weight='500' fill='#000000' letter-spacing='1'>new ideas, new success</text>
+    <text x='170' y='82' font-family='&quot;Space Grotesk&quot;, &quot;Outfit&quot;, &quot;Inter&quot;, sans-serif' font-size='56' font-weight='800' fill='#000000' letter-spacing='-1'>NexaSphere IT</text>
+    <text x='172' y='122' font-family='&quot;Montserrat&quot;, &quot;Space Grotesk&quot;, sans-serif' font-size='22' font-weight='705' fill='#000000' letter-spacing='3'>new ideas, new success</text>
   </g>
 </svg>`;
 
@@ -67,8 +67,8 @@ const logoSvgDark = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 650 16
     <path d='M 55,130 L 105,80 L 105,45' fill='none' stroke='url(#logo-red-grad-dark)' stroke-width='11' stroke-linecap='round' stroke-linejoin='round' />
     <circle cx='115' cy='30' r='12' fill='#03030c' stroke='url(#logo-red-grad-dark)' stroke-width='6' />
     <circle cx='55' cy='130' r='12' fill='#03030c' stroke='url(#logo-red-grad-dark)' stroke-width='6' />
-    <text x='170' y='82' font-family='&quot;Space Grotesk&quot;, &quot;Outfit&quot;, &quot;Inter&quot;, sans-serif' font-size='56' font-weight='800' fill='#ffffff' letter-spacing='-1'>NexaSphere It</text>
-    <text x='172' y='122' font-family='&quot;Alex Brush&quot;, &quot;Playfair Display&quot;, cursive, serif' font-size='32' font-weight='500' fill='#ffffff' letter-spacing='1'>new ideas, new success</text>
+    <text x='170' y='82' font-family='&quot;Space Grotesk&quot;, &quot;Outfit&quot;, &quot;Inter&quot;, sans-serif' font-size='56' font-weight='800' fill='#ffffff' letter-spacing='-1'>NexaSphere IT</text>
+    <text x='172' y='122' font-family='&quot;Montserrat&quot;, &quot;Space Grotesk&quot;, sans-serif' font-size='22' font-weight='705' fill='#ffffff' letter-spacing='3'>new ideas, new success</text>
   </g>
 </svg>`;
 
@@ -81,18 +81,18 @@ const defaultLogoDataUri = encodeSvgToBase64(logoSvg);
 const defaultLogoLightDataUri = encodeSvgToBase64(logoSvgDark);
 
 const defaultSettings: ThemeSettings = {
-  primaryColor: '#e11d48', // Match the red branding color of Nexasphere It
+  primaryColor: '#e11d48', // Match the red branding color of Nexasphere IT
   sidebarColor: '', // Default (use theme defaults)
   fontFamily: 'font-sans',
   sidebarTheme: 'light',
   companyLogo: '',
   companyLogoLight: '',
-  companyName: 'NexaSphere It',
+  companyName: 'NexaSphere IT',
   companyTagline: 'new ideas, new success',
   logoHeight: 40,
   currency: 'BDT',
   customFonts: [
-    { name: 'Default Sans (Outfit)', id: 'font-sans' },
+    { name: 'Montserrat (Sleek Geometric)', id: 'font-sans' },
     { name: 'Lora (Classic Elegant)', id: 'Lora' },
     { name: 'Inter (Sleek Modern)', id: 'Inter' },
     { name: 'Anek Bangla (Bengali)', id: 'Anek Bangla' },
@@ -221,7 +221,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return updated;
     });
     try {
-      await setDoc(doc(db, 'nexora_config', 'theme_settings'), newSettings, { merge: true });
+      await setDoc(doc(db, 'nexasphereit_config', 'theme_settings'), newSettings, { merge: true });
     } catch (e) {
       console.warn("Could not sync settings to Firestore:", e);
     }
@@ -230,7 +230,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const fetchGlobalThemeSettings = async () => {
       try {
-        const tDoc = await getDoc(doc(db, 'nexora_config', 'theme_settings'));
+        const tDoc = await getDoc(doc(db, 'nexasphereit_config', 'theme_settings'));
         if (tDoc.exists()) {
           const cloudData = tDoc.data();
           setSettings(prev => {

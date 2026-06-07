@@ -14,31 +14,31 @@ service cloud.firestore {
     }
 
     // 1. Catalog collections - Relaxed for sandbox development
-    match /nexora_services/{id} {
+    match /nexasphereit_services/{id} {
       allow read, write: if true;
     }
-    match /nexora_portfolio/{id} {
+    match /nexasphereit_portfolio/{id} {
       allow read, write: if true;
     }
-    match /nexora_pricing_plans/{id} {
+    match /nexasphereit_pricing_plans/{id} {
       allow read, write: if true;
     }
-    match /nexora_blog/{id} {
+    match /nexasphereit_blog/{id} {
       allow read, write: if true;
     }
-    match /nexora_team/{id} {
+    match /nexasphereit_team/{id} {
       allow read, write: if true;
     }
-    match /nexora_milestones/{id} {
+    match /nexasphereit_milestones/{id} {
       allow read, write: if true;
     }
-    match /nexora_faqs/{id} {
+    match /nexasphereit_faqs/{id} {
       allow read, write: if true;
     }
-    match /nexora_reviews/{id} {
+    match /nexasphereit_reviews/{id} {
       allow read, write: if true;
     }
-    match /nexora_portal_updates/{id} {
+    match /nexasphereit_portal_updates/{id} {
       allow read, write: if true;
     }
     match /services/{id} {
@@ -46,15 +46,15 @@ service cloud.firestore {
     }
 
     // 2. configurations
-    match /nexora_config/{id} {
+    match /nexasphereit_config/{id} {
       allow read, write: if true;
     }
 
     // 3. Public landing forms & user submissions
-    match /nexora_leads/{id} {
+    match /nexasphereit_leads/{id} {
       allow read, write: if true;
     }
-    match /nexora_messages/{id} {
+    match /nexasphereit_messages/{id} {
       allow read, write: if true;
     }
 
@@ -68,7 +68,7 @@ service cloud.firestore {
     match /sms_logs/{id} {
       allow read, write: if true;
     }
-    match /nexora_ads/{id} {
+    match /nexasphereit_ads/{id} {
       allow read, write: if true;
     }
 

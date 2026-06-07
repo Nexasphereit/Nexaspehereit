@@ -79,7 +79,9 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
       try {
         const realUserSession = getRealCurrentUser();
         if (!realUserSession || realUserSession.isAnonymous) {
-          await signInAnonymously(auth);
+          signInAnonymously(auth).catch(err => {
+            console.warn("Background billing credentials setup deferred:", err);
+          });
         }
       } catch (_) {}
 
@@ -297,7 +299,9 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
         try {
           const realUserSession = getRealCurrentUser();
           if (!realUserSession || realUserSession.isAnonymous) {
-            await signInAnonymously(auth);
+            signInAnonymously(auth).catch(err => {
+              console.warn("Background billing gateway setup deferred:", err);
+            });
           }
         } catch (authError) {
           console.warn("Firebase Auth Anonymous Session skipped (operating in offline fallback):", authError);
@@ -332,7 +336,7 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
         <div className="text-center space-y-6 relative z-10 px-4 py-6">
           {settings.companyLogo ? (
             <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-2xl bg-white border border-slate-200 p-3 transition-transform hover:scale-105 duration-300">
-              <img src={settings.companyLogo || undefined} alt="Company Logo" className="max-w-full max-h-full object-contain" />
+              <img src={settings.companyLogo || null} alt="Company Logo" className="max-w-full max-h-full object-contain" />
             </div>
           ) : (
             <div className="w-24 h-24 bg-gradient-to-br from-rose-600 to-red-800 rounded-[2.5rem] mx-auto flex items-center justify-center rotate-6 shadow-2xl shadow-rose-900/40 border border-rose-500/30">
