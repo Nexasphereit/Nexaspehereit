@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageCircle, X, Send, Sparkles, CheckCircle } from 'lucide-react';
+import { MessageCircle, X, Send, CheckCircle } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function MessengerWidget() {
@@ -103,7 +103,7 @@ export default function MessengerWidget() {
             <div className="absolute bottom-[-6px] right-6 w-3 h-3 bg-slate-950 border-r border-b border-indigo-500/30 transform rotate-45" />
             <div className="flex items-start gap-2.5">
               <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 mt-0.5">
-                <Sparkles size={14} className="animate-spin duration-3000" />
+                <MessageCircle size={14} className="animate-pulse" />
               </span>
               <div>
                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">NexaSphere Live</p>
@@ -129,7 +129,7 @@ export default function MessengerWidget() {
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-900/30 border border-indigo-500/20 text-indigo-400">
-                    <Sparkles size={18} />
+                    <MessageCircle size={18} />
                   </span>
                   <span className="absolute bottom-0 right-0 flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />

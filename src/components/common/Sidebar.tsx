@@ -12,7 +12,7 @@ import {
   Sun,
   Moon,
   Building2,
-  Sparkles,
+  PlusCircle,
   Sliders
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -168,7 +168,7 @@ export default function Sidebar() {
                   border: isDocCreationActive ? 'none' : '1px dashed currentColor'
                 }}
               >
-                <Sparkles size={18} className="shrink-0" />
+                <PlusCircle size={18} className="shrink-0" />
                 <span className="text-[7px] font-black uppercase tracking-wider mt-0.5 max-w-full truncate">
                   Create
                 </span>

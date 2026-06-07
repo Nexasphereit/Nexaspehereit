@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Trophy, Sparkles, Play, Video, FileText, Award, Calendar, 
+  Trophy, Play, Video, FileText, Award, Calendar, Star, Gift, 
   ArrowLeft, Phone, Mail, MapPin, ExternalLink, RefreshCw, 
   Flame, Clock, ShieldCheck, Heart, User, CheckCircle2, ChevronRight
 } from 'lucide-react';
@@ -233,7 +233,7 @@ export default function NexasphereitPortal() {
                     {/* Hero summary mock */}
                     <div className="space-y-4">
                       <div className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-400/5 border border-indigo-400/10 rounded-full text-indigo-400 text-[8px] uppercase tracking-widest font-black">
-                        <Sparkles size={8} className="animate-spin text-yellow-500" /> Leading South Asia Integrator
+                        <Star size={8} className="animate-spin text-yellow-500" /> Leading South Asia Integrator
                       </div>
                       <h3 className="text-xl font-black uppercase italic tracking-tight text-white leading-tight">
                         TRANSFORMING <br />
@@ -324,7 +324,7 @@ export default function NexasphereitPortal() {
               {[
                 { id: 'all', label: 'All Updates', icon: Flame },
                 { id: 'news', label: 'Daily News', icon: FileText },
-                { id: 'offers', label: 'Corporate Offers', icon: Sparkles },
+                { id: 'offers', label: 'Corporate Offers', icon: Gift },
                 { id: 'videos', label: 'Videos Posts', icon: Video },
                 { id: 'achievements', label: 'Achievements', icon: Trophy },
                 { id: 'content', label: 'Knowledge posts', icon: Award }
@@ -464,7 +464,7 @@ export default function NexasphereitPortal() {
                           ) : (
                             <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-center shrink-0 text-indigo-400">
                               {isAchievement && <Trophy className="text-amber-400 animate-bounce" size={20} />}
-                              {isOffer && <Sparkles className="text-rose-400" size={20} />}
+                              {isOffer && <Gift className="text-rose-400" size={20} />}
                               {isNews && <FileText size={20} />}
                               {isVideoType && <Video size={20} />}
                             </div>

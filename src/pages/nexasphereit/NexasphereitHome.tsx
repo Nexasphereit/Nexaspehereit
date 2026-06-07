@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  ArrowRight, Sparkles, Rocket, Globe, BarChart3, Target, 
+  ArrowRight, Rocket, Globe, BarChart3, Target, 
   TrendingUp, Award, CheckCircle, HelpCircle, Star, 
   Lock, ArrowUpRight, ChevronDown, Check, Video, Edit3, Heart, Layout, Code2, ShieldAlert,
   Play, FileText, Calendar, Trophy, ChevronLeft, ChevronRight
@@ -654,7 +654,7 @@ export default function NexasphereitHome() {
               transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
               className="absolute inset-3.5 bg-[#e11d48]/10 rounded-full border border-[#e11d48]/20 flex items-center justify-center text-[#e11d48]"
             >
-              <Sparkles size={14} className="animate-pulse" />
+              <Rocket size={14} className="animate-pulse" />
             </motion.div>
           </div>
           
@@ -691,7 +691,7 @@ export default function NexasphereitHome() {
               animate={{ opacity: 1, x: 0 }}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-md text-indigo-400 text-[10px] font-black tracking-widest uppercase italic w-fit select-none"
             >
-              <Sparkles size={11} className="text-yellow-400 animate-spin" />
+              <Star size={11} className="text-yellow-400 animate-spin" />
               <span>{heroConfig.floatingCapsule}</span>
             </motion.div>
 

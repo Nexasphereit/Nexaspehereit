@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Heart, LayoutDashboard, PlusCircle, Trash2, ListMinus, LayoutGrid, 
   Settings, Mail, FileText, Plus, UserCheck, MessageSquare, 
-  Sliders, Calendar, Eye, Send, Sparkles, LogOut, CheckSquare, 
+  Sliders, Calendar, Eye, Send, Cpu, Bell, LogOut, CheckSquare, 
   ExternalLink, Upload, FolderHeart, LibrarySquare, AlertCircle, ArrowRight,
   Star
 } from 'lucide-react';
@@ -1315,7 +1315,7 @@ export default function NexasphereitAdmin() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-white/[0.05] pb-8 text-left">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Sparkles className="text-indigo-400 animate-spin" size={16} />
+              <Cpu className="text-indigo-400 animate-pulse" size={16} />
               <span className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.25em] italic">NEXASPHERE BACKOFFICE DESK</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-sans font-black italic uppercase tracking-tighter">PORTAL CONTROL DECK</h1>
@@ -1381,7 +1381,7 @@ export default function NexasphereitAdmin() {
             { id: 'ads', label: 'SeedTest Ads', icon: Sliders },
             { id: 'services', label: 'Services Catalogue', icon: LibrarySquare },
             { id: 'blogs', label: 'Blogs Seeder Portal', icon: FileText },
-            { id: 'updates', label: 'News & Portal updates', icon: Sparkles },
+            { id: 'updates', label: 'News & Portal updates', icon: Bell },
             { id: 'customizer', label: 'Website Content Customizer', icon: Settings }
           ].filter(tab => tab.id !== 'customizer' || isAdmin).map((tab) => {
             const Icon = tab.icon;

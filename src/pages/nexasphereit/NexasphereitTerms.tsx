@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   ShieldCheck, Scale, FileText, ArrowRight, Globe, Layers, 
   CreditCard, RefreshCw, UserCheck, Key, Lock, Edit3, 
-  Sparkles, Mail, CheckCircle, HelpCircle, ArrowLeft, Send
+  Flame, Mail, CheckCircle, HelpCircle, ArrowLeft, Send
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -706,7 +706,7 @@ export default function NexasphereitTerms() {
 
           <div className="max-w-3xl mx-auto text-center space-y-8 relative z-10">
             <div className="inline-flex items-center gap-2 bg-pink-950/30 border border-pink-900/30 px-3.5 py-1.5 rounded-full">
-              <Sparkles size={12} className="text-pink-400 animate-spin" />
+              <Flame size={12} className="text-pink-400 animate-pulse" />
               <span className="text-[9px] font-mono font-black text-pink-300 tracking-wider uppercase">SCALING PROTOCOL</span>
             </div>
 

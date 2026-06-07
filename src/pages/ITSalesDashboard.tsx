@@ -23,7 +23,6 @@ import {
   ChevronRight,
   ChevronLeft,
   Calendar,
-  Sparkles,
   RefreshCw,
   FolderTree,
   Mail,

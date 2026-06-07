@@ -17,7 +17,7 @@ import { auth, db } from './lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import Login from './pages/Login';
 import { GalaxyBackground } from './components/common/GalaxyBackground';
-import { Sparkles, Phone, Mail, MapPin } from 'lucide-react';
+import { Cpu, Phone, Mail, MapPin } from 'lucide-react';
 import MessengerWidget from './components/common/MessengerWidget';
 
 // Nexasphereit agency pages
@@ -166,7 +166,7 @@ function AppContent() {
                 boxShadow: `0 0 30px ${settings.primaryColor || '#f43f5e'}33`
               }}
             >
-              <Sparkles size={20} className="animate-pulse" />
+              <Cpu size={20} className="animate-pulse" />
             </motion.div>
           </div>
 
@@ -317,7 +317,7 @@ function AppContent() {
                 className="absolute inset-2 border-b-2 border-l-2 border-transparent rounded-full opacity-40 shadow-inner"
                 style={{ borderBottomColor: settings.primaryColor }}
               />
-              <Sparkles style={{ color: settings.primaryColor }} size={24} className="animate-pulse" />
+              <Cpu style={{ color: settings.primaryColor }} size={24} className="animate-pulse" />
             </div>
             
             <motion.div 

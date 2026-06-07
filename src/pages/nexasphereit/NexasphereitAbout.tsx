@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Award, Target, Rocket, Heart, Star, Shield, Users, Trophy, Clock, Sparkles, Eye } from 'lucide-react';
+import { Award, Target, Rocket, Heart, Star, Shield, Users, Trophy, Clock, Eye } from 'lucide-react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useSEO } from '../../hooks/useSEO';
@@ -149,7 +149,7 @@ export default function NexasphereitAbout() {
             animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-pink-500/30 bg-pink-950/40 shadow-lg shadow-pink-500/10 cursor-default"
           >
-            <Sparkles size={13} className="text-pink-400 animate-pulse" />
+            <Trophy size={13} className="text-pink-400 animate-pulse" />
             <span className="text-[10px] text-pink-250 font-black uppercase tracking-[0.2em] italic">
               5 Years of Elite Multi-Channel Scale (Since 2021)
             </span>

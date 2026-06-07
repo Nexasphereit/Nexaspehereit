@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   Search, BookOpen, Clock, ArrowRight, ArrowUpRight, 
-  Send, Sparkles, Filter, ChevronRight, Hash 
+  Send, Filter, ChevronRight, Hash 
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';

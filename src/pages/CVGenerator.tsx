@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Download, Printer, Save, UserCircle, ArrowLeft, Globe, Mail, Phone, MapPin, ImageIcon, Briefcase, GraduationCap, Sparkles, Wand2 } from 'lucide-react';
+import { Plus, Trash2, Download, Printer, Save, UserCircle, ArrowLeft, Globe, Mail, Phone, MapPin, ImageIcon, Briefcase, GraduationCap, Zap } from 'lucide-react';
 import { Button, Input, Card, ImageUpload } from '../components/common/UI';
 import { cn } from '../lib/utils';
 import { CV, Experience, Education } from '../types';
@@ -359,14 +359,14 @@ const resolveOklchColor = (colorStr: string): string => {
                 onClick={() => setShowAiCvPanel(!showAiCvPanel)}
                 className="text-rose-600 dark:text-rose-400 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1 cursor-pointer"
               >
-                <Sparkles size={13} /> Optimize Summary with AI
+                <Zap size={13} /> Optimize Summary with AI
               </Button>
             </div>
 
             {showAiCvPanel && (
               <div className="p-4 bg-rose-50/20 dark:bg-rose-950/10 border border-rose-100/30 dark:border-rose-950/45 rounded-2xl space-y-3.5 transition-all mb-3 text-slate-900 dark:text-white">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-rose-500" />
+                  <Zap size={16} className="text-rose-500" />
                   <p className="text-xs font-black uppercase tracking-wider text-rose-950 dark:text-rose-200">
                     NexaSphere Resume AI Optimiser (Node.js API)
                   </p>
@@ -390,7 +390,7 @@ const resolveOklchColor = (colorStr: string): string => {
                     isLoading={isAiLoading}
                     className="p-3 shadow-lg"
                   >
-                    <Wand2 size={16} />
+                    <Zap size={16} />
                   </Button>
                 </div>
               </div>

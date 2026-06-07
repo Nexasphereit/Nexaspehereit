@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Download, Printer, Save, FileText, ArrowLeft, ImageIcon, Sparkles, Wand2 } from 'lucide-react';
+import { Plus, Trash2, Download, Printer, Save, FileText, ArrowLeft, ImageIcon, Zap } from 'lucide-react';
 import { Button, Input, Card, ImageUpload } from '../components/common/UI';
 import { cn } from '../lib/utils';
 import { Quotation, QuotationItem } from '../types';
@@ -419,7 +419,7 @@ const resolveOklchColor = (colorStr: string): string => {
                   onClick={() => setShowAiPanel(!showAiPanel)}
                   className="text-rose-600 dark:text-rose-400 font-black text-[10px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Sparkles size={14} /> AI Draft Suggestion
+                  <Zap size={14} /> AI Draft Suggestion
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleAddItem} className="text-black dark:text-white font-black text-[10px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer">
                   <Plus size={14} /> Add Entry
@@ -430,7 +430,7 @@ const resolveOklchColor = (colorStr: string): string => {
             {showAiPanel && (
               <div className="p-4 bg-rose-50/20 dark:bg-rose-950/10 border border-rose-100/30 dark:border-rose-950/45 rounded-2xl space-y-3.5 transition-all">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-rose-500" />
+                  <Zap size={16} className="text-rose-500" />
                   <p className="text-xs font-black uppercase tracking-wider text-rose-950 dark:text-rose-200">
                     NexaSphere AI Consulting Assistant (Node.js API)
                   </p>
@@ -454,7 +454,7 @@ const resolveOklchColor = (colorStr: string): string => {
                     isLoading={isAiLoading}
                     className="p-3 shadow-lg"
                   >
-                    <Wand2 size={16} />
+                    <Zap size={16} />
                   </Button>
                 </div>
               </div>

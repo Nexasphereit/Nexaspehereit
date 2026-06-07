@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { 
-  ArrowRight, Globe, BarChart3, Target, Sparkles, Cpu, 
+  ArrowRight, Globe, BarChart3, Target, Cpu, 
   Monitor, LayoutGrid, Award, Film, Edit, Send, PlusCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';

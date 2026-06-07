@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Menu, X, Rocket, LayoutDashboard, ArrowRight } from 'lucide-react';
+import { Menu, X, Rocket, LayoutDashboard, ArrowRight, PhoneCall } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { auth } from '../../lib/firebase';
 import { cn } from '../../lib/utils';
@@ -161,7 +161,7 @@ export default function NexasphereitHeader() {
           >
             {/* Inner glowing light shimmer effect */}
             <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-150%] group-hover:translate-x-[300%] transition-transform duration-1000 ease-out" />
-            <Sparkles size={13} className="group-hover:rotate-12 group-hover:scale-110 transition-transform duration-300 text-indigo-200" />
+            <Rocket size={13} className="group-hover:rotate-12 group-hover:scale-110 transition-transform duration-300 text-indigo-200" />
             <span>Free Consultation</span>
           </motion.button>
         </div>
@@ -172,7 +172,7 @@ export default function NexasphereitHeader() {
             onClick={() => setConsultationOpen(true)}
             className="p-2 text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
           >
-            <Sparkles size={20} className="active:scale-95 transition-transform" />
+            <PhoneCall size={20} className="active:scale-95 transition-transform" />
           </button>
           <motion.button
             whileTap={{ scale: 0.9 }}
@@ -258,7 +258,7 @@ export default function NexasphereitHeader() {
                   }}
                   className="w-full text-xs font-black uppercase tracking-widest text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all"
                 >
-                  <Sparkles size={14} />
+                  <Rocket size={14} />
                   Free Consultation
                 </button>
               </motion.div>

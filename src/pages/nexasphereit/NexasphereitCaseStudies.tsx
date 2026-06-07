@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Target, ArrowRight, TrendingUp, Sparkles, ShieldCheck, Cpu } from 'lucide-react';
+import { Target, ArrowRight, TrendingUp, ShieldCheck, Cpu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSEO } from '../../hooks/useSEO';
 

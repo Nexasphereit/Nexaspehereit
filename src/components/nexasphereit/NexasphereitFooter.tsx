@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Globe, Mail, Phone, MapPin, Send, MessageSquare, Twitter, Instagram, Youtube, MessageCircle, Facebook } from 'lucide-react';
+import { Globe, Mail, Phone, MapPin, Send, MessageSquare, Twitter, Instagram, Youtube, MessageCircle, Facebook } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { toast as hotToast } from 'react-hot-toast';
 import { useTheme } from '../../context/ThemeContext';

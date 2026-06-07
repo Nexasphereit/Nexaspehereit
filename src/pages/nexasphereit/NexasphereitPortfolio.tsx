@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  ArrowUpRight, BarChart3, Star, Filter, Sparkles, Eye, 
+  ArrowUpRight, BarChart3, Star, Filter, Eye, 
   MessageSquare, LayoutGrid, X, Trash, Layers, Activity 
 } from 'lucide-react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';

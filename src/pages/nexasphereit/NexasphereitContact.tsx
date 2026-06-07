@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   Send, Mail, Phone, MapPin, CheckCircle, HelpCircle, 
-  Sparkles, Calendar, Heart, ShieldAlert, Navigation, 
+  Calendar, Heart, ShieldAlert, Navigation, 
   Compass, Layers, Copy, Maximize2, Activity, Wifi
 } from 'lucide-react';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';

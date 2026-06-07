@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Sparkles, Send, Phone, AlertCircle, ShieldCheck, CheckCircle2, Clock, Zap, Target, Users, ExternalLink } from 'lucide-react';
+import { X, Send, Phone, AlertCircle, ShieldCheck, CheckCircle2, Clock, Zap, Target, Users, ExternalLink } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { db } from '../../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -179,7 +179,7 @@ export default function ConsultationModal() {
             {/* Top close button and header decoration */}
             <div className="flex items-center justify-between px-6 sm:px-12 pt-6 pb-2">
               <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.05] rounded-full px-3 py-1">
-                <Sparkles size={11} className="text-rose-450 animate-pulse" />
+                <Target size={11} className="text-rose-450 animate-pulse" />
                 <span className="text-[9px] font-mono font-black uppercase text-slate-400 tracking-wider">
                   NexaSphere Strategic Consultation Hub
                 </span>
